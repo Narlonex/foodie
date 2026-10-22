@@ -1,0 +1,24 @@
+# Render blueprint for Foodie.
+# Review before creating the service. Apply migrations manually with
+#   DATABASE_URL="..." npm run db:migrate
+# before the first deploy and after each new migration.
+services:
+  - type: web
+    name: foodie
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        sync: false
+      - key: APP_TIMEZONE
+        value: Europe/Bratislava
+      - key: OFF_CONTACT_EMAIL
+        sync: false
+      - key: USDA_FDC_API_KEY
+        sync: false
