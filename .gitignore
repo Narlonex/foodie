@@ -18,6 +18,11 @@ coverage/
 .env.*
 !.env.example
 !.env.test.example
+.neon-api-key
+*.pem
+
+# hosting CLI state
+.vercel/
 
 # logs
 npm-debug.log*
