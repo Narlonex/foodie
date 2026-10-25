@@ -78,13 +78,21 @@ export function localeFor(language: "en" | "sk"): string {
 }
 
 export function formatLongDate(iso: string, language: "en" | "sk"): string {
-  return new Intl.DateTimeFormat(localeFor(language), {
+  const parts = new Intl.DateTimeFormat(localeFor(language), {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
     timeZone: "UTC",
-  }).format(toUtcDate(iso));
+  }).formatToParts(toUtcDate(iso));
+  const part = (type: string) =>
+    parts.find((entry) => entry.type === type)?.value ?? "";
+  // Punctuation is assembled here because CLDR versions disagree about the
+  // comma after the weekday; relying on `format()` renders a different string
+  // on the server than in the browser and breaks hydration.
+  return language === "sk"
+    ? `${part("weekday")} ${part("day")}. ${part("month")} ${part("year")}`
+    : `${part("weekday")}, ${part("day")} ${part("month")} ${part("year")}`;
 }
 
 export function formatShortDate(iso: string, language: "en" | "sk"): string {

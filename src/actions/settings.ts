@@ -1,8 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requireViewer, setPreferenceCookies } from "@/lib/auth";
 import {
+  completeOnboarding,
+  updateBodyMetrics,
   updateGoals,
   updateLanguage,
   updateTheme,
@@ -10,10 +13,15 @@ import {
   updateUsdaPreference,
 } from "@/lib/repositories/profile";
 import { updateDayTypeTargets } from "@/lib/repositories/dayTypes";
+import { suggestedMacroTargets } from "@/lib/macroTargets";
+import { estimateMaintenanceCalories } from "@/lib/metrics";
 import {
+  activityLevelSchema,
+  bodyMetricsSchema,
   goalModeSchema,
   languageSchema,
   manualTargetsSchema,
+  sexSchema,
   themeSchema,
   unitSystemSchema,
 } from "@/lib/validation";
@@ -123,6 +131,78 @@ export async function updateGoalsAction(
 function numberField(value: FormDataEntryValue | null): number {
   const raw = String(value ?? "").trim();
   return raw === "" ? Number.NaN : Number(raw.replace(",", "."));
+}
+
+function optionalNumberField(value: FormDataEntryValue | null): number | null {
+  const raw = String(value ?? "").trim();
+  if (raw === "") return null;
+  const parsed = Number(raw.replace(",", "."));
+  return Number.isFinite(parsed) ? parsed : Number.NaN;
+}
+
+export async function saveBodyMetricsAction(
+  _previous: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const viewer = await requireViewer();
+  const goal = goalModeSchema.safeParse(formData.get("goalMode") ?? "maintenance");
+  const sexRaw = String(formData.get("sex") ?? "").trim();
+  const activityRaw = String(formData.get("activityLevel") ?? "").trim();
+  const sex = sexRaw === "" ? null : sexSchema.safeParse(sexRaw);
+  const activity =
+    activityRaw === "" ? null : activityLevelSchema.safeParse(activityRaw);
+  if (!goal.success || sex?.success === false || activity?.success === false) {
+    return failure("settings.saveError");
+  }
+  const parsed = bodyMetricsSchema.safeParse({
+    heightCm: optionalNumberField(formData.get("heightCm")),
+    weightKg: optionalNumberField(formData.get("weightKg")),
+    age: optionalNumberField(formData.get("age")),
+    sex: sex?.success ? sex.data : null,
+    activityLevel: activity?.success ? activity.data : null,
+    goalMode: goal.data,
+  });
+  if (!parsed.success) {
+    return {
+      status: "error",
+      message: "validation.errorSummary",
+      fieldErrors: errorFromZod(parsed.error.issues),
+    };
+  }
+  const saved = await updateBodyMetrics(viewer.user.id, parsed.data, true);
+  if (!saved) return failure("settings.saveError");
+
+  if (formData.get("applySuggestion") === "on" && viewer.profile.defaultDayTypeId) {
+    const maintenance = estimateMaintenanceCalories(parsed.data);
+    if (maintenance !== null) {
+      await updateGoals(viewer.user.id, parsed.data.goalMode, maintenance);
+      const suggestion = suggestedMacroTargets(maintenance, parsed.data.goalMode);
+      await updateDayTypeTargets(
+        viewer.user.id,
+        viewer.profile.defaultDayTypeId,
+        {
+          kcal: suggestion.kcal,
+          protein: suggestion.protein,
+          carbs: suggestion.carbs,
+          fat: suggestion.fat,
+        },
+      );
+      revalidatePath("/settings/goals");
+    }
+  }
+
+  revalidatePath("/", "layout");
+  revalidatePath("/settings/metrics");
+  if (formData.get("context") === "onboarding") redirect("/");
+  return success("metrics.saved");
+}
+
+export async function skipOnboardingAction(): Promise<void> {
+  const viewer = await requireViewer();
+  const saved = await completeOnboarding(viewer.user.id);
+  if (!saved) return;
+  revalidatePath("/", "layout");
+  redirect("/");
 }
 
 /** Saves all four targets for the user's default day type exactly as entered. */

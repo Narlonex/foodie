@@ -5,9 +5,11 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { queryOne } from "./db";
 import type {
+  ActivityLevel,
   GoalMode,
   Language,
   Profile,
+  Sex,
   Theme,
   UnitSystem,
   Viewer,
@@ -77,6 +79,12 @@ interface ViewerRow {
   maintenance_calories: string | null;
   default_day_type_id: string | null;
   usda_enabled: boolean;
+  height_cm: string | null;
+  weight_kg: string | null;
+  age: number | null;
+  sex: Sex | null;
+  activity_level: ActivityLevel | null;
+  onboarding_completed: boolean;
 }
 
 const getViewerCached = cache(async (): Promise<Viewer | null> => {
@@ -86,7 +94,9 @@ const getViewerCached = cache(async (): Promise<Viewer | null> => {
 
   const row = await queryOne<ViewerRow>(
     `SELECT p.user_id, u.email, p.language, p.theme, p.unit_system, p.goal_mode,
-            p.maintenance_calories, p.default_day_type_id, p.usda_enabled
+            p.maintenance_calories, p.default_day_type_id, p.usda_enabled,
+            p.height_cm, p.weight_kg, p.age, p.sex, p.activity_level,
+            p.onboarding_completed
        FROM sessions s
        JOIN users u ON u.id = s.user_id
        JOIN profiles p ON p.user_id = u.id
@@ -106,6 +116,12 @@ const getViewerCached = cache(async (): Promise<Viewer | null> => {
       row.maintenance_calories === null ? null : Number(row.maintenance_calories),
     defaultDayTypeId: row.default_day_type_id,
     usdaEnabled: row.usda_enabled,
+    heightCm: row.height_cm === null ? null : Number(row.height_cm),
+    weightKg: row.weight_kg === null ? null : Number(row.weight_kg),
+    age: row.age === null ? null : Number(row.age),
+    sex: row.sex,
+    activityLevel: row.activity_level,
+    onboardingCompleted: row.onboarding_completed,
   };
   return { user: { id: row.user_id, email: row.email }, profile };
 });

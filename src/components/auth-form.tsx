@@ -6,6 +6,7 @@ import { loginAction, registerAction } from "@/actions/auth";
 import { initialFormState } from "@/actions/types";
 import { getTranslator, translate, type TranslationKey } from "@/i18n";
 import type { Language } from "@/lib/types";
+import { BrandMark } from "./brand-mark";
 import { Icon } from "./icons";
 
 function errorText(language: Language, key: string | undefined): string | null {
@@ -31,9 +32,7 @@ export function AuthForm({
   return (
     <div className="auth-panel">
       <div className="auth-brand">
-        <span className="brand-mark">
-          <Icon name="leaf" size={22} strokeWidth={2} />
-        </span>
+        <BrandMark />
         <span>{t("app.name")}</span>
       </div>
 

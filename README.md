@@ -114,7 +114,7 @@ The original planning conversation was not accessible while this build was compl
 | `APP_TIMEZONE` | No | IANA timezone used to decide the current diary date. Defaults to `Europe/Bratislava`; invalid values fall back safely. |
 | `OFF_CONTACT_EMAIL` | Recommended | Contact address inserted into the Open Food Facts User-Agent. Use a real address so the API operator can contact you. |
 | `OFF_USER_AGENT` | No | Full custom User-Agent. Overrides the generated `Foodie/1.0 (OFF_CONTACT_EMAIL)` value. |
-| `USDA_FDC_API_KEY` | No | Server-only USDA FoodData Central key. When absent, the USDA source is hidden and Open Food Facts plus custom foods continue to work. |
+| `USDA_FDC_API_KEY` | No | Server-only USDA FoodData Central key. When absent, the shared `DEMO_KEY` is used, so USDA search works with low rate limits. A personal key is recommended for regular use. |
 
 `.env.example` contains placeholders only. Never commit `.env`, `.env.local`, database credentials or API keys. `.env*` is gitignored except the example.
 
@@ -208,7 +208,7 @@ Migrations are intentionally a manual/release step. If you use a Render plan tha
 ## Food data sources and attribution
 
 - **Open Food Facts** — <https://world.openfoodfacts.org/> · API docs <https://openfoodfacts.github.io/openfoodfacts-server/api/> · data under the Open Database License (ODbL). Foodie identifies Open Food Facts results in the UI, links to the source record when a barcode exists, sends a descriptive User-Agent, debounces search, aborts stale requests and caches lookups briefly.
-- **USDA FoodData Central** — <https://fdc.nal.usda.gov/> · API guide <https://fdc.nal.usda.gov/api-guide>. Optional; requires a server-side `USDA_FDC_API_KEY`. If it is not configured, USDA is not shown.
+- **USDA FoodData Central** — <https://fdc.nal.usda.gov/> · API guide <https://fdc.nal.usda.gov/api-guide>. Works by default through USDA's public `DEMO_KEY`; set a server-side `USDA_FDC_API_KEY` for regular use. Each account can turn USDA search on or off under Settings → Food data.
 - **User-created foods** are labelled as such and are never presented as sourced from either API.
 
 Search results show data completeness. A partial record is not treated as complete, and unknown nutrient values remain unknown through normalization, scaling, storage, display and totals. There is no invented quality score.
@@ -241,7 +241,7 @@ tests/                     Vitest unit and optional integration tests
 ## Deferred work
 
 - **Camera barcode scanning** is not implemented. It would require a tested scanner library, device permissions and HTTPS; the build intentionally avoids a fake camera button. Manual barcode entry is available in the food dialog.
-- **USDA** requires an owner-provided API key before it appears. The rest of the app does not depend on it.
+- **USDA** works through the public `DEMO_KEY` with low limits; a personal API key is recommended for regular use. The rest of the app does not depend on it.
 - Original planning-conversation details such as exact day-type names, if any, could not be verified. They are configurable rather than hardcoded, and the defaults above are documented assumptions.
 
 ## Scripts

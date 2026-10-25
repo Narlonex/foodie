@@ -24,6 +24,9 @@ const SEARCH_FIELDS = [
   "serving_size",
   "serving_quantity",
   "countries_tags",
+  "image_front_small_url",
+  "image_front_url",
+  "image_url",
 ].join(",");
 
 export class FoodApiError extends Error {
@@ -48,6 +51,18 @@ function numberValue(value: unknown): number | null {
   if (typeof value === "string" && value.trim() !== "") {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function imageValue(raw: Record<string, unknown>): string | null {
+  for (const key of [
+    "image_front_small_url",
+    "image_front_url",
+    "image_url",
+  ]) {
+    const value = textValue(raw[key]);
+    if (value && value.startsWith("https://")) return value;
   }
   return null;
 }
@@ -251,6 +266,7 @@ export function normalizeOffProduct(raw: Record<string, unknown>): FoodCandidate
         servingUnit: null,
         nutrients: result.nutrients,
         energySource: result.energySource,
+        imageUrl: imageValue(raw),
       };
     }
     throw new FoodApiError("no-data", "No nutrition data is available for this product.");
@@ -267,6 +283,7 @@ export function normalizeOffProduct(raw: Record<string, unknown>): FoodCandidate
     servingUnit: picked.servingUnit,
     nutrients: picked.nutrients,
     energySource: picked.energySource,
+    imageUrl: imageValue(raw),
   };
 }
 
@@ -294,6 +311,7 @@ export function normalizeOffSearchHit(hit: Record<string, unknown>): FoodCandida
     servingUnit: null,
     nutrients: result.nutrients,
     energySource: result.energySource,
+    imageUrl: imageValue(hit),
   };
 }
 
@@ -393,6 +411,9 @@ export async function fetchOpenFoodFactsProduct(
     "quantity",
     "product_quantity",
     "product_quantity_unit",
+    "image_front_small_url",
+    "image_front_url",
+    "image_url",
   ].join(",");
   const url = `${PRODUCT_URL}/${encodeURIComponent(barcode)}?fields=${fields}`;
   try {
@@ -413,7 +434,7 @@ export async function fetchOpenFoodFactsProduct(
       // Older records remain available through the supported v2 endpoint.
       const legacyUrl = `${LEGACY_PRODUCT_URL}/${encodeURIComponent(
         barcode,
-      )}.json?fields=code,product_name,brands,quantity,serving_size,nutriments`;
+      )}.json?fields=code,product_name,brands,quantity,serving_size,nutriments,image_front_small_url,image_front_url,image_url`;
       try {
         const legacy = await requestJson(legacyUrl);
         const product =

@@ -37,6 +37,8 @@ export type IconName =
   | "lock"
   | "globe"
   | "scale"
+  | "camera"
+  | "ruler"
   | "database";
 
 const paths: Record<IconName, ReactNode> = {
@@ -218,6 +220,19 @@ const paths: Record<IconName, ReactNode> = {
     <>
       <ellipse cx="12" cy="5.5" rx="8" ry="3" />
       <path d="M4 5.5v13c0 1.7 3.6 3 8 3s8-1.3 8-3v-13M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3" />
+    </>
+  ),
+  camera: (
+    <>
+      <path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.2l1.2-2h6.2l1.2 2h1.2A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5z" />
+      <circle cx="12" cy="12.5" r="3.2" />
+    </>
+  ),
+  ruler: (
+    <>
+      <path d="m3 15 6-6 6 6-6 6z" />
+      <path d="m9 9 3-3 9 9-3 3" />
+      <path d="m13 13 1.5-1.5M16 16l1.5-1.5" />
     </>
   ),
 };

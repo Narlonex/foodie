@@ -32,6 +32,8 @@ import {
 } from "@/lib/types";
 import { AddSavedMealDialog } from "./add-saved-meal-dialog";
 import { Dialog } from "./dialog";
+import { FoodPhotoField } from "./food-photo-field";
+import { FoodThumb } from "./food-thumb";
 import { Icon } from "./icons";
 import { QuickAddFoodDialog } from "./quick-add-food-dialog";
 import { EmptyState, SourceBadge } from "./ui";
@@ -442,9 +444,7 @@ function FoodRow({
   const kcal = food.nutrients.kcal;
   return (
     <div className="food-list-item">
-      <span className="food-avatar">
-        <Icon name="leaf" size={19} />
-      </span>
+      <FoodThumb name={food.name} imageUrl={food.imageUrl} size={44} />
       <div className="food-main">
         <span className="food-name">{food.name}</span>
         <span className="food-meta">
@@ -584,6 +584,11 @@ function CustomFoodDialog({
           </p>
         ) : null}
         <p className="source-note">{t("sources.customNote")}</p>
+        <FoodPhotoField
+          language={language}
+          name={food?.name ?? "?"}
+          initialUrl={food?.imageUrl}
+        />
         <div className="form-grid">
           <div className="field span-2">
             <label htmlFor="food-name">{t("foods.name")}</label>

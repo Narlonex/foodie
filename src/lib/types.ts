@@ -25,6 +25,15 @@ export type Language = "en" | "sk";
 export type Theme = "dark" | "light";
 export type UnitSystem = "metric" | "imperial";
 export type GoalMode = "cut" | "maintenance" | "bulk";
+export type Sex = "female" | "male" | "other";
+export const ACTIVITY_LEVELS = [
+  "sedentary",
+  "light",
+  "moderate",
+  "active",
+  "very_active",
+] as const;
+export type ActivityLevel = (typeof ACTIVITY_LEVELS)[number];
 export type MacroAdjustmentMode = "carbs" | "fats" | "proteins" | "all";
 
 export interface MacroSplit {
@@ -48,6 +57,7 @@ export interface Food extends FoodNutrition {
   barcode: string | null;
   name: string;
   brand: string | null;
+  imageUrl: string | null;
   isFavorite: boolean;
 }
 
@@ -58,6 +68,7 @@ export interface FoodCandidate extends FoodNutrition {
   barcode: string | null;
   name: string;
   brand: string | null;
+  imageUrl: string | null;
 }
 
 export interface DiaryEntry extends FoodNutrition {
@@ -69,6 +80,7 @@ export interface DiaryEntry extends FoodNutrition {
   barcode: string | null;
   name: string;
   brand: string | null;
+  imageUrl: string | null;
   amount: number;
   amountUnit: AmountUnit;
   loggedAt: string;
@@ -95,6 +107,12 @@ export interface Profile {
   maintenanceCalories: number | null;
   defaultDayTypeId: string | null;
   usdaEnabled: boolean;
+  heightCm: number | null;
+  weightKg: number | null;
+  age: number | null;
+  sex: Sex | null;
+  activityLevel: ActivityLevel | null;
+  onboardingCompleted: boolean;
 }
 
 export interface Viewer {

@@ -6,7 +6,8 @@ import { mapFood, type FoodRow } from "./mappers";
 import { insertEntryWithFood } from "./diary";
 
 const ITEM_FOOD_COLUMNS = `
-  f.id, f.source, f.external_id, f.barcode, f.name, f.brand, f.basis_type,
+  f.id, f.source, f.external_id, f.barcode, f.name, f.brand, f.image_url,
+  (f.image_data IS NOT NULL) AS has_image, f.basis_type,
   f.serving_size, f.serving_unit, f.kcal, f.kj, f.protein_g, f.carbs_g,
   f.sugars_g, f.fat_g, f.sat_fat_g, f.fiber_g, f.salt_g, f.energy_source,
   f.is_favorite
@@ -105,7 +106,8 @@ async function insertItems(
 ): Promise<void> {
   for (const [index, item] of items.entries()) {
     const food = await client.query<FoodRow>(
-      `SELECT id, source, external_id, barcode, name, brand, basis_type,
+      `SELECT id, source, external_id, barcode, name, brand, image_url,
+              (image_data IS NOT NULL) AS has_image, basis_type,
               serving_size, serving_unit, kcal, kj, protein_g, carbs_g, sugars_g,
               fat_g, sat_fat_g, fiber_g, salt_g, energy_source, is_favorite
          FROM foods WHERE id = $1 AND user_id = $2`,

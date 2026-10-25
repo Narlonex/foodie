@@ -45,6 +45,8 @@ export interface FoodRow {
   salt_g: string | number | null;
   energy_source: EnergySource;
   is_favorite: boolean;
+  image_url: string | null;
+  has_image: boolean;
 }
 
 export function nutrientsFromRow(row: {
@@ -79,6 +81,9 @@ export function mapFood(row: FoodRow): Food {
     barcode: row.barcode,
     name: row.name,
     brand: row.brand,
+    imageUrl:
+      row.image_url ??
+      (row.has_image ? `/api/foods/${row.id}/image` : null),
     basisType: row.basis_type,
     servingSize: toNumber(row.serving_size),
     servingUnit: row.serving_unit,
@@ -88,7 +93,8 @@ export function mapFood(row: FoodRow): Food {
   };
 }
 
-export interface EntryRow extends Omit<FoodRow, "is_favorite" | "external_id"> {
+export interface EntryRow
+  extends Omit<FoodRow, "is_favorite" | "external_id" | "has_image"> {
   food_id: string | null;
   date: string;
   meal: Meal;
@@ -114,6 +120,7 @@ export function mapEntry(row: EntryRow): DiaryEntry {
     barcode: row.barcode,
     name: row.name,
     brand: row.brand,
+    imageUrl: row.image_url ?? null,
     ...nutrition,
     amount: toRequiredNumber(row.amount),
     amountUnit: row.amount_unit,

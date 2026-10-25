@@ -8,6 +8,10 @@ const USDA_SEARCH_URL = "https://api.nal.usda.gov/fdc/v1/foods/search";
 
 const NUTRIENT_IDS = {
   kcal: 1008,
+  // Foundation foods often omit 1008 and report energy only through the
+  // Atwater factors, so both are accepted as a label-equivalent energy value.
+  kcalAtwaterGeneral: 2047,
+  kcalAtwaterSpecific: 2048,
   kj: 1062,
   protein: 1003,
   carbs: 1005,
@@ -57,9 +61,14 @@ export function normalizeUsdaFood(raw: UsdaFood): FoodCandidate | null {
       byId.set(nutrient.nutrientId, nutrient.value);
     }
   }
+  const kcalValue =
+    byId.get(NUTRIENT_IDS.kcal) ??
+    byId.get(NUTRIENT_IDS.kcalAtwaterGeneral) ??
+    byId.get(NUTRIENT_IDS.kcalAtwaterSpecific) ??
+    null;
   const rawNutrients: Nutrients = {
     ...EMPTY_NUTRIENTS,
-    kcal: byId.get(NUTRIENT_IDS.kcal) ?? null,
+    kcal: kcalValue,
     kj: byId.get(NUTRIENT_IDS.kj) ?? null,
     protein: byId.get(NUTRIENT_IDS.protein) ?? null,
     carbs: byId.get(NUTRIENT_IDS.carbs) ?? null,
@@ -69,16 +78,15 @@ export function normalizeUsdaFood(raw: UsdaFood): FoodCandidate | null {
     fiber: byId.get(NUTRIENT_IDS.fiber) ?? null,
     salt: null,
   };
-  const hadKcal = rawNutrients.kcal !== null;
+  const hadKcal = kcalValue !== null;
   if (!hadKcal && rawNutrients.kj !== null) {
     rawNutrients.kcal = rawNutrients.kj / 4.184;
   }
   const normalized = normalizeNutrients(rawNutrients);
-  if (
-    !Object.values(normalized.nutrients).some(
-      (value) => value !== null && value !== undefined,
-    )
-  ) {
+  const { kcal, protein, carbs, fat } = normalized.nutrients;
+  // A search hit that carries only trace nutrients (fatty acids, vitamins) is
+  // not a usable food row, so it is dropped instead of shown with empty macros.
+  if (kcal === null && protein === null && carbs === null && fat === null) {
     return null;
   }
   return {
@@ -95,6 +103,7 @@ export function normalizeUsdaFood(raw: UsdaFood): FoodCandidate | null {
       !hadKcal && normalized.energySource === "provided"
         ? "calculated"
         : normalized.energySource,
+    imageUrl: null,
   };
 }
 

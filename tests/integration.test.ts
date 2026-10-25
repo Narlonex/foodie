@@ -53,6 +53,7 @@ function foodDraft(
     basisType: "100g" as const,
     servingSize: null,
     servingUnit: null,
+    imageUrl: null,
     nutrients: {
       ...EMPTY_NUTRIENTS,
       kcal: values.kcal === undefined ? 380 : values.kcal,

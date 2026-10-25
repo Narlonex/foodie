@@ -13,13 +13,15 @@ import type { Food, FoodSource } from "../types";
 type Runner = Pick<PoolClient, "query">;
 
 const FOOD_COLUMNS = `
-  id, source, external_id, barcode, name, brand, basis_type, serving_size,
+  id, source, external_id, barcode, name, brand, image_url,
+  (image_data IS NOT NULL) AS has_image, basis_type, serving_size,
   serving_unit, kcal, kj, protein_g, carbs_g, sugars_g, fat_g, sat_fat_g,
   fiber_g, salt_g, energy_source, is_favorite
 `;
 
 const FOOD_COLUMNS_QUALIFIED = `
-  f.id, f.source, f.external_id, f.barcode, f.name, f.brand, f.basis_type,
+  f.id, f.source, f.external_id, f.barcode, f.name, f.brand, f.image_url,
+  (f.image_data IS NOT NULL) AS has_image, f.basis_type,
   f.serving_size, f.serving_unit, f.kcal, f.kj, f.protein_g, f.carbs_g,
   f.sugars_g, f.fat_g, f.sat_fat_g, f.fiber_g, f.salt_g, f.energy_source,
   f.is_favorite
@@ -35,6 +37,9 @@ export interface FoodDraft {
   servingSize: number | null;
   servingUnit: "g" | "ml" | null;
   nutrients: FoodInput["nutrients"];
+  imageUrl: string | null;
+  imageData?: Buffer | null;
+  imageMime?: string | null;
 }
 
 export function foodInputToDraft(input: FoodInput): FoodDraft {
@@ -48,6 +53,9 @@ export function foodInputToDraft(input: FoodInput): FoodDraft {
     servingSize: input.servingSize,
     servingUnit: input.servingUnit,
     nutrients: input.nutrients,
+    imageUrl: input.imageUrl,
+    imageData: null,
+    imageMime: null,
   };
 }
 
@@ -78,6 +86,9 @@ export async function persistFoodDraft(
     normalized.basisType,
     normalized.servingSize,
     normalized.servingUnit,
+    normalized.imageUrl,
+    normalized.imageData ?? null,
+    normalized.imageMime ?? null,
     normalized.nutrients.kcal,
     normalized.nutrients.kj,
     normalized.nutrients.protein,
@@ -95,11 +106,12 @@ export async function persistFoodDraft(
     const result = await runner.query<FoodRow>(
       `INSERT INTO foods (
         user_id, source, external_id, barcode, name, brand, basis_type,
-        serving_size, serving_unit, kcal, kj, protein_g, carbs_g, sugars_g,
-        fat_g, sat_fat_g, fiber_g, salt_g, energy_source, is_favorite
+        serving_size, serving_unit, image_url, image_data, image_mime,
+        kcal, kj, protein_g, carbs_g, sugars_g, fat_g, sat_fat_g, fiber_g,
+        salt_g, energy_source, is_favorite
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
-        $15, $16, $17, $18, $19, $20
+        $15, $16, $17, $18, $19, $20, $21, $22, $23
       ) RETURNING ${FOOD_COLUMNS}`,
       params,
     );
@@ -112,10 +124,12 @@ export async function persistFoodDraft(
     const result = await runner.query<FoodRow>(
       `UPDATE foods SET
         barcode = $3, name = $4, brand = $5, basis_type = $6,
-        serving_size = $7, serving_unit = $8, kcal = $9, kj = $10,
-        protein_g = $11, carbs_g = $12, sugars_g = $13, fat_g = $14,
-        sat_fat_g = $15, fiber_g = $16, salt_g = $17, energy_source = $18,
-        is_favorite = is_favorite OR $19
+        serving_size = $7, serving_unit = $8, image_url = $9,
+        image_data = COALESCE($10, image_data),
+        image_mime = COALESCE($11, image_mime), kcal = $12, kj = $13,
+        protein_g = $14, carbs_g = $15, sugars_g = $16, fat_g = $17,
+        sat_fat_g = $18, fiber_g = $19, salt_g = $20, energy_source = $21,
+        is_favorite = is_favorite OR $22
       WHERE id = $2 AND user_id = $1 AND source = 'custom'
       RETURNING ${FOOD_COLUMNS}`,
       [
@@ -127,6 +141,9 @@ export async function persistFoodDraft(
         normalized.basisType,
         normalized.servingSize,
         normalized.servingUnit,
+        normalized.imageUrl,
+        normalized.imageData ?? null,
+        normalized.imageMime ?? null,
         normalized.nutrients.kcal,
         normalized.nutrients.kj,
         normalized.nutrients.protein,
@@ -152,11 +169,12 @@ export async function persistFoodDraft(
   const result = await runner.query<FoodRow>(
     `INSERT INTO foods (
       user_id, source, external_id, barcode, name, brand, basis_type,
-      serving_size, serving_unit, kcal, kj, protein_g, carbs_g, sugars_g,
-      fat_g, sat_fat_g, fiber_g, salt_g, energy_source, is_favorite
+      serving_size, serving_unit, image_url, image_data, image_mime,
+      kcal, kj, protein_g, carbs_g, sugars_g, fat_g, sat_fat_g, fiber_g,
+      salt_g, energy_source, is_favorite
     ) VALUES (
       $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
-      $15, $16, $17, $18, $19, $20
+      $15, $16, $17, $18, $19, $20, $21, $22, $23
     )
     ON CONFLICT (user_id, source, external_id) WHERE external_id IS NOT NULL
     DO UPDATE SET
@@ -166,6 +184,9 @@ export async function persistFoodDraft(
       basis_type = EXCLUDED.basis_type,
       serving_size = EXCLUDED.serving_size,
       serving_unit = EXCLUDED.serving_unit,
+      image_url = COALESCE(EXCLUDED.image_url, foods.image_url),
+      image_data = COALESCE(EXCLUDED.image_data, foods.image_data),
+      image_mime = COALESCE(EXCLUDED.image_mime, foods.image_mime),
       kcal = EXCLUDED.kcal,
       kj = EXCLUDED.kj,
       protein_g = EXCLUDED.protein_g,
@@ -236,6 +257,22 @@ export async function getOwnedFood(
     [foodId, userId],
   );
   return row ? mapFood(row) : null;
+}
+
+export async function getFoodImage(
+  userId: string,
+  foodId: string,
+): Promise<{ data: Buffer; mime: string } | null> {
+  const row = await queryOne<{
+    image_data: Buffer | null;
+    image_mime: string | null;
+  }>(
+    `SELECT image_data, image_mime FROM foods
+      WHERE id = $1 AND user_id = $2`,
+    [foodId, userId],
+  );
+  if (!row?.image_data || !row.image_mime) return null;
+  return { data: row.image_data, mime: row.image_mime };
 }
 
 export async function createCustomFood(

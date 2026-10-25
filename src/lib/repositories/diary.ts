@@ -16,7 +16,7 @@ import { getDayTypesForDates, getEffectiveDayType } from "./dayTypes";
 import type { FoodInput } from "../validation";
 
 const ENTRY_COLUMNS = `
-  id, date, meal, food_id, source, name, brand, barcode, basis_type,
+  id, date, meal, food_id, source, name, brand, image_url, barcode, basis_type,
   serving_size, serving_unit, kcal, kj, protein_g, carbs_g, sugars_g, fat_g,
   sat_fat_g, fiber_g, salt_g, energy_source, amount, amount_unit, logged_at
 `;
@@ -42,7 +42,8 @@ async function selectFoodForUpdate(
   foodId: string,
 ): Promise<Food | null> {
   const result = await client.query<FoodRow>(
-    `SELECT id, source, external_id, barcode, name, brand, basis_type,
+    `SELECT id, source, external_id, barcode, name, brand, image_url,
+            (image_data IS NOT NULL) AS has_image, basis_type,
             serving_size, serving_unit, kcal, kj, protein_g, carbs_g, sugars_g,
             fat_g, sat_fat_g, fiber_g, salt_g, energy_source, is_favorite
        FROM foods WHERE id = $1 AND user_id = $2`,
@@ -64,12 +65,13 @@ export async function insertEntryWithFood(
   assertUnitMatchesInternal(food, amountUnit);
   const result = await client.query<EntryRow>(
     `INSERT INTO diary_entries (
-      user_id, date, meal, food_id, source, name, brand, barcode, basis_type,
-      serving_size, serving_unit, kcal, kj, protein_g, carbs_g, sugars_g,
-      fat_g, sat_fat_g, fiber_g, salt_g, energy_source, amount, amount_unit
+      user_id, date, meal, food_id, source, name, brand, image_url, barcode,
+      basis_type, serving_size, serving_unit, kcal, kj, protein_g, carbs_g,
+      sugars_g, fat_g, sat_fat_g, fiber_g, salt_g, energy_source, amount,
+      amount_unit
     ) VALUES (
       $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
-      $16, $17, $18, $19, $20, $21, $22, $23
+      $16, $17, $18, $19, $20, $21, $22, $23, $24
     ) RETURNING ${ENTRY_COLUMNS}`,
     [
       userId,
@@ -79,6 +81,7 @@ export async function insertEntryWithFood(
       food.source,
       food.name,
       food.brand,
+      food.imageUrl,
       food.barcode,
       food.basisType,
       food.servingSize,
@@ -463,6 +466,7 @@ export function entryAsFood(entry: DiaryEntry): Food {
     barcode: entry.barcode,
     name: entry.name,
     brand: entry.brand,
+    imageUrl: entry.imageUrl,
     isFavorite: false,
     basisType: entry.basisType,
     servingSize: entry.servingSize,

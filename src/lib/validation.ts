@@ -31,6 +31,23 @@ export const displayAmountUnitSchema = z.enum([
   "serving",
 ]);
 export const foodSourceSchema = z.enum(["off", "usda", "custom"]);
+export const sexSchema = z.enum(["female", "male", "other"]);
+export const activityLevelSchema = z.enum([
+  "sedentary",
+  "light",
+  "moderate",
+  "active",
+  "very_active",
+]);
+
+export const bodyMetricsSchema = z.object({
+  heightCm: z.number().finite("validation.height").min(50, "validation.height").max(300, "validation.height").nullable(),
+  weightKg: z.number().finite("validation.weight").min(20, "validation.weight").max(500, "validation.weight").nullable(),
+  age: z.number().int("validation.age").min(13, "validation.age").max(120, "validation.age").nullable(),
+  sex: sexSchema.nullable(),
+  activityLevel: activityLevelSchema.nullable(),
+  goalMode: goalModeSchema,
+});
 
 export const isoDateSchema = z
   .string()
@@ -70,6 +87,7 @@ export const foodInputSchema = z
     servingSize: z.number().finite().positive("validation.servingSize").max(100_000).nullable(),
     servingUnit: z.enum(["g", "ml"]).nullable(),
     nutrients: nutrientsSchema,
+    imageUrl: z.string().trim().max(2048).nullable().default(null),
   })
   .superRefine((value, context) => {
     if (value.basisType === "serving" && value.servingSize === null) {
@@ -105,6 +123,8 @@ export const customFoodSchema = z
     servingSize: z.number().finite().positive("validation.servingSize").max(100_000).nullable(),
     servingUnit: z.enum(["g", "ml"]).nullable(),
     nutrients: nutrientsSchema,
+    /** Optional data URL (client-downscaled JPEG/PNG/WebP) for a custom photo. */
+    photo: z.string().max(3_000_000).optional().default(""),
   })
   .superRefine((value, context) => {
     if (value.basisType === "serving" && value.servingSize === null) {
@@ -160,5 +180,6 @@ export const registerSchema = z.object({
 });
 
 export type FoodInput = z.infer<typeof foodInputSchema>;
+export type BodyMetricsInput = z.infer<typeof bodyMetricsSchema>;
 export type DayTypeFormInput = z.infer<typeof dayTypeFormSchema>;
 export type ManualTargetsInput = z.infer<typeof manualTargetsSchema>;

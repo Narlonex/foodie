@@ -30,6 +30,7 @@ import { AddFoodDialog } from "./add-food-dialog";
 import { AddSavedMealDialog } from "./add-saved-meal-dialog";
 import { CopyDayDialog, RepeatMealDialog } from "./copy-day-dialog";
 import { DeleteEntryDialog, EditEntryDialog } from "./entry-dialogs";
+import { FoodThumb } from "./food-thumb";
 import { Icon } from "./icons";
 import { EmptyState, MealIcon, ProgressBar, SourceBadge } from "./ui";
 
@@ -839,6 +840,7 @@ function MealSection({
             const entryKcal = portion.nutrients.kcal;
             return (
               <li className="entry-row" key={entry.id}>
+                <FoodThumb name={entry.name} imageUrl={entry.imageUrl} size={38} />
                 <div className="entry-main">
                   <span className="entry-name">{entry.name}</span>
                   <span className="entry-meta">

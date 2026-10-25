@@ -324,6 +324,56 @@ export const sk: Dictionary = {
   "settings.saved": "Nastavenia boli uložené.",
   "settings.saveError": "Zmeny sa nepodarilo uložiť. Skúste to znova.",
   "settings.notConfigured": "Nie je nastavené",
+  "settings.metrics": "Telo a metriky",
+
+  "metrics.title": "Telo a metriky",
+  "metrics.intro":
+    "Doplňte výšku, váhu a cieľ, aby vám Foodie mohol navrhnúť kalorické a makro ciele. Všetko je voliteľné a zostáva súkromné vo vašom účte.",
+  "metrics.height": "Výška (cm)",
+  "metrics.weight": "Váha (kg)",
+  "metrics.age": "Vek",
+  "metrics.sex": "Pohlavie",
+  "metrics.sexFemale": "Žena",
+  "metrics.sexMale": "Muž",
+  "metrics.sexOther": "Iné",
+  "metrics.activity": "Úroveň aktivity",
+  "metrics.activitySedentary": "Sedavá — málo alebo žiadne cvičenie",
+  "metrics.activityLight": "Ľahká — 1–3 tréningy týždenne",
+  "metrics.activityModerate": "Stredná — 3–5 tréningov týždenne",
+  "metrics.activityActive": "Aktívna — 6–7 tréningov týždenne",
+  "metrics.activityVeryActive":
+    "Veľmi aktívna — fyzická práca alebo dvojfázový tréning",
+  "metrics.goal": "Cieľ",
+  "metrics.goalHint":
+    "Rez používa mierny kalorický deficit, udržanie drží cieľ stabilný a objem pridáva mierny prebytok.",
+  "metrics.saved": "Vaše metriky boli uložené.",
+  "metrics.optional":
+    "Voliteľné. Doplňte, čo poznáte — kedykoľvek to môžete zmeniť.",
+  "metrics.estimate": "Odhadovaná údržba",
+  "metrics.estimateHint":
+    "Hrubý odhad z uvedených údajov pomocou Mifflin–St Jeorovej rovnice a úrovne aktivity. Je to východiskový bod, nie lekárska rada.",
+  "metrics.estimateMissing":
+    "Doplňte výšku, váhu, vek, pohlavie a úroveň aktivity, aby sa zobrazil odhad.",
+  "metrics.bmi": "BMI",
+
+  "onboarding.title": "Vitajte vo Foodie",
+  "onboarding.welcome": "Nastavme si vaše denné ciele",
+  "onboarding.intro":
+    "Povedzte nám niečo o sebe a Foodie odhadne východiskový denný kalorický cieľ. Môžete to preskočiť a doplniť neskôr v nastaveniach.",
+  "onboarding.tip": "Rýchly tip",
+  "onboarding.tipBody":
+    "Výška, váha a úroveň aktivity slúžia len na odhad počiatočných kalórií. Každý cieľ si môžete upraviť v Nastavenia → Výživové ciele.",
+  "onboarding.details": "Vaše údaje",
+  "onboarding.goalTitle": "Váš cieľ",
+  "onboarding.goalQuestion": "Na čo sa chcete zamerať?",
+  "onboarding.suggestion": "Navrhované počiatočné ciele",
+  "onboarding.suggestionHint":
+    "Návrh podľa vašich údajov. Každé číslo si môžete doladiť vo Výživových cieľoch.",
+  "onboarding.apply": "Použiť tieto ciele pre môj predvolený typ dňa",
+  "onboarding.continue": "Uložiť a pokračovať",
+  "onboarding.skip": "Zatiaľ preskočiť",
+  "onboarding.skipped": "Metriky si môžete doplniť neskôr v nastaveniach.",
+  "onboarding.needGoal": "Vyberte svoj cieľ.",
 
   "goals.title": "Výživové ciele",
   "goals.intro":
@@ -480,6 +530,14 @@ export const sk: Dictionary = {
   "foods.basisServing": "Na porciu",
   "foods.servingSize": "Veľkosť porcie",
   "foods.servingUnit": "Jednotka porcie",
+  "foods.photo": "Fotka",
+  "foods.photoHint":
+    "Voliteľné. Vyberte fotku potraviny, aby ste ju neskôr ľahšie spoznali.",
+  "foods.photoChoose": "Vybrať fotku",
+  "foods.photoReplace": "Nahradiť fotku",
+  "foods.photoRemove": "Odstrániť fotku",
+  "foods.photoError":
+    "Fotku sa nepodarilo načítať. Vyberte obrázok JPEG, PNG alebo WebP do 5 MB.",
   "foods.nutrientsSection": "Výživové hodnoty",
   "foods.nutrientsHint":
     "Hodnoty sú na zvolený základ. Ak hodnotu neviete, nechajte pole prázdne.",
@@ -747,6 +805,9 @@ export const sk: Dictionary = {
   "validation.calories": "Zadajte kalorický cieľ od 1 do 20 000.",
   "validation.macro": "Zadajte nulu alebo kladnú hodnotu makra.",
   "validation.percent": "Percentá musia byť medzi 0 a 100.",
+  "validation.height": "Zadajte výšku medzi 50 a 300 cm.",
+  "validation.weight": "Zadajte váhu medzi 20 a 500 kg.",
+  "validation.age": "Zadajte vek medzi 13 a 120.",
   "validation.savedMealName": "Zadajte názov jedla s 1 až 80 znakmi.",
   "validation.split": "Energetický pomer musí dať spolu 100 %.",
   "validation.errorSummary": "Opravte zvýraznené polia.",

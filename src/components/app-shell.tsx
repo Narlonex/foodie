@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { logoutAction } from "@/actions/auth";
 import type { Translator } from "@/i18n";
 import type { Viewer } from "@/lib/types";
+import { BrandMark } from "./brand-mark";
 import { Icon } from "./icons";
 import { NavLinks, type NavItem } from "./nav-links";
 import { ThemeToggle } from "./theme-toggle";
@@ -35,9 +36,7 @@ export function AppShell({
             className="brand"
             aria-label={`${t("app.name")} – ${t("nav.dashboard")}`}
           >
-            <span className="brand-mark">
-              <Icon name="leaf" size={22} strokeWidth={2} />
-            </span>
+            <BrandMark />
             <span>
               <span className="brand-text">{t("app.name")}</span>
               <span className="brand-sub">{t("app.tagline")}</span>

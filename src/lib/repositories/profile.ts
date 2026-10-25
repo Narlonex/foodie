@@ -1,6 +1,13 @@
 import "server-only";
 import { queryOne } from "../db";
-import type { GoalMode, Language, Theme, UnitSystem } from "../types";
+import type {
+  ActivityLevel,
+  GoalMode,
+  Language,
+  Sex,
+  Theme,
+  UnitSystem,
+} from "../types";
 
 export async function updateLanguage(
   userId: string,
@@ -56,6 +63,48 @@ export async function updateUsdaPreference(
     `UPDATE profiles SET usda_enabled = $2
       WHERE user_id = $1 RETURNING user_id`,
     [userId, usdaEnabled],
+  );
+  return Boolean(row);
+}
+
+export interface BodyMetrics {
+  heightCm: number | null;
+  weightKg: number | null;
+  age: number | null;
+  sex: Sex | null;
+  activityLevel: ActivityLevel | null;
+  goalMode: GoalMode;
+}
+
+export async function updateBodyMetrics(
+  userId: string,
+  metrics: BodyMetrics,
+  onboardingCompleted: boolean,
+): Promise<boolean> {
+  const row = await queryOne<{ user_id: string }>(
+    `UPDATE profiles SET
+        height_cm = $2, weight_kg = $3, age = $4, sex = $5,
+        activity_level = $6, goal_mode = $7, onboarding_completed = $8
+      WHERE user_id = $1 RETURNING user_id`,
+    [
+      userId,
+      metrics.heightCm,
+      metrics.weightKg,
+      metrics.age,
+      metrics.sex,
+      metrics.activityLevel,
+      metrics.goalMode,
+      onboardingCompleted,
+    ],
+  );
+  return Boolean(row);
+}
+
+export async function completeOnboarding(userId: string): Promise<boolean> {
+  const row = await queryOne<{ user_id: string }>(
+    `UPDATE profiles SET onboarding_completed = true
+      WHERE user_id = $1 RETURNING user_id`,
+    [userId],
   );
   return Boolean(row);
 }

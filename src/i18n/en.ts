@@ -320,6 +320,55 @@ export const en = {
   "settings.saved": "Your settings were saved.",
   "settings.saveError": "We could not save your changes. Please try again.",
   "settings.notConfigured": "Not configured",
+  "settings.metrics": "Body & metrics",
+
+  "metrics.title": "Body & metrics",
+  "metrics.intro":
+    "Add your height, weight and goal so Foodie can suggest calorie and macro targets. Everything is optional and stays private to your account.",
+  "metrics.height": "Height (cm)",
+  "metrics.weight": "Weight (kg)",
+  "metrics.age": "Age",
+  "metrics.sex": "Sex",
+  "metrics.sexFemale": "Female",
+  "metrics.sexMale": "Male",
+  "metrics.sexOther": "Other",
+  "metrics.activity": "Activity level",
+  "metrics.activitySedentary": "Sedentary — little or no exercise",
+  "metrics.activityLight": "Light — 1–3 workouts a week",
+  "metrics.activityModerate": "Moderate — 3–5 workouts a week",
+  "metrics.activityActive": "Active — 6–7 workouts a week",
+  "metrics.activityVeryActive": "Very active — physical job or twice-daily training",
+  "metrics.goal": "Goal",
+  "metrics.goalHint":
+    "Cut uses a modest calorie deficit, maintenance keeps your target steady and bulk adds a modest surplus.",
+  "metrics.saved": "Your metrics were saved.",
+  "metrics.optional":
+    "Optional. Fill in what you know — you can change it anytime.",
+  "metrics.estimate": "Estimated maintenance",
+  "metrics.estimateHint":
+    "A rough estimate from the details above, using the Mifflin–St Jeor equation and your activity level. It is a starting point, not medical advice.",
+  "metrics.estimateMissing":
+    "Fill in height, weight, age, sex and activity level to see an estimate.",
+  "metrics.bmi": "BMI",
+
+  "onboarding.title": "Welcome to Foodie",
+  "onboarding.welcome": "Let's set up your daily targets",
+  "onboarding.intro":
+    "Tell us a little about yourself and Foodie will estimate a daily calorie starting point. You can skip this and add it later in Settings.",
+  "onboarding.tip": "Quick tip",
+  "onboarding.tipBody":
+    "Height, weight and activity level are only used to estimate your starting calories. Every target stays editable in Settings → Nutrition goals.",
+  "onboarding.details": "Your details",
+  "onboarding.goalTitle": "Your goal",
+  "onboarding.goalQuestion": "What would you like to work towards?",
+  "onboarding.suggestion": "Suggested starting targets",
+  "onboarding.suggestionHint":
+    "A suggestion based on your details. You can fine-tune every number in Nutrition goals.",
+  "onboarding.apply": "Apply these targets to my default day type",
+  "onboarding.continue": "Save and continue",
+  "onboarding.skip": "Skip for now",
+  "onboarding.skipped": "You can add your metrics later in Settings.",
+  "onboarding.needGoal": "Choose your goal.",
 
   "goals.title": "Nutrition goals",
   "goals.intro":
@@ -481,6 +530,14 @@ export const en = {
   "foods.basisServing": "Per serving",
   "foods.servingSize": "Serving size",
   "foods.servingUnit": "Serving unit",
+  "foods.photo": "Photo",
+  "foods.photoHint":
+    "Optional. Choose a photo of the food so you recognise it later.",
+  "foods.photoChoose": "Choose photo",
+  "foods.photoReplace": "Replace photo",
+  "foods.photoRemove": "Remove photo",
+  "foods.photoError":
+    "That photo could not be read. Choose a JPEG, PNG or WebP image under 5 MB.",
   "foods.nutrientsSection": "Nutrition values",
   "foods.nutrientsHint":
     "Values are per selected basis. Leave a field blank if you do not know it.",
@@ -748,6 +805,9 @@ export const en = {
   "validation.calories": "Enter a calorie target between 1 and 20,000.",
   "validation.macro": "Enter zero or a positive macro value.",
   "validation.percent": "Percentages must be between 0 and 100.",
+  "validation.height": "Enter a height between 50 and 300 cm.",
+  "validation.weight": "Enter a weight between 20 and 500 kg.",
+  "validation.age": "Enter an age between 13 and 120.",
   "validation.savedMealName": "Enter a meal name of 1 to 80 characters.",
   "validation.split": "The energy split must add up to 100%.",
   "validation.errorSummary": "Please fix the highlighted fields.",

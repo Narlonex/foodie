@@ -19,6 +19,11 @@ export default async function SettingsPage() {
       icon: "target",
     },
     {
+      href: "/settings/metrics",
+      label: t("settings.metrics"),
+      icon: "scale",
+    },
+    {
       href: "/settings/day-types",
       label: t("settings.dayTypes"),
       icon: "calendar",

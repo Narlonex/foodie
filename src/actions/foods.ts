@@ -146,6 +146,22 @@ function nullableNumber(formData: FormData, key: string): number | null {
   return Number.isFinite(value) ? value : Number.NaN;
 }
 
+const PHOTO_DATA_URL = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/;
+
+function parsePhoto(value: string | null | undefined): {
+  imageData: Buffer;
+  imageMime: string;
+} | null {
+  if (!value) return null;
+  const match = PHOTO_DATA_URL.exec(value);
+  const mime = match?.[1];
+  const base64 = match?.[2];
+  if (!mime || !base64) return null;
+  const imageData = Buffer.from(base64, "base64");
+  if (imageData.length === 0 || imageData.length > 2_000_000) return null;
+  return { imageData, imageMime: mime };
+}
+
 function parseCustomFood(formData: FormData) {
   const basisType = String(formData.get("basisType") ?? "100g");
   const servingRaw = formData.get("servingSize");
@@ -172,6 +188,7 @@ function parseCustomFood(formData: FormData) {
       fiber: nullableNumber(formData, "fiber"),
       salt: nullableNumber(formData, "salt"),
     },
+    photo: String(formData.get("photo") ?? ""),
   });
 }
 
@@ -199,6 +216,8 @@ export async function createCustomFoodAction(
       servingSize: parsed.data.servingSize,
       servingUnit: parsed.data.servingUnit,
       nutrients: parsed.data.nutrients,
+      imageUrl: null,
+      ...(parsePhoto(parsed.data.photo) ?? {}),
     });
     revalidatePath("/foods");
     return {
@@ -236,6 +255,8 @@ export async function updateCustomFoodAction(
       servingSize: parsed.data.servingSize,
       servingUnit: parsed.data.servingUnit,
       nutrients: parsed.data.nutrients,
+      imageUrl: null,
+      ...(parsePhoto(parsed.data.photo) ?? {}),
     });
     if (!food) return { status: "error", message: "foods.notFound" };
     revalidatePath("/foods");

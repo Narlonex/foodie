@@ -332,4 +332,34 @@ describe("USDA FoodData Central normalization", () => {
     expect(normalizeUsdaFood({ description: "No id" })).toBeNull();
     expect(normalizeUsdaFood({ fdcId: 1 })).toBeNull();
   });
+
+  it("uses Atwater energy factors when Foundation foods omit energy 1008", () => {
+    const result = normalizeUsdaFood({
+      fdcId: 746782,
+      description: "Chicken, breast, boneless, skinless, raw",
+      dataType: "Foundation",
+      foodNutrients: [
+        { nutrientId: 2047, value: 106 },
+        { nutrientId: 1003, value: 22.5 },
+        { nutrientId: 1005, value: 0 },
+        { nutrientId: 1004, value: 1.93 },
+      ],
+    });
+    expect(result?.nutrients.kcal).toBe(106);
+    expect(result?.energySource).toBe("provided");
+    expect(result?.nutrients.protein).toBe(22.5);
+  });
+
+  it("drops hits that carry no energy or macro nutrients", () => {
+    expect(
+      normalizeUsdaFood({
+        fdcId: 2759004,
+        description: "Lunchmeat, chicken breast, sliced",
+        foodNutrients: [
+          { nutrientId: 1258, value: 0.703 },
+          { nutrientId: 1166, value: 0.213 },
+        ],
+      }),
+    ).toBeNull();
+  });
 });

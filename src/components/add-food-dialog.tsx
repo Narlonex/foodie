@@ -30,6 +30,7 @@ import {
   type UnitSystem,
 } from "@/lib/types";
 import { Dialog } from "./dialog";
+import { FoodThumb } from "./food-thumb";
 import { Icon } from "./icons";
 import { ProgressBar, SourceBadge } from "./ui";
 
@@ -387,9 +388,7 @@ export function AddFoodDialog({
           onClick={() => chooseFood(food, food.id ?? null, false)}
           aria-label={t("search.selectFood", { name: food.name })}
         >
-          <span className="food-avatar">
-            <Icon name="leaf" size={18} />
-          </span>
+          <FoodThumb name={food.name} imageUrl={food.imageUrl} />
           <span className="result-main">
             <span className="result-name">{food.name}</span>
             <span className="result-meta">
@@ -578,9 +577,7 @@ export function AddFoodDialog({
                       onClick={() => chooseFood(food, null, true)}
                       aria-label={t("search.selectFood", { name: food.name })}
                     >
-                      <span className="food-avatar">
-                        <Icon name="leaf" size={18} />
-                      </span>
+                      <FoodThumb name={food.name} imageUrl={food.imageUrl} />
                       <span className="result-main">
                         <span className="result-name">{food.name}</span>
                         <span className="result-meta">

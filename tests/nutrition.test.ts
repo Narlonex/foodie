@@ -29,6 +29,7 @@ function entry(partial: Partial<DiaryEntry>): DiaryEntry {
     barcode: null,
     name: "Test food",
     brand: null,
+    imageUrl: null,
     amount: 100,
     amountUnit: "g",
     basisType: "100g",
