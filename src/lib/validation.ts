@@ -5,15 +5,16 @@ import { MEALS, NUTRIENT_KEYS } from "./types";
 export const emailSchema = z
   .string()
   .trim()
-  .min(3)
-  .max(254)
+  .min(3, "validation.email")
+  .max(254, "validation.email")
   .email("validation.email")
   .transform((value) => value.toLowerCase());
 
 export const passwordSchema = z
   .string()
-  .min(10, "validation.passwordLength")
-  .max(200, "validation.passwordLength");
+  .min(8, "validation.passwordLength")
+  .max(200, "validation.passwordLength")
+  .regex(/[A-Z]/, "validation.passwordUppercase");
 
 export const languageSchema = z.enum(["en", "sk"]);
 export const themeSchema = z.enum(["dark", "light"]);

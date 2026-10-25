@@ -83,7 +83,7 @@ export function AuthForm({
               type="password"
               className="input"
               autoComplete={isLogin ? "current-password" : "new-password"}
-              minLength={isLogin ? undefined : 10}
+              minLength={isLogin ? undefined : 8}
               required
               aria-invalid={passwordError ? true : undefined}
               aria-describedby={

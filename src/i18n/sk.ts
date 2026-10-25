@@ -121,7 +121,7 @@ export const sk: Dictionary = {
     "Denník, ciele a vlastné potraviny sú uložené vo vašom účte.",
   "auth.email": "E-mail",
   "auth.password": "Heslo",
-  "auth.passwordHint": "Aspoň 10 znakov.",
+  "auth.passwordHint": "Aspoň 8 znakov vrátane jedného veľkého písmena.",
   "auth.signIn": "Prihlásiť sa",
   "auth.signUp": "Vytvoriť účet",
   "auth.noAccount": "Ste vo Foodie noví?",
@@ -133,7 +133,8 @@ export const sk: Dictionary = {
   "auth.emailTaken": "Účet s týmto e-mailom už existuje.",
   "auth.genericError": "Požiadavku sa nepodarilo dokončiť. Skúste to znova.",
   "auth.signOutSuccess": "Boli ste odhlásení.",
-  "auth.passwordTooShort": "Použite heslo s aspoň 10 znakmi.",
+  "auth.passwordTooShort":
+    "Použite heslo s aspoň 8 znakmi a jedným veľkým písmenom.",
   "auth.emailInvalid": "Zadajte platnú e-mailovú adresu.",
   "auth.required": "Zadajte e-mail a heslo.",
   "auth.sessionExpired": "Relácia vypršala. Prihláste sa znova.",
@@ -792,7 +793,9 @@ export const sk: Dictionary = {
   "food.saveFailed": "Potravinu sa nepodarilo pridať. Skúste to znova.",
 
   "validation.email": "Zadajte platnú e-mailovú adresu.",
-  "validation.passwordLength": "Použite heslo s aspoň 10 znakmi.",
+  "validation.passwordLength": "Použite heslo s aspoň 8 znakmi.",
+  "validation.passwordUppercase":
+    "Heslo musí obsahovať aspoň jedno veľké písmeno.",
   "validation.required": "Toto pole je povinné.",
   "validation.date": "Zadajte platný dátum.",
   "validation.amount": "Zadajte množstvo väčšie ako nula.",

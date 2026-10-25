@@ -188,6 +188,14 @@ describe("account and date validation", () => {
     expect(loginSchema.safeParse({ email: "not-an-email", password: "x" }).success).toBe(false);
   });
 
+  it("requires eight characters and one uppercase letter", () => {
+    const register = (password: string) =>
+      registerSchema.safeParse({ email: "a@b.co", password }).success;
+    expect(register("lowercase1")).toBe(false);
+    expect(register("Abcdefg")).toBe(false);
+    expect(register("Abcdefg1")).toBe(true);
+  });
+
   it("accepts real ISO dates and rejects impossible ones", () => {
     expect(isoDateSchema.safeParse("2026-10-21").success).toBe(true);
     expect(isoDateSchema.safeParse("2026-02-30").success).toBe(false);

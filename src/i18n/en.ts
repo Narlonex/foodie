@@ -117,7 +117,7 @@ export const en = {
     "Your diary, goals and custom foods are stored in your own account.",
   "auth.email": "Email",
   "auth.password": "Password",
-  "auth.passwordHint": "At least 10 characters.",
+  "auth.passwordHint": "At least 8 characters, including one uppercase letter.",
   "auth.signIn": "Sign in",
   "auth.signUp": "Create account",
   "auth.noAccount": "New to Foodie?",
@@ -129,7 +129,8 @@ export const en = {
   "auth.emailTaken": "An account with this email already exists.",
   "auth.genericError": "We could not complete that request. Please try again.",
   "auth.signOutSuccess": "You have been signed out.",
-  "auth.passwordTooShort": "Use at least 10 characters for your password.",
+  "auth.passwordTooShort":
+    "Use at least 8 characters with one uppercase letter for your password.",
   "auth.emailInvalid": "Enter a valid email address.",
   "auth.required": "Enter your email and password.",
   "auth.sessionExpired": "Your session expired. Please sign in again.",
@@ -792,7 +793,9 @@ export const en = {
   "food.saveFailed": "We could not add that food. Please try again.",
 
   "validation.email": "Enter a valid email address.",
-  "validation.passwordLength": "Use at least 10 characters for your password.",
+  "validation.passwordLength": "Use at least 8 characters for your password.",
+  "validation.passwordUppercase":
+    "Include at least one uppercase letter in your password.",
   "validation.required": "This field is required.",
   "validation.date": "Enter a valid date.",
   "validation.amount": "Enter an amount greater than zero.",
