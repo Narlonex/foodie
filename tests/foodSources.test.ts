@@ -1,9 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import {
   FoodApiError,
   missingNutrientKeys,
   normalizeOffProduct,
   normalizeOffSearchHit,
+  searchOpenFoodFacts,
 } from "@/lib/foods/openFoodFacts";
 import { normalizeUsdaFood } from "@/lib/foods/usda";
 
@@ -278,6 +279,59 @@ describe("Open Food Facts search normalization", () => {
         nutriments: {},
       }),
     ).toBeNull();
+  });
+});
+
+describe("Open Food Facts transient failures", () => {
+  const originalFetch = globalThis.fetch;
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  function stubFetch(statuses: number[]) {
+    let calls = 0;
+    globalThis.fetch = (async () => {
+      const status = statuses[calls] ?? 200;
+      calls += 1;
+      if (status !== 200) return new Response("busy", { status });
+      return new Response(
+        JSON.stringify({
+          hits: [
+            {
+              code: "1234567",
+              product_name: "Milk",
+              nutriments: { "energy-kcal_100g": 42 },
+            },
+          ],
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }) as typeof fetch;
+    return () => calls;
+  }
+
+  it("retries a busy response and returns the later success", async () => {
+    const calls = stubFetch([503, 502, 200]);
+    const results = await searchOpenFoodFacts("milk");
+    expect(calls()).toBe(3);
+    expect(results[0]?.externalId).toBe("1234567");
+  });
+
+  it("reports an unavailable source after three busy responses", async () => {
+    const calls = stubFetch([503, 503, 503]);
+    await expect(searchOpenFoodFacts("milk")).rejects.toMatchObject({
+      kind: "unavailable",
+    });
+    expect(calls()).toBe(3);
+  });
+
+  it("does not retry a rate limit", async () => {
+    const calls = stubFetch([429, 200]);
+    await expect(searchOpenFoodFacts("milk")).rejects.toMatchObject({
+      kind: "rate-limited",
+    });
+    expect(calls()).toBe(1);
   });
 });
 

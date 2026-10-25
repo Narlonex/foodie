@@ -315,28 +315,74 @@ export function normalizeOffSearchHit(hit: Record<string, unknown>): FoodCandida
   };
 }
 
+// Open Food Facts answers with a 5xx HTML page now and then when its nodes are
+// busy. Those requests are worth repeating; a 429 means slow down and is not.
+const RETRYABLE_STATUSES = new Set([500, 502, 503, 504]);
+const MAX_ATTEMPTS = 3;
+
+function retryDelay(attempt: number): Promise<void> {
+  // Short, growing pause with a little jitter so retries do not synchronise.
+  const ms = attempt * 250 + Math.random() * 150;
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function requestJson(url: string): Promise<unknown> {
-  let response: Response;
-  try {
-    response = await fetch(url, {
-      headers: headers(),
-      signal: AbortSignal.timeout(9_000),
-      next: { revalidate: 600 },
-    });
-  } catch {
-    throw new FoodApiError("unavailable", "Open Food Facts could not be reached.");
+  let lastError: FoodApiError | null = null;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        headers: headers(),
+        signal: AbortSignal.timeout(9_000),
+        next: { revalidate: 600 },
+      });
+    } catch {
+      lastError = new FoodApiError(
+        "unavailable",
+        "Open Food Facts could not be reached.",
+      );
+      if (attempt < MAX_ATTEMPTS) {
+        await retryDelay(attempt);
+        continue;
+      }
+      throw lastError;
+    }
+
+    if (RETRYABLE_STATUSES.has(response.status)) {
+      lastError = new FoodApiError(
+        "unavailable",
+        "The food database is unavailable.",
+      );
+      if (attempt < MAX_ATTEMPTS) {
+        await retryDelay(attempt);
+        continue;
+      }
+      throw lastError;
+    }
+    if (response.status === 429) {
+      throw new FoodApiError(
+        "rate-limited",
+        "The food database is rate limiting requests.",
+      );
+    }
+    if (!response.ok) {
+      throw new FoodApiError("unavailable", "The food database is unavailable.");
+    }
+    try {
+      return await response.json();
+    } catch {
+      throw new FoodApiError(
+        "invalid",
+        "The food database returned malformed data.",
+      );
+    }
   }
-  if (response.status === 429) {
-    throw new FoodApiError("rate-limited", "The food database is rate limiting requests.");
-  }
-  if (!response.ok) {
-    throw new FoodApiError("unavailable", "The food database is unavailable.");
-  }
-  try {
-    return await response.json();
-  } catch {
-    throw new FoodApiError("invalid", "The food database returned malformed data.");
-  }
+
+  throw (
+    lastError ??
+    new FoodApiError("unavailable", "The food database is unavailable.")
+  );
 }
 
 function normalizeQuery(query: string): string {
