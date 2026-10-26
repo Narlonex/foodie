@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { EMPTY_NUTRIENTS } from "@/lib/types";
+import { entryPortion } from "@/lib/nutrition";
 
 /**
  * These tests need a real PostgreSQL-compatible server. Point
@@ -510,5 +511,98 @@ describeDb("database-backed Foodie flows", () => {
     expect(week.find((day) => day.date === "2026-10-22")?.dayType?.name).toBe("Rest Day");
     expect(week.find((day) => day.date === "2026-10-23")?.entryCount).toBe(0);
     expect(week.find((day) => day.date === "2026-10-23")?.dayType?.name).toBe("Rest Day");
+  });
+
+  it("saves a recipe with its final weight and logs it as a snapshot", async () => {
+    const chicken = await foods.createCustomFood(
+      userA,
+      foodDraft("Recipe chicken", {
+        kcal: 120,
+        protein: 23,
+        carbs: 0,
+        fat: 2,
+      }),
+    );
+    const rice = await foods.createCustomFood(
+      userA,
+      foodDraft("Recipe rice", {
+        kcal: 350,
+        protein: 7,
+        carbs: 78,
+        fat: 1,
+      }),
+    );
+    const chickenId = chicken.id;
+    const riceId = rice.id;
+    if (!chickenId || !riceId) throw new Error("Missing recipe foods.");
+
+    const recipeId = await savedMeals.createSavedMeal(
+      userA,
+      "Recipe test",
+      [
+        { foodId: chickenId, amount: 200, amountUnit: "g" },
+        { foodId: riceId, amount: 100, amountUnit: "g" },
+      ],
+      { finalWeightG: 450, servings: 3 },
+    );
+    const recipe = await savedMeals.getSavedMeal(userA, recipeId);
+    expect(recipe?.finalWeightG).toBe(450);
+    expect(recipe?.servings).toBe(3);
+    expect(await savedMeals.getSavedMeal(userB, recipeId)).toBeNull();
+
+    const entry = await savedMeals.logRecipeToDiary(
+      userA,
+      recipeId,
+      "2026-11-02",
+      "dinner",
+      150,
+    );
+    expect(entry.basisType).toBe("100g");
+    expect(entry.amount).toBe(150);
+    expect(entry.foodId).toBeNull();
+    // Batch 590 kcal at 450 g prepared, so 150 g carries a third of it.
+    expect(entry.nutrients.kcal ?? 0).toBeCloseTo(131.1111, 3);
+    expect(entryPortion(entry).nutrients.kcal ?? 0).toBeCloseTo(196.67, 1);
+
+    await savedMeals.updateSavedMeal(
+      userA,
+      recipeId,
+      "Recipe test v2",
+      [{ foodId: chickenId, amount: 100, amountUnit: "g" }],
+      { finalWeightG: 100, servings: 1 },
+    );
+    const afterEdit = await diary.getEntry(userA, entry.id);
+    expect(afterEdit?.nutrients.kcal ?? 0).toBeCloseTo(131.1111, 3);
+
+    const copyId = await savedMeals.duplicateSavedMeal(userA, recipeId);
+    expect(copyId).not.toBeNull();
+    expect(copyId).not.toBe(recipeId);
+  });
+
+  it("stores preparation, package data and dashboard preferences", async () => {
+    const skyr = await foods.createCustomFood(userA, {
+      ...foodDraft("Skyr natural"),
+      preparation: "raw",
+      packageQuantity: 450,
+      packageUnit: "g",
+      drainedWeight: null,
+    });
+    expect(skyr.preparation).toBe("raw");
+    expect(skyr.packageQuantity).toBe(450);
+    expect(skyr.packageUnit).toBe("g");
+
+    const defaults = await foods.createCustomFood(userA, foodDraft("Plain food"));
+    expect(defaults.preparation).toBe("unspecified");
+    expect(defaults.packageQuantity).toBeNull();
+
+    const profile = await import("@/lib/repositories/profile");
+    expect(
+      await profile.updateDashboardNutrients(userA, ["kcal", "fiber"]),
+    ).toBe(true);
+    const rows = await db.query<{ dashboard_nutrients: string[] }>(
+      `SELECT dashboard_nutrients FROM profiles WHERE user_id = $1`,
+      [userA],
+    );
+    expect(rows[0]?.dashboard_nutrients).toEqual(["kcal", "fiber"]);
   });
 });

@@ -18,6 +18,7 @@ import {
   MEALS,
   NUTRIENT_KEYS,
   type DayType,
+  type DashboardNutrient,
   type DiaryEntry,
   type DiaryTotals,
   type Food,
@@ -32,7 +33,22 @@ import { CopyDayDialog, RepeatMealDialog } from "./copy-day-dialog";
 import { DeleteEntryDialog, EditEntryDialog } from "./entry-dialogs";
 import { FoodThumb } from "./food-thumb";
 import { Icon } from "./icons";
-import { EmptyState, MealIcon, ProgressBar, SourceBadge } from "./ui";
+import {
+  EmptyState,
+  MealIcon,
+  PreparationBadge,
+  ProgressBar,
+  SourceBadge,
+} from "./ui";
+
+const MACRO_CARDS = [
+  { key: "protein", label: "nutrients.protein" },
+  { key: "carbs", label: "nutrients.carbs" },
+  { key: "fat", label: "nutrients.fat" },
+] as const satisfies readonly {
+  key: "protein" | "carbs" | "fat";
+  label: TranslationKey;
+}[];
 
 export function DashboardView({
   date,
@@ -45,6 +61,7 @@ export function DashboardView({
   defaultDayTypeId,
   entries,
   totals,
+  dashboardNutrients,
   favorites,
   recent,
   customFoods,
@@ -66,6 +83,7 @@ export function DashboardView({
   customFoods: Food[];
   savedMeals: SavedMeal[];
   usdaEnabled: boolean;
+  dashboardNutrients: DashboardNutrient[];
 }) {
   const t = getTranslator(language);
   const router = useRouter();
@@ -101,6 +119,9 @@ export function DashboardView({
           ]),
         ) as DiaryTotals["nutrients"])
       : totals.nutrients;
+  const visibleMacros = MACRO_CARDS.filter((macro) =>
+    dashboardNutrients.includes(macro.key),
+  );
   const consumed = displayNutrients.kcal.value;
   const target = dayType?.kcal ?? null;
   const remaining =
@@ -274,31 +295,21 @@ export function DashboardView({
               <span className="small muted">{t("dashboard.macrosHelp")}</span>
             </div>
             <div className="macro-grid">
-              <MacroCard
-                name={t("nutrients.protein")}
-                color="protein"
-                consumed={displayNutrients.protein}
-                target={dayType?.protein ?? null}
-                language={language}
-                t={t}
-              />
-              <MacroCard
-                name={t("nutrients.carbs")}
-                color="carbs"
-                consumed={displayNutrients.carbs}
-                target={dayType?.carbs ?? null}
-                language={language}
-                t={t}
-              />
-              <MacroCard
-                name={t("nutrients.fat")}
-                color="fat"
-                consumed={displayNutrients.fat}
-                target={dayType?.fat ?? null}
-                language={language}
-                t={t}
-              />
+              {visibleMacros.map((macro) => (
+                <MacroCard
+                  key={macro.key}
+                  name={t(macro.label)}
+                  color={macro.key}
+                  consumed={displayNutrients[macro.key]}
+                  target={dayType?.[macro.key] ?? null}
+                  language={language}
+                  t={t}
+                />
+              ))}
             </div>
+            <Link href="/settings/dashboard" className="button-link small">
+              {t("dashboard.editVisibleNutrients")}
+            </Link>
           </section>
 
           {entries.length === 0 ? (
@@ -498,7 +509,12 @@ export function DashboardView({
                   ["fiber", displayNutrients.fiber],
                   ["salt", displayNutrients.salt],
                 ] as const
-              ).map(([key, total]) => {
+              )
+                .filter(
+                  ([key]) =>
+                    key === "satFat" || dashboardNutrients.includes(key),
+                )
+                .map(([key, total]) => {
                 const label =
                   key === "satFat"
                     ? t("nutrients.saturatedFat")
@@ -846,6 +862,10 @@ function MealSection({
                   <span className="entry-meta">
                     {entry.brand ? <span>{entry.brand}</span> : null}
                     <SourceBadge source={entry.source} language={language} />
+                    <PreparationBadge
+                      preparation={entry.preparation}
+                      language={language}
+                    />
                     <span>
                       {formatPortion(
                         entry.amount,

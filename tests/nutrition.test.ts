@@ -30,6 +30,7 @@ function entry(partial: Partial<DiaryEntry>): DiaryEntry {
     name: "Test food",
     brand: null,
     imageUrl: null,
+    preparation: "unspecified",
     amount: 100,
     amountUnit: "g",
     basisType: "100g",

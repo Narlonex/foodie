@@ -186,6 +186,17 @@ export const sk: Dictionary = {
   "dashboard.mealsTitle": "Jedlá",
   "dashboard.quickActions": "Rýchle akcie",
   "dashboard.copyDay": "Skopírovať iný deň",
+  "dashboard.settingsIntro":
+    "Vyberte, ktoré karty živín sa zobrazujú na dashboarde. Mení sa len zobrazenie; súčty, ciele ani zapisovanie nie.",
+  "dashboard.visibleNutrients": "Viditeľné živiny",
+  "dashboard.visibleNutrientsHelp":
+    "Kalórie ostávajú vždy viditeľné. Ostatné karty sa dajú skryť.",
+  "dashboard.alwaysVisible": "Vždy zapnuté",
+  "dashboard.visibilityNote":
+    "Skryté živiny sa stále počítajú a ukladajú; len sa nezobrazujú na dashboarde.",
+  "dashboard.resetDefaults": "Obnoviť predvolené",
+  "dashboard.editVisibleNutrients": "Vybrať viditeľné živiny",
+  "dashboard.saved": "Nastavenia dashboardu boli uložené.",
   "dashboard.addSavedMeal": "Pridať uložené jedlo",
   "dashboard.weekOverview": "Týždenný prehľad",
   "dashboard.entryCount": "{count} položiek",
@@ -326,6 +337,7 @@ export const sk: Dictionary = {
   "settings.saveError": "Zmeny sa nepodarilo uložiť. Skúste to znova.",
   "settings.notConfigured": "Nie je nastavené",
   "settings.metrics": "Telo a metriky",
+  "settings.dashboard": "Karty na prehľade",
 
   "metrics.title": "Telo a metriky",
   "metrics.intro":
@@ -588,7 +600,7 @@ export const sk: Dictionary = {
   "savedMeals.addTitle": "Pridať „{name}“ do denníka",
   "savedMeals.chooseDate": "Dátum",
   "savedMeals.chooseMeal": "Jedlo",
-  "savedMeals.itemsCount": "{count} potravín",
+  "savedMeals.itemsCount": "Surovín: {count}",
   "savedMeals.confirmAdd": "Pridať do denníka",
   "savedMeals.added": "Uložené jedlo bolo pridané do denníka.",
   "savedMeals.deleteConfirm": "Odstrániť „{name}“?",
@@ -604,6 +616,8 @@ export const sk: Dictionary = {
   "savedMeals.noItems": "Toto uložené jedlo nemá dostupné potraviny.",
   "savedMeals.noAvailable":
     "Na zostavenie jedla potrebujete aspoň jednu uloženú potravinu.",
+  "savedMeals.duplicate": "Duplikovať",
+  "savedMeals.duplicated": "Recept bol duplikovaný.",
   "savedMeals.builderHelp":
     "Vyberte potraviny a množstvá. Chýbajúce výživové hodnoty zostávajú neznáme.",
 
@@ -707,7 +721,7 @@ export const sk: Dictionary = {
   "search.submit": "Hľadať",
   "search.resultsCount": "Výsledkov: {count}",
   "search.minChars": "Zadajte aspoň 2 znaky.",
-  "search.loading": "Hľadá sa v Open Food Facts…",
+  "search.loading": "Hľadá sa v potravinových databázach…",
   "search.noResults": "Žiadne zodpovedajúce potraviny",
   "search.noResultsHelp":
     "Skúste iný pravopis, názov značky alebo vyhľadajte čiarový kód. Môžete vytvoriť aj vlastnú potravinu.",
@@ -715,7 +729,8 @@ export const sk: Dictionary = {
   "search.rateLimited":
     "Food databáza dočasne obmedzuje vyhľadávanie. Chvíľu počkajte a skúste znova.",
   "search.tryAgain": "Skúsiť znova",
-  "search.startTyping": "Hľadajte balené potraviny podľa názvu alebo značky.",
+  "search.startTyping":
+    "Hľadajte balené potraviny aj suroviny podľa názvu alebo značky.",
   "search.tabsSearch": "Hľadať",
   "search.tabsFavorites": "Obľúbené",
   "search.tabsRecent": "Nedávne",
@@ -768,6 +783,15 @@ export const sk: Dictionary = {
   "search.quickAddHelp": "Pred pridaním vyberte množstvo a jedlo.",
   "search.openFoodFacts": "Open Food Facts",
   "search.usda": "USDA FoodData Central",
+  "search.both": "Oboje",
+  "search.bothHint":
+    "Hľadá naraz v balených potravinách (Open Food Facts) aj v surovinách (USDA).",
+  "search.bothAttribution":
+    "Výsledky z Open Food Facts, © prispievatelia Open Food Facts (ODbL), a USDA FoodData Central.",
+  "search.hintOff": "Balený produkt — údaje z etikety",
+  "search.hintUsda": "Surovina — všeobecné hodnoty na 100 g",
+  "search.sourceDown":
+    "{source} momentálne neodpovedá, zobrazujú sa výsledky z druhej databázy.",
   "search.custom": "Moje potraviny",
   "search.noFavorites": "Zatiaľ nemáte obľúbené potraviny.",
   "search.noRecent": "Zatiaľ žiadne nedávne potraviny. Zapisované potraviny sa tu objavia.",
@@ -807,6 +831,8 @@ export const sk: Dictionary = {
   "validation.dayTypeName": "Zadajte názov typu dňa s 1 až 60 znakmi.",
   "validation.calories": "Zadajte kalorický cieľ od 1 do 20 000.",
   "validation.macro": "Zadajte nulu alebo kladnú hodnotu makra.",
+  "validation.package":
+    "Zadajte kladné číslo. Veľkosť balenia ani hmotnosť po odkvapkaní nemôže prekročiť balenie.",
   "validation.percent": "Percentá musia byť medzi 0 a 100.",
   "validation.height": "Zadajte výšku medzi 50 a 300 cm.",
   "validation.weight": "Zadajte váhu medzi 20 a 500 kg.",
@@ -837,6 +863,72 @@ export const sk: Dictionary = {
   "error.notFoundHelp": "Stránka, ktorú hľadáte, neexistuje.",
   "error.backHome": "Prejsť na prehľad",
   "error.healthDatabase": "Kontrola databázy zlyhala",
+  "preparation.label": "Úprava",
+  "preparation.raw": "Surové",
+  "preparation.cooked": "Uvarené",
+  "preparation.unspecified": "Neuvedené",
+  "preparation.help":
+    "Uveďte, či hodnoty platia pre surovú surovinu alebo pre hotové jedlo. Etikety to uvádzajú málokedy, preto to ostáva neuvedené a nie vymyslené.",
+  "preparation.rawHelp": "Hodnoty pre potravinu pred tepelnou úpravou.",
+  "preparation.cookedHelp": "Hodnoty pre potravinu po tepelnej úprave.",
+
+  "package.mode": "Ako zadať množstvo",
+  "package.byWeight": "Na gramy",
+  "package.byPackage": "Na balenia",
+  "package.packs": "Zjedené balenia",
+  "package.packUnit": "bal.",
+  "package.quantity": "Veľkosť balenia",
+  "package.unit": "Jednotka balenia",
+  "package.drainedWeight": "Hmotnosť po odkvapkaní",
+  "package.help":
+    "Čistá hmotnosť jedného balenia. Používa ju len kalkulačka balení a nikdy sa nehádá.",
+  "package.result": "To je približne {amount} {unit}.",
+  "package.size": "Jedno balenie obsahuje {amount} {unit}.",
+  "package.drainedNote": "Hmotnosť po odkvapkaní je uvedená zvlášť: {amount} g.",
+  "package.invalid":
+    "Zadajte kladný počet balení, napríklad 0,5 alebo 1/3.",
+
+  "recipes.finalWeight": "Výsledná hmotnosť (g)",
+  "recipes.finalWeightHelp":
+    "Odvážte hotové jedlo. Hodnoty na 100 g ho potrebujú; bez neho je recept len zoznam surovín.",
+  "recipes.servings": "Porcie",
+  "recipes.servingsCount": "Porcie: {count}",
+  "recipes.batchWeight": "{grams} g hotového jedla",
+  "recipes.noWeight": "chýba výsledná hmotnosť",
+  "recipes.batchTotals": "Súčty za celú dávku",
+  "recipes.batchKcal": "Dávka: {kcal} kcal",
+  "recipes.batchKcalLabel": "Celá dávka",
+  "recipes.perServingKcal": "{kcal} kcal na porciu",
+  "recipes.perServingLabel": "Jedna porcia",
+  "recipes.perServingKcalShort": "Na porciu",
+  "recipes.per100Summary": "{kcal} kcal na 100 g",
+  "recipes.per100UnknownEnergy": "Energia na 100 g je neznáma.",
+  "recipes.servingWeight": "Nominálna hmotnosť porcie",
+  "recipes.servingWeightHint": "Jedna porcia má približne {grams} g.",
+  "recipes.weightCaveat":
+    "Výsledná hmotnosť slúži len na prepočet porcií. Varenie môže vodu pridať alebo odpariť a odkvapkaná tekutina či nasiaknutý olej sa nezohľadňujú.",
+  "recipes.incomplete":
+    "Niektoré suroviny majú neznáme živiny. Ostávajú neznáme a nepočítajú sa ako nula.",
+  "recipes.needFinalWeight":
+    "Pred zápisom receptu na gramy doplňte výslednú hmotnosť hotového jedla.",
+  "recipes.needFinalWeightHint":
+    "Doplňte výslednú hmotnosť, aby sa dali zobraziť hodnoty na 100 g a na porciu.",
+  "recipes.log": "Zapísať recept",
+  "recipes.logTitle": "Zapísať „{name}“",
+  "recipes.logIntro":
+    "Vyberte množstvo hotového jedla. Zápis je snímka, takže neskoršie úpravy ho nezmenia.",
+  "recipes.logMode": "Ako zadať množstvo",
+  "recipes.byWeight": "Gramy",
+  "recipes.byServing": "Porcie",
+  "recipes.grams": "Zjedené gramy",
+  "recipes.gramsHint": "Zadajte hmotnosť porcie v gramoch.",
+  "recipes.logConfirm": "Pridať do denníka",
+  "recipes.logged": "Recept bol pridaný do denníka.",
+  "recipes.logFailed": "Recept sa nepodarilo pridať. Skúste to znova.",
+  "recipes.amountInvalid": "Zadajte množstvo väčšie ako nula.",
+  "recipes.snapshotNote":
+    "Zapíše sa ako jedna položka s hodnotami receptu na 100 g.",
+
   "error.loadFailed": "Denník sa nepodarilo načítať. Obnovte stránku.",
   "error.invalidRequest": "Požiadavka nebola platná.",
   "error.unauthorised": "Pokračujte prihlásením.",

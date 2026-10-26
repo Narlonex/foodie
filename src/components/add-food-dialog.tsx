@@ -18,6 +18,11 @@ import { getTranslator, translate, type TranslationKey } from "@/i18n";
 import { formatKcal, formatNumber, unitTranslationKey } from "@/lib/format";
 import { scaleNutrients, toBaseAmount } from "@/lib/nutrition";
 import {
+  packageToAmount,
+  parsePackageCount,
+  type PackageSize,
+} from "@/lib/package";
+import {
   MEALS,
   NUTRIENT_KEYS,
   basisLabel,
@@ -32,11 +37,12 @@ import {
 import { Dialog } from "./dialog";
 import { FoodThumb } from "./food-thumb";
 import { Icon } from "./icons";
-import { ProgressBar, SourceBadge } from "./ui";
+import { PreparationBadge, ProgressBar, SourceBadge } from "./ui";
 
 type SearchTab = "search" | "favorites" | "recent" | "custom";
 type SearchStatus = "idle" | "loading" | "done" | "error";
-type Source = "off" | "usda";
+type SourceKind = "off" | "usda";
+type Source = SourceKind | "both";
 
 interface Selection {
   food: FoodCandidate | Food;
@@ -96,12 +102,15 @@ export function AddFoodDialog({
 }) {
   const t = getTranslator(language);
   const [tab, setTab] = useState<SearchTab>("search");
-  const [source, setSource] = useState<Source>("off");
+  const [source, setSource] = useState<Source>(() =>
+    usdaEnabled ? "both" : "off",
+  );
   const [query, setQuery] = useState("");
   const [searchTick, setSearchTick] = useState(0);
   const [results, setResults] = useState<FoodCandidate[]>([]);
   const [searchStatus, setSearchStatus] = useState<SearchStatus>("idle");
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [unavailableSources, setUnavailableSources] = useState<SourceKind[]>([]);
   const [barcode, setBarcode] = useState("");
   const [barcodeError, setBarcodeError] = useState<string | null>(null);
   const [barcodeLoading, setBarcodeLoading] = useState(false);
@@ -109,6 +118,8 @@ export function AddFoodDialog({
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [amount, setAmount] = useState("100");
+  const [packageMode, setPackageMode] = useState(false);
+  const [packs, setPacks] = useState("1");
   const [meal, setMeal] = useState<Meal>(initialMeal);
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -159,19 +170,30 @@ export function AddFoodDialog({
         const payload = (await response.json().catch(() => ({}))) as {
           results?: FoodCandidate[];
           error?: string;
+          unavailable?: string[];
         };
         if (!response.ok) {
           setResults([]);
+          setUnavailableSources([]);
           setSearchError(payload.error ?? "search.error");
           setSearchStatus("error");
           return;
         }
         setResults(Array.isArray(payload.results) ? payload.results : []);
+        setUnavailableSources(
+          Array.isArray(payload.unavailable)
+            ? payload.unavailable.filter(
+                (value): value is SourceKind =>
+                  value === "off" || value === "usda",
+              )
+            : [],
+        );
         setSearchStatus("done");
       } catch (error) {
         if (controller.signal.aborted) return;
         if (error instanceof DOMException && error.name === "AbortError") return;
         setResults([]);
+        setUnavailableSources([]);
         setSearchError("search.networkError");
         setSearchStatus("error");
       }
@@ -182,22 +204,58 @@ export function AddFoodDialog({
     };
   }, [query, source, tab, open, searchTick]);
 
-  const preview = useMemo(() => {
+  // A package can only be used when its unit matches the food's nutrition
+  // basis; otherwise the calculator stays hidden rather than converting guesses.
+  const packageSize: PackageSize | null = useMemo(() => {
     if (!selection) return null;
+    const { packageQuantity, packageUnit, basisType } = selection.food;
+    if (packageQuantity === null || packageUnit === null) return null;
+    if (basisType === "100g" && packageUnit === "g") {
+      return { quantity: packageQuantity, unit: "g" };
+    }
+    if (basisType === "100ml" && packageUnit === "ml") {
+      return { quantity: packageQuantity, unit: "ml" };
+    }
+    return null;
+  }, [selection]);
+
+  const packageCount = parsePackageCount(packs);
+  const packageAmount = packageToAmount(packageCount, packageSize);
+
+  const baseAmount = useMemo(() => {
+    if (!selection) return null;
+    if (packageMode) {
+      return packageAmount
+        ? { amount: packageAmount.amount, amountUnit: packageAmount.unit }
+        : null;
+    }
     const parsed = Number(amount.replace(",", "."));
     if (!Number.isFinite(parsed) || parsed <= 0) return null;
     try {
-      const unit = inputUnitFor(selection.food, unitSystem);
-      const base = toBaseAmount(parsed, unit);
-      return scaleNutrients(selection.food, base.amount, base.amountUnit);
+      return toBaseAmount(parsed, inputUnitFor(selection.food, unitSystem));
     } catch {
       return null;
     }
-  }, [amount, selection, unitSystem]);
+  }, [amount, packageAmount, packageMode, selection, unitSystem]);
 
-  const selectedUnit = selection
-    ? inputUnitFor(selection.food, unitSystem)
-    : "g";
+  const preview = useMemo(() => {
+    if (!selection || !baseAmount) return null;
+    try {
+      return scaleNutrients(
+        selection.food,
+        baseAmount.amount,
+        baseAmount.amountUnit,
+      );
+    } catch {
+      return null;
+    }
+  }, [baseAmount, selection]);
+
+  const selectedUnit = packageMode
+    ? (packageSize?.unit ?? "g")
+    : selection
+      ? inputUnitFor(selection.food, unitSystem)
+      : "g";
 
   function chooseFood(
     food: Food | FoodCandidate,
@@ -210,6 +268,8 @@ export function AddFoodDialog({
       : favoriteKeys.has(externalKey(food));
     setSelection({ food, libraryId, favorite });
     setAmount(defaultAmount(food, unitSystem));
+    setPackageMode(false);
+    setPacks("1");
     setActionError(null);
     setDetailError(null);
     detailRequestKey.current = key;
@@ -253,6 +313,13 @@ export function AddFoodDialog({
     } else {
       setDetailLoading(false);
     }
+  }
+
+  /** One short line per row so the source is obvious without opening it. */
+  function sourceHint(kind: Food["source"]): string | null {
+    if (kind === "usda") return t("search.hintUsda");
+    if (kind === "off") return t("search.hintOff");
+    return null;
   }
 
   async function toggleFavorite(
@@ -331,12 +398,11 @@ export function AddFoodDialog({
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    if (!selection || !preview) {
+    if (!selection || !preview || !baseAmount) {
       setActionError(t("search.amountRequired"));
       return;
     }
-    const parsed = Number(amount.replace(",", "."));
-    const base = toBaseAmount(parsed, selectedUnit);
+    const base = baseAmount;
     setSaving(true);
     setActionError(null);
     try {
@@ -430,22 +496,32 @@ export function AddFoodDialog({
       return (
         <div className="search-shell">
           {usdaEnabled ? (
-            <div className="segmented" role="group" aria-label={t("common.source")}>
-              <button
-                type="button"
-                aria-pressed={source === "off"}
-                onClick={() => setSource("off")}
-              >
-                {t("search.openFoodFacts")}
-              </button>
-              <button
-                type="button"
-                aria-pressed={source === "usda"}
-                onClick={() => setSource("usda")}
-              >
-                {t("search.usda")}
-              </button>
-            </div>
+            <>
+              <div className="segmented" role="group" aria-label={t("common.source")}>
+                <button
+                  type="button"
+                  aria-pressed={source === "both"}
+                  onClick={() => setSource("both")}
+                >
+                  {t("search.both")}
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={source === "off"}
+                  onClick={() => setSource("off")}
+                >
+                  {t("search.openFoodFacts")}
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={source === "usda"}
+                  onClick={() => setSource("usda")}
+                >
+                  {t("search.usda")}
+                </button>
+              </div>
+              <p className="source-note">{t("search.bothHint")}</p>
+            </>
           ) : (
             <p className="source-note">{t("search.offAttribution")}</p>
           )}
@@ -528,6 +604,22 @@ export function AddFoodDialog({
             <p className="source-note">{t("search.startTyping")}</p>
           ) : null}
 
+          {unavailableSources.length > 0 ? (
+            <p className="source-note" role="status">
+              {t("search.sourceDown", {
+                source: unavailableSources
+                  .map((kind) =>
+                    t(
+                      kind === "usda"
+                        ? "search.usda"
+                        : "search.openFoodFacts",
+                    ),
+                  )
+                  .join(", "),
+              })}
+            </p>
+          ) : null}
+
           {searchStatus === "loading" ? (
             <div className="stack-sm" aria-hidden="true">
               <div className="skeleton" />
@@ -583,6 +675,10 @@ export function AddFoodDialog({
                         <span className="result-meta">
                           {food.brand ? <span>{food.brand}</span> : null}
                           <SourceBadge source={food.source} language={language} />
+                          <PreparationBadge
+                            preparation={food.preparation}
+                            language={language}
+                          />
                           <span>
                             {food.nutrients.kcal === null
                               ? t("search.unknown")
@@ -595,6 +691,11 @@ export function AddFoodDialog({
                             )}
                           </span>
                         </span>
+                        {sourceHint(food.source) ? (
+                          <span className="result-hint">
+                            {sourceHint(food.source)}
+                          </span>
+                        ) : null}
                       </span>
                       <span className="result-kcal">
                         {completeness(food.nutrients, t)}
@@ -624,9 +725,11 @@ export function AddFoodDialog({
           ) : null}
 
           <p className="source-note">
-            {source === "usda"
-              ? t("search.usdaAttribution")
-              : t("search.offAttribution")}
+            {source === "both"
+              ? t("search.bothAttribution")
+              : source === "usda"
+                ? t("search.usdaAttribution")
+                : t("search.offAttribution")}
           </p>
         </div>
       );
@@ -714,6 +817,10 @@ export function AddFoodDialog({
           <div className="result-meta" style={{ marginTop: 6 }}>
             {food.brand ? <span>{food.brand}</span> : null}
             <SourceBadge source={food.source} language={language} />
+            <PreparationBadge
+              preparation={food.preparation}
+              language={language}
+            />
             {food.barcode ? <span>{food.barcode}</span> : null}
           </div>
         </div>
@@ -766,6 +873,18 @@ export function AddFoodDialog({
                     : food.source === "usda"
                       ? t("sources.usda")
                       : t("sources.custom")}
+                </strong>
+              </div>
+              <div className="kv-row">
+                <span>{t("preparation.label")}</span>
+                <strong>
+                  {t(
+                    food.preparation === "raw"
+                      ? "preparation.raw"
+                      : food.preparation === "cooked"
+                        ? "preparation.cooked"
+                        : "preparation.unspecified",
+                  )}
                 </strong>
               </div>
               <div className="kv-row">
@@ -838,29 +957,100 @@ export function AddFoodDialog({
           </div>
 
           <form className="detail-card" onSubmit={submit} id="add-food-form">
+            {packageSize ? (
+              <div className="segmented" role="group" aria-label={t("package.mode")}>
+                <button
+                  type="button"
+                  aria-pressed={!packageMode}
+                  onClick={() => {
+                    setPackageMode(false);
+                    setActionError(null);
+                  }}
+                >
+                  {t("package.byWeight")}
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={packageMode}
+                  onClick={() => {
+                    setPackageMode(true);
+                    setActionError(null);
+                  }}
+                >
+                  {t("package.byPackage")}
+                </button>
+              </div>
+            ) : null}
+
             <div className="field">
-              <label htmlFor="food-amount">{t("search.amount")}</label>
+              <label htmlFor="food-amount">
+                {packageMode ? t("package.packs") : t("search.amount")}
+              </label>
               <div className="row" style={{ alignItems: "stretch" }}>
-                <input
-                  id="food-amount"
-                  className="input"
-                  inputMode="decimal"
-                  value={amount}
-                  onChange={(event) => setAmount(event.target.value)}
-                  aria-describedby="amount-hint"
-                  autoComplete="off"
-                />
+                {packageMode ? (
+                  <input
+                    id="food-amount"
+                    className="input"
+                    inputMode="decimal"
+                    value={packs}
+                    onChange={(event) => setPacks(event.target.value)}
+                    aria-describedby="amount-hint"
+                    autoComplete="off"
+                  />
+                ) : (
+                  <input
+                    id="food-amount"
+                    className="input"
+                    inputMode="decimal"
+                    value={amount}
+                    onChange={(event) => setAmount(event.target.value)}
+                    aria-describedby="amount-hint"
+                    autoComplete="off"
+                  />
+                )}
                 <span className="badge" style={{ minHeight: 44 }}>
-                  {t(unitTranslationKey(selectedUnit))}
+                  {packageMode
+                    ? t("package.packUnit")
+                    : t(unitTranslationKey(selectedUnit))}
                 </span>
               </div>
               <p className="field-hint" id="amount-hint">
-                {food.basisType === "serving"
-                  ? t("search.servingHint")
-                  : t("search.amountHint", {
-                      unit: t(unitTranslationKey(selectedUnit)),
-                    })}
+                {packageMode
+                  ? packageAmount
+                    ? t("package.result", {
+                        amount: formatNumber(
+                          packageAmount.amount,
+                          language,
+                          0,
+                        ),
+                        unit:
+                          packageAmount.unit === "ml"
+                            ? t("units.ml")
+                            : t("units.g"),
+                      })
+                    : t("package.invalid")
+                  : food.basisType === "serving"
+                    ? t("search.servingHint")
+                    : t("search.amountHint", {
+                        unit: t(unitTranslationKey(selectedUnit)),
+                      })}
               </p>
+              {packageSize ? (
+                <p className="field-hint">
+                  {t("package.size", {
+                    amount: formatNumber(packageSize.quantity, language, 0),
+                    unit:
+                      packageSize.unit === "ml"
+                        ? t("units.ml")
+                        : t("units.g"),
+                  })}
+                  {food.drainedWeight !== null
+                    ? ` · ${t("package.drainedNote", {
+                        amount: formatNumber(food.drainedWeight, language, 0),
+                      })}`
+                    : ""}
+                </p>
+              ) : null}
             </div>
 
             <div className="field">

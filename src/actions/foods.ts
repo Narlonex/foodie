@@ -170,6 +170,14 @@ function parseCustomFood(formData: FormData) {
       ? Number(servingRaw.replace(",", "."))
       : null;
   const servingUnitRaw = String(formData.get("servingUnit") ?? "g");
+  const packageQuantity = nullableNumber(formData, "packageQuantity");
+  const packageUnitRaw = String(formData.get("packageUnit") ?? "").trim();
+  const packageUnit =
+    packageQuantity === null || packageUnitRaw === ""
+      ? null
+      : packageUnitRaw === "ml"
+        ? "ml"
+        : "g";
   return customFoodSchema.safeParse({
     name: String(formData.get("name") ?? ""),
     brand: String(formData.get("brand") ?? ""),
@@ -177,6 +185,10 @@ function parseCustomFood(formData: FormData) {
     basisType,
     servingSize: basisType === "serving" ? servingSize : null,
     servingUnit: basisType === "serving" ? servingUnitRaw : null,
+    preparation: String(formData.get("preparation") ?? "unspecified"),
+    packageQuantity,
+    packageUnit,
+    drainedWeight: nullableNumber(formData, "drainedWeight"),
     nutrients: {
       kcal: nullableNumber(formData, "kcal"),
       kj: nullableNumber(formData, "kj"),
@@ -217,6 +229,10 @@ export async function createCustomFoodAction(
       servingUnit: parsed.data.servingUnit,
       nutrients: parsed.data.nutrients,
       imageUrl: null,
+      preparation: parsed.data.preparation,
+      packageQuantity: parsed.data.packageQuantity,
+      packageUnit: parsed.data.packageUnit,
+      drainedWeight: parsed.data.drainedWeight,
       ...(parsePhoto(parsed.data.photo) ?? {}),
     });
     revalidatePath("/foods");
@@ -256,6 +272,10 @@ export async function updateCustomFoodAction(
       servingUnit: parsed.data.servingUnit,
       nutrients: parsed.data.nutrients,
       imageUrl: null,
+      preparation: parsed.data.preparation,
+      packageQuantity: parsed.data.packageQuantity,
+      packageUnit: parsed.data.packageUnit,
+      drainedWeight: parsed.data.drainedWeight,
       ...(parsePhoto(parsed.data.photo) ?? {}),
     });
     if (!food) return { status: "error", message: "foods.notFound" };

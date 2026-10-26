@@ -7,6 +7,8 @@ import {
   addSavedMealToDiary,
   createSavedMeal,
   deleteSavedMeal,
+  duplicateSavedMeal,
+  logRecipeToDiary,
   updateSavedMeal,
 } from "@/lib/repositories/savedMeals";
 import {
@@ -24,10 +26,28 @@ const itemSchema = z.object({
   amountUnit: amountUnitSchema,
 });
 
+const optionalMeasure = z
+  .number()
+  .finite("validation.package")
+  .positive("validation.package")
+  .max(100_000, "validation.package")
+  .nullable()
+  .optional()
+  .default(null);
+
 const mealInputSchema = z.object({
   savedMealId: z.string().uuid().optional(),
   name: savedMealNameSchema,
   items: z.array(itemSchema).min(1, "savedMeals.needItem"),
+  finalWeightG: optionalMeasure,
+  servings: z
+    .number()
+    .finite("validation.package")
+    .positive("validation.package")
+    .max(1000, "validation.package")
+    .nullable()
+    .optional()
+    .default(null),
 });
 
 function errorForItems(): FormState {
@@ -49,6 +69,10 @@ export async function saveMealAction(
         parsed.data.savedMealId,
         parsed.data.name,
         parsed.data.items,
+        {
+          finalWeightG: parsed.data.finalWeightG,
+          servings: parsed.data.servings,
+        },
       );
       if (!updated) return { ok: false, error: "savedMeals.saveError" };
       revalidatePath("/foods");
@@ -62,6 +86,10 @@ export async function saveMealAction(
       viewer.user.id,
       parsed.data.name,
       parsed.data.items,
+      {
+        finalWeightG: parsed.data.finalWeightG,
+        servings: parsed.data.servings,
+      },
     );
     revalidatePath("/foods");
     return { ok: true, message: "savedMeals.created", data: { savedMealId: id } };
@@ -112,6 +140,57 @@ export async function deleteSavedMealAction(
   if (!deleted) return { ok: false, error: "savedMeals.saveError" };
   revalidatePath("/foods");
   return { ok: true, message: "savedMeals.deleted" };
+}
+
+export async function duplicateSavedMealAction(
+  savedMealId: string,
+): Promise<ActionResult<{ savedMealId: string }>> {
+  const viewer = await requireViewer();
+  const parsed = z.string().uuid().safeParse(savedMealId);
+  if (!parsed.success) return { ok: false, error: "savedMeals.saveError" };
+  try {
+    const id = await duplicateSavedMeal(viewer.user.id, parsed.data);
+    if (!id) return { ok: false, error: "savedMeals.saveError" };
+    revalidatePath("/foods");
+    return {
+      ok: true,
+      message: "savedMeals.duplicated",
+      data: { savedMealId: id },
+    };
+  } catch {
+    return { ok: false, error: "savedMeals.saveError" };
+  }
+}
+
+const logRecipeSchema = z.object({
+  savedMealId: z.string().uuid(),
+  date: isoDateSchema,
+  meal: mealSchema,
+  grams: positiveAmountSchema,
+});
+
+/** Logs a recipe as one entry, scaled from its per-100-g values. */
+export async function logRecipeAction(
+  input: unknown,
+): Promise<ActionResult<{ entryId: string }>> {
+  const viewer = await requireViewer();
+  const parsed = logRecipeSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "recipes.amountInvalid" };
+  try {
+    const entry = await logRecipeToDiary(
+      viewer.user.id,
+      parsed.data.savedMealId,
+      parsed.data.date,
+      parsed.data.meal,
+      parsed.data.grams,
+    );
+    revalidatePath("/");
+    revalidatePath("/history");
+    revalidatePath("/foods");
+    return { ok: true, message: "recipes.logged", data: { entryId: entry.id } };
+  } catch {
+    return { ok: false, error: "recipes.logFailed" };
+  }
 }
 
 // Kept for forms that call the builder with malformed data.

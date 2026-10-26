@@ -1,5 +1,6 @@
 import "server-only";
 import { env } from "../env";
+import { detectPreparation } from "./preparation";
 import { normalizeNutrients } from "../nutrition";
 import { EMPTY_NUTRIENTS, type FoodCandidate, type Nutrients } from "../types";
 import { FoodApiError } from "./openFoodFacts";
@@ -104,6 +105,12 @@ export function normalizeUsdaFood(raw: UsdaFood): FoodCandidate | null {
         ? "calculated"
         : normalized.energySource,
     imageUrl: null,
+    // USDA FoodData Central publishes no package data, so the package
+    // calculator stays unavailable for these foods instead of guessing.
+    preparation: detectPreparation(raw.description),
+    packageQuantity: null,
+    packageUnit: null,
+    drainedWeight: null,
   };
 }
 

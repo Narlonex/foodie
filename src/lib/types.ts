@@ -20,6 +20,18 @@ export type Nutrients = Record<NutrientKey, number | null>;
 export type BasisType = "100g" | "100ml" | "serving";
 export type AmountUnit = "g" | "ml" | "serving";
 export type FoodSource = "off" | "usda" | "custom";
+export const PREPARATION_STATES = ["raw", "cooked", "unspecified"] as const;
+export type Preparation = (typeof PREPARATION_STATES)[number];
+export const DASHBOARD_NUTRIENTS = [
+  "kcal",
+  "protein",
+  "carbs",
+  "fat",
+  "fiber",
+  "sugars",
+  "salt",
+] as const;
+export type DashboardNutrient = (typeof DASHBOARD_NUTRIENTS)[number];
 export type EnergySource = "provided" | "calculated" | "unknown";
 export type Language = "en" | "sk";
 export type Theme = "dark" | "light";
@@ -59,6 +71,13 @@ export interface Food extends FoodNutrition {
   brand: string | null;
   imageUrl: string | null;
   isFavorite: boolean;
+  /** How the food was prepared. "unspecified" is a real answer, not a guess. */
+  preparation: Preparation;
+  /** Net package quantity, when the source or the user supplied one. */
+  packageQuantity: number | null;
+  packageUnit: "g" | "ml" | null;
+  /** Drained weight, when the source publishes it separately from net weight. */
+  drainedWeight: number | null;
 }
 
 /** A validated food from an external source, before it is saved for a user. */
@@ -69,6 +88,10 @@ export interface FoodCandidate extends FoodNutrition {
   name: string;
   brand: string | null;
   imageUrl: string | null;
+  preparation: Preparation;
+  packageQuantity: number | null;
+  packageUnit: "g" | "ml" | null;
+  drainedWeight: number | null;
 }
 
 export interface DiaryEntry extends FoodNutrition {
@@ -81,6 +104,7 @@ export interface DiaryEntry extends FoodNutrition {
   name: string;
   brand: string | null;
   imageUrl: string | null;
+  preparation: Preparation;
   amount: number;
   amountUnit: AmountUnit;
   loggedAt: string;
@@ -113,6 +137,8 @@ export interface Profile {
   sex: Sex | null;
   activityLevel: ActivityLevel | null;
   onboardingCompleted: boolean;
+  /** Nutrient cards the dashboard renders. Calories are always included. */
+  dashboardNutrients: DashboardNutrient[];
 }
 
 export interface Viewer {
@@ -130,6 +156,10 @@ export interface SavedMealItem {
 export interface SavedMeal {
   id: string;
   name: string;
+  /** Final weight of the prepared batch, needed for per-100-g values. */
+  finalWeightG: number | null;
+  /** Number of portions the batch was divided into. */
+  servings: number | null;
   items: SavedMealItem[];
 }
 

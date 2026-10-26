@@ -1,5 +1,7 @@
 import "server-only";
 import { env } from "../env";
+import { parsePackageSize } from "../package";
+import { detectPreparation } from "./preparation";
 import { normalizeNutrients } from "../nutrition";
 import type {
   BasisType,
@@ -53,6 +55,33 @@ function numberValue(value: unknown): number | null {
     return Number.isFinite(parsed) ? parsed : null;
   }
   return null;
+}
+
+/**
+ * Net package quantity and drained weight, read only from what the record
+ * prints. A missing or unreadable quantity stays null so the package calculator
+ * can ask the user instead of inventing a size.
+ */
+function packageFields(raw: Record<string, unknown>): {
+  packageQuantity: number | null;
+  packageUnit: "g" | "ml" | null;
+  drainedWeight: number | null;
+} {
+  const size = parsePackageSize(textValue(raw.quantity));
+  const drained = parsePackageSize(textValue(raw.drained_weight));
+  const drainedNumber = drained?.quantity ?? numberValue(raw.drained_weight);
+  return {
+    packageQuantity: size?.quantity ?? null,
+    packageUnit: size?.unit ?? null,
+    drainedWeight:
+      drainedNumber !== null && drainedNumber > 0 && size?.unit !== "ml"
+        ? drainedNumber
+        : null,
+  };
+}
+
+function catalogFields(raw: Record<string, unknown>, name: string) {
+  return { preparation: detectPreparation(name), ...packageFields(raw) };
 }
 
 function imageValue(raw: Record<string, unknown>): string | null {
@@ -156,6 +185,28 @@ interface OffInputSet {
   nutrients?: Record<string, unknown>;
 }
 
+/**
+ * Packaging sets are read from label photos and are often mis-read, with whole
+ * rows shifted (a Nutella label became 30 g protein and 15 g salt per 100 g).
+ * A per-100 g set whose components add up to more than 100 g, whose sugars beat
+ * its carbohydrates or whose saturated fat beats its total fat cannot be real,
+ * so it is dropped instead of being saved as the food's values.
+ */
+function isPlausibleSet(set: OffInputSet): boolean {
+  const lookup = lookupFromNutrientMap(set.nutrients ?? {});
+  const protein = lookup.get("proteins") ?? 0;
+  const carbs = lookup.get("carbohydrates") ?? 0;
+  const fat = lookup.get("fat") ?? 0;
+  const fiber = lookup.get("fiber") ?? 0;
+  const salt = lookup.get("salt") ?? 0;
+  const sugars = lookup.get("sugars");
+  const satFat = lookup.get("saturated-fat");
+  if (protein + carbs + fat + fiber + salt > 105) return false;
+  if (sugars !== null && sugars > carbs * 1.1 + 0.5) return false;
+  if (satFat !== null && satFat > fat * 1.1 + 0.5) return false;
+  return true;
+}
+
 function pickNutritionSet(
   inputSets: OffInputSet[],
 ): { basis: BasisType; nutrients: Nutrients; energySource: FoodCandidate["energySource"]; servingSize: number | null; servingUnit: "g" | "ml" | null } | null {
@@ -165,7 +216,8 @@ function pickNutritionSet(
       set.nutrients &&
       typeof set.nutrients === "object" &&
       set.source !== "estimate" &&
-      Number(set.per_quantity) > 0,
+      Number(set.per_quantity) > 0 &&
+      isPlausibleSet(set),
   );
   const servingSet = usable.find(
     (set) =>
@@ -188,9 +240,12 @@ function pickNutritionSet(
       (set.per === "100g" || set.per === "100ml") &&
       (basis === "100ml" ? set.per === "100ml" : set.per === "100g"),
   );
+  // Manufacturer values are curated from the producer's own data; packaging
+  // values come from OCR of the printed table and are the usual source of
+  // garbled rows, so they are only a fallback.
   const sourcePriority: Record<string, number> = {
-    packaging: 0,
-    manufacturer: 1,
+    manufacturer: 0,
+    packaging: 1,
   };
   per100.sort(
     (a, b) =>
@@ -267,6 +322,7 @@ export function normalizeOffProduct(raw: Record<string, unknown>): FoodCandidate
         nutrients: result.nutrients,
         energySource: result.energySource,
         imageUrl: imageValue(raw),
+        ...catalogFields(raw, name),
       };
     }
     throw new FoodApiError("no-data", "No nutrition data is available for this product.");
@@ -284,6 +340,7 @@ export function normalizeOffProduct(raw: Record<string, unknown>): FoodCandidate
     nutrients: picked.nutrients,
     energySource: picked.energySource,
     imageUrl: imageValue(raw),
+    ...catalogFields(raw, name),
   };
 }
 
@@ -312,6 +369,7 @@ export function normalizeOffSearchHit(hit: Record<string, unknown>): FoodCandida
     nutrients: result.nutrients,
     energySource: result.energySource,
     imageUrl: imageValue(hit),
+    ...catalogFields(hit, name),
   };
 }
 

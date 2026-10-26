@@ -2,6 +2,7 @@ import "server-only";
 import type { Pool, PoolClient } from "pg";
 import { getPool, query, queryOne, withTransaction } from "../db";
 import type { AmountUnit, DiaryEntry, Food, Meal, SavedMeal, SavedMealItem } from "../types";
+import { recipeNutrition } from "../recipes";
 import { mapFood, type FoodRow } from "./mappers";
 import { insertEntryWithFood } from "./diary";
 
@@ -10,8 +11,11 @@ const ITEM_FOOD_COLUMNS = `
   (f.image_data IS NOT NULL) AS has_image, f.basis_type,
   f.serving_size, f.serving_unit, f.kcal, f.kj, f.protein_g, f.carbs_g,
   f.sugars_g, f.fat_g, f.sat_fat_g, f.fiber_g, f.salt_g, f.energy_source,
-  f.is_favorite
+  f.preparation, f.is_favorite, f.package_quantity, f.package_unit,
+  f.drained_weight
 `;
+
+const MEAL_COLUMNS = `id, name, final_weight_g, servings`;
 
 interface ItemRow extends FoodRow {
   item_id: string;
@@ -60,9 +64,32 @@ async function loadItems(
   return map;
 }
 
+interface MealRow {
+  id: string;
+  name: string;
+  final_weight_g: string | number | null;
+  servings: string | number | null;
+}
+
+function toNumber(value: string | number | null): number | null {
+  if (value === null) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function mapMeal(row: MealRow, items: SavedMealItem[]): SavedMeal {
+  return {
+    id: row.id,
+    name: row.name,
+    finalWeightG: toNumber(row.final_weight_g),
+    servings: toNumber(row.servings),
+    items,
+  };
+}
+
 export async function listSavedMeals(userId: string): Promise<SavedMeal[]> {
-  const meals = await query<{ id: string; name: string }>(
-    `SELECT id, name FROM saved_meals WHERE user_id = $1 ORDER BY lower(name)`,
+  const meals = await query<MealRow>(
+    `SELECT ${MEAL_COLUMNS} FROM saved_meals WHERE user_id = $1 ORDER BY lower(name)`,
     [userId],
   );
   if (meals.length === 0) return [];
@@ -71,24 +98,20 @@ export async function listSavedMeals(userId: string): Promise<SavedMeal[]> {
     userId,
     meals.map((meal) => meal.id),
   );
-  return meals.map((meal) => ({
-    id: meal.id,
-    name: meal.name,
-    items: items.get(meal.id) ?? [],
-  }));
+  return meals.map((meal) => mapMeal(meal, items.get(meal.id) ?? []));
 }
 
 export async function getSavedMeal(
   userId: string,
   savedMealId: string,
 ): Promise<SavedMeal | null> {
-  const meal = await queryOne<{ id: string; name: string }>(
-    `SELECT id, name FROM saved_meals WHERE id = $1 AND user_id = $2`,
+  const meal = await queryOne<MealRow>(
+    `SELECT ${MEAL_COLUMNS} FROM saved_meals WHERE id = $1 AND user_id = $2`,
     [savedMealId, userId],
   );
   if (!meal) return null;
   const items = await loadItems(getPool(), userId, [meal.id]);
-  return { id: meal.id, name: meal.name, items: items.get(meal.id) ?? [] };
+  return mapMeal(meal, items.get(meal.id) ?? []);
 }
 
 function assertUniqueFoods(items: SavedMealInputItem[]): void {
@@ -133,17 +156,24 @@ async function insertItems(
   }
 }
 
+export interface RecipeShape {
+  finalWeightG: number | null;
+  servings: number | null;
+}
+
 export async function createSavedMeal(
   userId: string,
   name: string,
   items: SavedMealInputItem[],
+  recipe: RecipeShape = { finalWeightG: null, servings: null },
 ): Promise<string> {
   if (items.length === 0) throw new Error("A saved meal needs at least one food.");
   assertUniqueFoods(items);
   return withTransaction(async (client) => {
     const meal = await client.query<{ id: string }>(
-      `INSERT INTO saved_meals (user_id, name) VALUES ($1, $2) RETURNING id`,
-      [userId, name],
+      `INSERT INTO saved_meals (user_id, name, final_weight_g, servings)
+       VALUES ($1, $2, $3, $4) RETURNING id`,
+      [userId, name, recipe.finalWeightG, recipe.servings],
     );
     const id = meal.rows[0]?.id;
     if (!id) throw new Error("Failed to create the saved meal.");
@@ -157,14 +187,16 @@ export async function updateSavedMeal(
   savedMealId: string,
   name: string,
   items: SavedMealInputItem[],
+  recipe: RecipeShape = { finalWeightG: null, servings: null },
 ): Promise<boolean> {
   if (items.length === 0) throw new Error("A saved meal needs at least one food.");
   assertUniqueFoods(items);
   return withTransaction(async (client) => {
     const updated = await client.query<{ id: string }>(
-      `UPDATE saved_meals SET name = $3
+      `UPDATE saved_meals
+          SET name = $3, final_weight_g = $4, servings = $5
         WHERE id = $1 AND user_id = $2 RETURNING id`,
-      [savedMealId, userId, name],
+      [savedMealId, userId, name, recipe.finalWeightG, recipe.servings],
     );
     if (!updated.rows[0]) return false;
     await client.query(`DELETE FROM saved_meal_items WHERE saved_meal_id = $1`, [
@@ -227,5 +259,111 @@ export async function addSavedMealToDiary(
       entries.push(entry);
     }
     return { entries };
+  });
+}
+
+/**
+ * Logs a whole recipe as one diary entry, scaled from its per-100-g values. The
+ * entry is a snapshot, so editing the recipe later cannot rewrite history.
+ */
+export async function logRecipeToDiary(
+  userId: string,
+  savedMealId: string,
+  date: string,
+  meal: Meal,
+  grams: number,
+): Promise<DiaryEntry> {
+  const recipe = await getSavedMeal(userId, savedMealId);
+  if (!recipe) throw new Error("Recipe not found.");
+  if (!Number.isFinite(grams) || grams <= 0 || grams > 100_000) {
+    throw new Error("Amounts must be positive.");
+  }
+  const summary = recipeNutrition(
+    recipe.items.map((item) => ({
+      food: item.food,
+      amount: item.amount,
+      amountUnit: item.amountUnit,
+    })),
+    recipe.finalWeightG,
+    recipe.servings,
+  );
+  if (!summary.per100g) {
+    throw new Error("A final weight is needed to log this recipe by weight.");
+  }
+  const snapshot: Food = {
+    source: "custom",
+    externalId: null,
+    barcode: null,
+    name: recipe.name.slice(0, 200),
+    brand: null,
+    imageUrl: null,
+    isFavorite: false,
+    basisType: "100g",
+    servingSize: null,
+    servingUnit: null,
+    nutrients: summary.per100g,
+    energySource: summary.energySource,
+    preparation: "unspecified",
+    packageQuantity: null,
+    packageUnit: null,
+    drainedWeight: null,
+  };
+  return withTransaction((client) =>
+    insertEntryWithFood(client, userId, snapshot, date, meal, grams, "g"),
+  );
+}
+
+/** Copies a recipe (ingredients and weight) under a free name. */
+export async function duplicateSavedMeal(
+  userId: string,
+  savedMealId: string,
+): Promise<string | null> {
+  return withTransaction(async (client) => {
+    const source = await client.query<MealRow>(
+      `SELECT ${MEAL_COLUMNS} FROM saved_meals WHERE id = $1 AND user_id = $2`,
+      [savedMealId, userId],
+    );
+    const row = source.rows[0];
+    if (!row) return null;
+    const items = await client.query<{
+      food_id: string;
+      amount: string;
+      amount_unit: AmountUnit;
+      sort_order: number;
+    }>(
+      `SELECT food_id, amount, amount_unit, sort_order
+         FROM saved_meal_items WHERE saved_meal_id = $1
+        ORDER BY sort_order, created_at`,
+      [savedMealId],
+    );
+
+    const base = row.name.slice(0, 70);
+    let name = `${base} (copy)`;
+    for (let attempt = 2; attempt <= 50; attempt += 1) {
+      const clash = await client.query(
+        `SELECT 1 FROM saved_meals
+          WHERE user_id = $1 AND lower(btrim(name)) = lower(btrim($2))`,
+        [userId, name],
+      );
+      if ((clash.rowCount ?? 0) === 0) break;
+      name = `${base} (${attempt})`;
+    }
+
+    const created = await client.query<{ id: string }>(
+      `INSERT INTO saved_meals (user_id, name, final_weight_g, servings)
+       VALUES ($1, $2, $3, $4) RETURNING id`,
+      [userId, name, row.final_weight_g, row.servings],
+    );
+    const newId = created.rows[0]?.id;
+    if (!newId) throw new Error("Failed to duplicate the recipe.");
+    for (const item of items.rows) {
+      await client.query(
+        `INSERT INTO saved_meal_items
+          (saved_meal_id, food_id, amount, amount_unit, sort_order)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [newId, item.food_id, item.amount, item.amount_unit, item.sort_order],
+      );
+    }
+    return newId;
   });
 }

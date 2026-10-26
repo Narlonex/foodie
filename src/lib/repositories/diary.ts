@@ -18,7 +18,8 @@ import type { FoodInput } from "../validation";
 const ENTRY_COLUMNS = `
   id, date, meal, food_id, source, name, brand, image_url, barcode, basis_type,
   serving_size, serving_unit, kcal, kj, protein_g, carbs_g, sugars_g, fat_g,
-  sat_fat_g, fiber_g, salt_g, energy_source, amount, amount_unit, logged_at
+  sat_fat_g, fiber_g, salt_g, energy_source, preparation, amount, amount_unit,
+  logged_at
 `;
 
 export class ExistingEntriesError extends Error {
@@ -45,7 +46,8 @@ async function selectFoodForUpdate(
     `SELECT id, source, external_id, barcode, name, brand, image_url,
             (image_data IS NOT NULL) AS has_image, basis_type,
             serving_size, serving_unit, kcal, kj, protein_g, carbs_g, sugars_g,
-            fat_g, sat_fat_g, fiber_g, salt_g, energy_source, is_favorite
+            fat_g, sat_fat_g, fiber_g, salt_g, energy_source, preparation,
+            is_favorite, package_quantity, package_unit, drained_weight
        FROM foods WHERE id = $1 AND user_id = $2`,
     [foodId, userId],
   );
@@ -67,11 +69,11 @@ export async function insertEntryWithFood(
     `INSERT INTO diary_entries (
       user_id, date, meal, food_id, source, name, brand, image_url, barcode,
       basis_type, serving_size, serving_unit, kcal, kj, protein_g, carbs_g,
-      sugars_g, fat_g, sat_fat_g, fiber_g, salt_g, energy_source, amount,
-      amount_unit
+      sugars_g, fat_g, sat_fat_g, fiber_g, salt_g, energy_source, preparation,
+      amount, amount_unit
     ) VALUES (
       $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
-      $16, $17, $18, $19, $20, $21, $22, $23, $24
+      $16, $17, $18, $19, $20, $21, $22, $23, $24, $25
     ) RETURNING ${ENTRY_COLUMNS}`,
     [
       userId,
@@ -96,6 +98,7 @@ export async function insertEntryWithFood(
       food.nutrients.fiber,
       food.nutrients.salt,
       food.energySource,
+      food.preparation ?? "unspecified",
       amount,
       amountUnit,
     ],
@@ -468,6 +471,10 @@ export function entryAsFood(entry: DiaryEntry): Food {
     brand: entry.brand,
     imageUrl: entry.imageUrl,
     isFavorite: false,
+    preparation: entry.preparation,
+    packageQuantity: null,
+    packageUnit: null,
+    drainedWeight: null,
     basisType: entry.basisType,
     servingSize: entry.servingSize,
     servingUnit: entry.servingUnit,

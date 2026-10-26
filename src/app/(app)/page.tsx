@@ -53,6 +53,7 @@ export default async function DashboardPage({
       customFoods={customFoods}
       savedMeals={savedMeals}
       usdaEnabled={viewer.profile.usdaEnabled && isUsdaConfigured()}
+      dashboardNutrients={viewer.profile.dashboardNutrients}
     />
   );
 }

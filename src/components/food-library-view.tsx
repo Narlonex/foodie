@@ -15,11 +15,16 @@ import {
   toggleFavoriteAction,
   updateCustomFoodAction,
 } from "@/actions/foods";
-import { saveMealAction, deleteSavedMealAction } from "@/actions/savedMeals";
+import {
+  deleteSavedMealAction,
+  duplicateSavedMealAction,
+  saveMealAction,
+} from "@/actions/savedMeals";
 import { initialFormState } from "@/actions/types";
 import { getTranslator, translate, type TranslationKey } from "@/i18n";
 import { formatGrams, formatKcal, formatNumber, formatPortion, unitTranslationKey } from "@/lib/format";
 import { fromBaseAmount, toBaseAmount } from "@/lib/nutrition";
+import { recipeNutrition } from "@/lib/recipes";
 import {
   NUTRIENT_KEYS,
   basisLabel,
@@ -36,7 +41,8 @@ import { FoodPhotoField } from "./food-photo-field";
 import { FoodThumb } from "./food-thumb";
 import { Icon } from "./icons";
 import { QuickAddFoodDialog } from "./quick-add-food-dialog";
-import { EmptyState, SourceBadge } from "./ui";
+import { RecipeLogDialog } from "./recipe-log-dialog";
+import { EmptyState, PreparationBadge, SourceBadge } from "./ui";
 
 type Tab = "custom" | "favorites" | "recent" | "meals";
 
@@ -77,6 +83,10 @@ export function FoodLibraryView({
   const [builder, setBuilder] = useState<SavedMeal | "new" | null>(null);
   const [deletingMeal, setDeletingMeal] = useState<SavedMeal | null>(null);
   const [addingMeal, setAddingMeal] = useState<SavedMeal | null>(null);
+  const [loggingRecipe, setLoggingRecipe] = useState<SavedMeal | null>(null);
+  const [duplicatingRecipe, setDuplicatingRecipe] = useState<string | null>(
+    null,
+  );
   const [toast, setToast] = useState<string | null>(null);
   const [favoriteOverrides, setFavoriteOverrides] = useState<
     Record<string, boolean>
@@ -115,7 +125,20 @@ export function FoodLibraryView({
     setBuilder(null);
     setDeletingMeal(null);
     setAddingMeal(null);
+    setLoggingRecipe(null);
     setToast(message);
+    router.refresh();
+  }
+
+  async function duplicateRecipe(meal: SavedMeal) {
+    setDuplicatingRecipe(meal.id);
+    const result = await duplicateSavedMealAction(meal.id);
+    setDuplicatingRecipe(null);
+    if (!result.ok) {
+      setToast(translate(language, result.error as TranslationKey));
+      return;
+    }
+    setToast(t("savedMeals.duplicated"));
     router.refresh();
   }
 
@@ -271,7 +294,19 @@ export function FoodLibraryView({
             </div>
           ) : (
             <div className="stack-sm">
-              {savedMeals.map((meal) => (
+              {savedMeals.map((meal) => {
+                const summary = recipeNutrition(
+                  meal.items.map((item) => ({
+                    food: item.food,
+                    amount: item.amount,
+                    amountUnit: item.amountUnit,
+                  })),
+                  meal.finalWeightG,
+                  meal.servings,
+                );
+                const batchKcal = summary.batch.nutrients.kcal.value;
+                const servingKcal = summary.perServing?.kcal ?? null;
+                return (
                 <article className="saved-meal-card" key={meal.id}>
                   <div className="row-between">
                     <div>
@@ -280,16 +315,42 @@ export function FoodLibraryView({
                         {t("savedMeals.itemsCount", {
                           count: meal.items.length,
                         })}
+                        {meal.finalWeightG !== null
+                          ? ` · ${t("recipes.batchWeight", {
+                              grams: formatNumber(meal.finalWeightG, language, 0),
+                            })}`
+                          : ` · ${t("recipes.noWeight")}`}
+                        {meal.servings !== null
+                          ? ` · ${t("recipes.servingsCount", {
+                              count: formatNumber(meal.servings, language, 2),
+                            })}`
+                          : ""}
                       </p>
                     </div>
                     <div className="row" style={{ gap: 4 }}>
                       <button
                         type="button"
                         className="button small"
-                        onClick={() => setAddingMeal(meal)}
+                        onClick={() =>
+                          meal.finalWeightG !== null
+                            ? setLoggingRecipe(meal)
+                            : setAddingMeal(meal)
+                        }
                       >
                         <Icon name="plus" size={15} />
-                        {t("savedMeals.addToDiary")}
+                        {meal.finalWeightG !== null
+                          ? t("recipes.log")
+                          : t("savedMeals.addToDiary")}
+                      </button>
+                      <button
+                        type="button"
+                        className="icon-button small"
+                        onClick={() => void duplicateRecipe(meal)}
+                        disabled={duplicatingRecipe === meal.id}
+                        aria-label={t("savedMeals.duplicate")}
+                        title={t("savedMeals.duplicate")}
+                      >
+                        <Icon name="copy" size={15} />
                       </button>
                       <button
                         type="button"
@@ -325,12 +386,45 @@ export function FoodLibraryView({
                             language,
                             t,
                           )}
+                          {item.food.preparation !== "unspecified" ? (
+                            <span className="subtle">
+                              {" "}
+                              {t(
+                                item.food.preparation === "raw"
+                                  ? "preparation.raw"
+                                  : "preparation.cooked",
+                              )}
+                            </span>
+                          ) : null}
                         </span>
                       ))
                     )}
                   </div>
+                  <p className="field-hint">
+                    {summary.per100g === null
+                      ? t("recipes.needFinalWeightHint")
+                      : summary.per100g.kcal !== null
+                        ? t("recipes.per100Summary", {
+                            kcal: formatKcal(summary.per100g.kcal, language),
+                          })
+                        : t("recipes.per100UnknownEnergy")}
+                    {batchKcal !== null
+                      ? ` · ${t("recipes.batchKcal", {
+                          kcal: formatKcal(batchKcal, language),
+                        })}`
+                      : ""}
+                    {servingKcal !== null && meal.servings !== null
+                      ? ` · ${t("recipes.perServingKcal", {
+                          kcal: formatKcal(servingKcal, language),
+                        })}`
+                      : ""}
+                  </p>
+                  {summary.incomplete ? (
+                    <p className="source-note">{t("recipes.incomplete")}</p>
+                  ) : null}
                 </article>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -397,6 +491,17 @@ export function FoodLibraryView({
         />
       ) : null}
 
+      {loggingRecipe ? (
+        <RecipeLogDialog
+          recipe={loggingRecipe}
+          date={today}
+          initialMeal="breakfast"
+          language={language}
+          onClose={() => setLoggingRecipe(null)}
+          onDone={done}
+        />
+      ) : null}
+
       {deletingMeal ? (
         <DeleteSavedMealDialog
           meal={deletingMeal}
@@ -450,6 +555,7 @@ function FoodRow({
         <span className="food-meta">
           {food.brand ? <span>{food.brand}</span> : null}
           <SourceBadge source={food.source} language={language} />
+          <PreparationBadge preparation={food.preparation} language={language} />
           <span>{basisLabel(food.basisType, food.servingSize, food.servingUnit)}</span>
           {food.nutrients.protein === null ||
           food.nutrients.carbs === null ||
@@ -692,6 +798,68 @@ function CustomFoodDialog({
           ) : (
             <input type="hidden" name="servingSize" value="" />
           )}
+          <div className="field">
+            <label htmlFor="food-preparation">{t("preparation.label")}</label>
+            <select
+              id="food-preparation"
+              name="preparation"
+              className="select"
+              defaultValue={food?.preparation ?? "unspecified"}
+            >
+              <option value="unspecified">{t("preparation.unspecified")}</option>
+              <option value="raw">{t("preparation.raw")}</option>
+              <option value="cooked">{t("preparation.cooked")}</option>
+            </select>
+            <p className="field-hint">{t("preparation.help")}</p>
+          </div>
+          <div className="field">
+            <label htmlFor="food-package-quantity">
+              {t("package.quantity")}{" "}
+              <span className="subtle">({t("common.optional")})</span>
+            </label>
+            <input
+              id="food-package-quantity"
+              name="packageQuantity"
+              className="input"
+              inputMode="decimal"
+              defaultValue={food?.packageQuantity ?? ""}
+              aria-describedby="food-package-hint"
+            />
+            {errorFor("packageQuantity") ? (
+              <p className="field-error">{errorFor("packageQuantity")}</p>
+            ) : null}
+          </div>
+          <div className="field">
+            <label htmlFor="food-package-unit">{t("package.unit")}</label>
+            <select
+              id="food-package-unit"
+              name="packageUnit"
+              className="select"
+              defaultValue={food?.packageUnit ?? "g"}
+            >
+              <option value="g">{t("units.g")}</option>
+              <option value="ml">{t("units.ml")}</option>
+            </select>
+          </div>
+          <div className="field span-2">
+            <label htmlFor="food-drained-weight">
+              {t("package.drainedWeight")}{" "}
+              <span className="subtle">({t("common.optional")})</span>
+            </label>
+            <input
+              id="food-drained-weight"
+              name="drainedWeight"
+              className="input"
+              inputMode="decimal"
+              defaultValue={food?.drainedWeight ?? ""}
+            />
+            {errorFor("drainedWeight") ? (
+              <p className="field-error">{errorFor("drainedWeight")}</p>
+            ) : null}
+            <p className="field-hint" id="food-package-hint">
+              {t("package.help")}
+            </p>
+          </div>
         </div>
 
         <div className="form-section">
@@ -835,6 +1003,12 @@ function SavedMealBuilderDialog({
   }, [availableFoods, savedMeal]);
 
   const [name, setName] = useState(savedMeal?.name ?? "");
+  const [finalWeight, setFinalWeight] = useState(
+    savedMeal?.finalWeightG ? String(savedMeal.finalWeightG) : "",
+  );
+  const [servings, setServings] = useState(
+    savedMeal?.servings ? String(savedMeal.servings) : "",
+  );
   const [rows, setRows] = useState<BuilderRow[]>(() =>
     (savedMeal?.items ?? []).map((item) => ({
       key: item.id,
@@ -848,6 +1022,50 @@ function SavedMealBuilderDialog({
   );
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  const components = useMemo(() => {
+    const list: {
+      food: Food;
+      amount: number;
+      amountUnit: AmountUnit;
+    }[] = [];
+    for (const row of rows) {
+      const food = foods.find((candidate) => candidate.id === row.foodId);
+      if (!food) continue;
+      const parsed = Number(row.amount.replace(",", "."));
+      if (!Number.isFinite(parsed) || parsed <= 0) continue;
+      try {
+        const base = toBaseAmount(
+          parsed,
+          displayUnitFor(food, unitSystem) as
+            | "g"
+            | "ml"
+            | "oz"
+            | "floz"
+            | "serving",
+        );
+        list.push({ food, amount: base.amount, amountUnit: base.amountUnit });
+      } catch {
+        // An invalid row simply does not contribute to the live preview.
+      }
+    }
+    return list;
+  }, [foods, rows, unitSystem]);
+
+  const summary = useMemo(() => {
+    if (components.length === 0) return null;
+    const weight = Number(finalWeight.replace(",", "."));
+    const portionCount = Number(servings.replace(",", "."));
+    try {
+      return recipeNutrition(
+        components,
+        Number.isFinite(weight) && weight > 0 ? weight : null,
+        Number.isFinite(portionCount) && portionCount > 0 ? portionCount : null,
+      );
+    } catch {
+      return null;
+    }
+  }, [components, finalWeight, servings]);
 
   function addRow() {
     const used = new Set(rows.map((row) => row.foodId));
@@ -884,6 +1102,24 @@ function SavedMealBuilderDialog({
       setError(t("savedMeals.duplicateItem"));
       return;
     }
+    const parsedWeight =
+      finalWeight.trim() === "" ? null : Number(finalWeight.replace(",", "."));
+    if (
+      parsedWeight !== null &&
+      (!Number.isFinite(parsedWeight) || parsedWeight <= 0)
+    ) {
+      setError(t("validation.package"));
+      return;
+    }
+    const parsedServings =
+      servings.trim() === "" ? null : Number(servings.replace(",", "."));
+    if (
+      parsedServings !== null &&
+      (!Number.isFinite(parsedServings) || parsedServings <= 0)
+    ) {
+      setError(t("validation.package"));
+      return;
+    }
     const items: { foodId: string; amount: number; amountUnit: AmountUnit }[] = [];
     for (const row of rows) {
       const food = foods.find((candidate) => candidate.id === row.foodId);
@@ -909,6 +1145,8 @@ function SavedMealBuilderDialog({
         savedMealId: savedMeal?.id,
         name: name.trim(),
         items,
+        finalWeightG: parsedWeight,
+        servings: parsedServings,
       });
       if (!result.ok) {
         setError(translate(language, result.error as TranslationKey));
@@ -954,16 +1192,48 @@ function SavedMealBuilderDialog({
         </EmptyState>
       ) : (
         <div className="stack">
-          <div className="field">
-            <label htmlFor="saved-meal-name">{t("savedMeals.name")}</label>
-            <input
-              id="saved-meal-name"
-              className="input"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder={t("savedMeals.namePlaceholder")}
-              data-autofocus
-            />
+          <div className="form-grid">
+            <div className="field span-2">
+              <label htmlFor="saved-meal-name">{t("savedMeals.name")}</label>
+              <input
+                id="saved-meal-name"
+                className="input"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder={t("savedMeals.namePlaceholder")}
+                data-autofocus
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="recipe-final-weight">
+                {t("recipes.finalWeight")}{" "}
+                <span className="subtle">({t("common.optional")})</span>
+              </label>
+              <input
+                id="recipe-final-weight"
+                className="input"
+                inputMode="decimal"
+                value={finalWeight}
+                onChange={(event) => setFinalWeight(event.target.value)}
+                aria-describedby="recipe-weight-hint"
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="recipe-servings">
+                {t("recipes.servings")}{" "}
+                <span className="subtle">({t("common.optional")})</span>
+              </label>
+              <input
+                id="recipe-servings"
+                className="input"
+                inputMode="decimal"
+                value={servings}
+                onChange={(event) => setServings(event.target.value)}
+              />
+            </div>
+            <p className="field-hint span-2" id="recipe-weight-hint">
+              {t("recipes.finalWeightHelp")}
+            </p>
           </div>
 
           <div className="stack-sm">
@@ -1050,6 +1320,69 @@ function SavedMealBuilderDialog({
               {t("savedMeals.addItem")}
             </button>
           </div>
+
+          {summary ? (
+            <div className="preview-panel">
+              <div className="row-between">
+                <strong className="small">{t("recipes.batchTotals")}</strong>
+                <span className="badge">
+                  {summary.per100g !== null
+                    ? t("recipes.per100Summary", {
+                        kcal:
+                          summary.per100g.kcal !== null
+                            ? formatKcal(summary.per100g.kcal, language)
+                            : t("common.unknown"),
+                      })
+                    : t("recipes.needFinalWeightHint")}
+                </span>
+              </div>
+              <div className="kv-list">
+                <div className="kv-row">
+                  <span>{t("recipes.batchKcalLabel")}</span>
+                  <strong>
+                    {summary.batch.nutrients.kcal.value === null
+                      ? t("common.unknown")
+                      : `${formatKcal(summary.batch.nutrients.kcal.value, language)} kcal`}
+                  </strong>
+                </div>
+                {(["protein", "carbs", "fat"] as const).map((key) => {
+                  const value = summary.batch.nutrients[key].value;
+                  return (
+                    <div className="kv-row" key={key}>
+                      <span>{t(`nutrients.${key}` as TranslationKey)}</span>
+                      <strong>
+                        {value === null
+                          ? t("common.unknown")
+                          : `${formatGrams(value, language)} g`}
+                      </strong>
+                    </div>
+                  );
+                })}
+                {summary.perServing ? (
+                  <div className="kv-row">
+                    <span>{t("recipes.perServingLabel")}</span>
+                    <strong>
+                      {summary.perServing.kcal === null
+                        ? t("common.unknown")
+                        : `${formatKcal(summary.perServing.kcal, language)} kcal`}
+                    </strong>
+                  </div>
+                ) : null}
+                {summary.servingWeightGrams !== null ? (
+                  <div className="kv-row">
+                    <span>{t("recipes.servingWeight")}</span>
+                    <strong>
+                      {formatNumber(summary.servingWeightGrams, language, 0)} g
+                    </strong>
+                  </div>
+                ) : null}
+              </div>
+              <p className="source-note">{t("recipes.weightCaveat")}</p>
+              {summary.incomplete ? (
+                <p className="notice warning">{t("recipes.incomplete")}</p>
+              ) : null}
+            </div>
+          ) : null}
 
           {error ? (
             <p className="notice error" role="alert">

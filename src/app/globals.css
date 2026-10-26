@@ -2051,6 +2051,15 @@ ol {
   flex-wrap: wrap;
 }
 
+.result-hint {
+  font-size: 0.7rem;
+  color: var(--text-subtle);
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .result-kcal {
   font-size: 0.78rem;
   color: var(--text-muted);

@@ -9,6 +9,7 @@ import type {
   MacroAdjustmentMode,
   Meal,
   Nutrients,
+  Preparation,
   SavedMeal,
   SavedMealItem,
 } from "../types";
@@ -44,9 +45,13 @@ export interface FoodRow {
   fiber_g: string | number | null;
   salt_g: string | number | null;
   energy_source: EnergySource;
+  preparation: Preparation;
   is_favorite: boolean;
   image_url: string | null;
   has_image: boolean;
+  package_quantity: string | number | null;
+  package_unit: "g" | "ml" | null;
+  drained_weight: string | number | null;
 }
 
 export function nutrientsFromRow(row: {
@@ -90,11 +95,23 @@ export function mapFood(row: FoodRow): Food {
     nutrients: nutrientsFromRow(row),
     energySource: row.energy_source,
     isFavorite: row.is_favorite,
+    preparation: row.preparation ?? "unspecified",
+    packageQuantity: toNumber(row.package_quantity),
+    packageUnit: row.package_unit,
+    drainedWeight: toNumber(row.drained_weight),
   };
 }
 
 export interface EntryRow
-  extends Omit<FoodRow, "is_favorite" | "external_id" | "has_image"> {
+  extends Omit<
+    FoodRow,
+    | "is_favorite"
+    | "external_id"
+    | "has_image"
+    | "package_quantity"
+    | "package_unit"
+    | "drained_weight"
+  > {
   food_id: string | null;
   date: string;
   meal: Meal;
@@ -121,6 +138,7 @@ export function mapEntry(row: EntryRow): DiaryEntry {
     name: row.name,
     brand: row.brand,
     imageUrl: row.image_url ?? null,
+    preparation: row.preparation ?? "unspecified",
     ...nutrition,
     amount: toRequiredNumber(row.amount),
     amountUnit: row.amount_unit,
@@ -164,11 +182,19 @@ export function mapDayType(row: DayTypeRow): DayType {
 export interface SavedMealRow {
   id: string;
   name: string;
+  final_weight_g: string | number | null;
+  servings: string | number | null;
 }
 
 export function mapSavedMeal(
   row: SavedMealRow,
   items: SavedMealItem[],
 ): SavedMeal {
-  return { id: row.id, name: row.name, items };
+  return {
+    id: row.id,
+    name: row.name,
+    finalWeightG: toNumber(row.final_weight_g),
+    servings: toNumber(row.servings),
+    items,
+  };
 }

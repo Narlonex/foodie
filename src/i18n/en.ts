@@ -182,6 +182,17 @@ export const en = {
   "dashboard.mealsTitle": "Meals",
   "dashboard.quickActions": "Quick actions",
   "dashboard.copyDay": "Copy another day",
+  "dashboard.settingsIntro":
+    "Choose which nutrient cards appear on your dashboard. This changes the display only; totals, targets and logging stay the same.",
+  "dashboard.visibleNutrients": "Visible nutrients",
+  "dashboard.visibleNutrientsHelp":
+    "Calories stay visible. Every other card can be hidden.",
+  "dashboard.alwaysVisible": "Always on",
+  "dashboard.visibilityNote":
+    "Hidden nutrients are still calculated and stored; they are only left out of the dashboard.",
+  "dashboard.resetDefaults": "Reset to defaults",
+  "dashboard.editVisibleNutrients": "Choose visible nutrients",
+  "dashboard.saved": "Dashboard preferences saved.",
   "dashboard.addSavedMeal": "Add saved meal",
   "dashboard.weekOverview": "Weekly overview",
   "dashboard.entryCount": "{count} entries",
@@ -322,6 +333,7 @@ export const en = {
   "settings.saveError": "We could not save your changes. Please try again.",
   "settings.notConfigured": "Not configured",
   "settings.metrics": "Body & metrics",
+  "settings.dashboard": "Dashboard cards",
 
   "metrics.title": "Body & metrics",
   "metrics.intro":
@@ -588,7 +600,7 @@ export const en = {
   "savedMeals.addTitle": "Add “{name}” to your diary",
   "savedMeals.chooseDate": "Date",
   "savedMeals.chooseMeal": "Meal",
-  "savedMeals.itemsCount": "{count} foods",
+  "savedMeals.itemsCount": "Ingredients: {count}",
   "savedMeals.confirmAdd": "Add to diary",
   "savedMeals.added": "Saved meal added to your diary.",
   "savedMeals.deleteConfirm": "Delete “{name}”?",
@@ -604,6 +616,8 @@ export const en = {
   "savedMeals.noItems": "This saved meal has no available foods.",
   "savedMeals.noAvailable":
     "You need at least one saved food before you can build a meal.",
+  "savedMeals.duplicate": "Duplicate",
+  "savedMeals.duplicated": "Recipe duplicated.",
   "savedMeals.builderHelp":
     "Choose foods and amounts. Missing nutrition values stay unknown.",
 
@@ -707,7 +721,7 @@ export const en = {
   "search.submit": "Search",
   "search.resultsCount": "{count} results",
   "search.minChars": "Type at least 2 characters.",
-  "search.loading": "Searching Open Food Facts…",
+  "search.loading": "Searching food databases…",
   "search.noResults": "No matching foods",
   "search.noResultsHelp":
     "Try a different spelling, a brand name, or look up the barcode. You can also create a custom food.",
@@ -715,7 +729,8 @@ export const en = {
   "search.rateLimited":
     "The food database is temporarily rate limiting searches. Wait a moment and try again.",
   "search.tryAgain": "Try again",
-  "search.startTyping": "Search packaged foods by name or brand.",
+  "search.startTyping":
+    "Search packaged foods and raw ingredients by name or brand.",
   "search.tabsSearch": "Search",
   "search.tabsFavorites": "Favorites",
   "search.tabsRecent": "Recent",
@@ -768,6 +783,15 @@ export const en = {
   "search.quickAddHelp": "Choose an amount and meal before adding.",
   "search.openFoodFacts": "Open Food Facts",
   "search.usda": "USDA FoodData Central",
+  "search.both": "Both",
+  "search.bothHint":
+    "Searches packaged foods (Open Food Facts) and raw ingredients (USDA) at once.",
+  "search.bothAttribution":
+    "Results from Open Food Facts, © Open Food Facts contributors (ODbL), and USDA FoodData Central.",
+  "search.hintOff": "Packaged product — values from the label",
+  "search.hintUsda": "Raw ingredient — generic values per 100 g",
+  "search.sourceDown":
+    "{source} is not responding right now, so results come from the other database.",
   "search.custom": "My foods",
   "search.noFavorites": "You have no favorite foods yet.",
   "search.noRecent": "No recent foods yet. Foods you log will appear here.",
@@ -807,6 +831,8 @@ export const en = {
   "validation.dayTypeName": "Enter a day type name of 1 to 60 characters.",
   "validation.calories": "Enter a calorie target between 1 and 20,000.",
   "validation.macro": "Enter zero or a positive macro value.",
+  "validation.package":
+    "Enter a positive number. Package size and drained weight cannot exceed the package.",
   "validation.percent": "Percentages must be between 0 and 100.",
   "validation.height": "Enter a height between 50 and 300 cm.",
   "validation.weight": "Enter a weight between 20 and 500 kg.",
@@ -837,6 +863,72 @@ export const en = {
   "error.notFoundHelp": "The page you were looking for does not exist.",
   "error.backHome": "Go to dashboard",
   "error.healthDatabase": "Database check failed",
+  "preparation.label": "Preparation",
+  "preparation.raw": "Raw",
+  "preparation.cooked": "Cooked",
+  "preparation.unspecified": "Not specified",
+  "preparation.help":
+    "Say whether the values describe the raw ingredient or the cooked dish. Nutrition labels rarely state this, so it is left unspecified rather than guessed.",
+  "preparation.rawHelp": "Values for the food as it is before cooking.",
+  "preparation.cookedHelp": "Values for the food after it was cooked.",
+
+  "package.mode": "How to enter the amount",
+  "package.byWeight": "By weight",
+  "package.byPackage": "By package",
+  "package.packs": "Packages eaten",
+  "package.packUnit": "pack",
+  "package.quantity": "Package size",
+  "package.unit": "Package unit",
+  "package.drainedWeight": "Drained weight",
+  "package.help":
+    "Net weight of one package. Used only by the package calculator; it is never guessed.",
+  "package.result": "That is about {amount} {unit}.",
+  "package.size": "One package holds {amount} {unit}.",
+  "package.drainedNote": "Drained weight {amount} g is listed separately.",
+  "package.invalid":
+    "Enter a positive number of packages, for example 0.5 or 1/3.",
+
+  "recipes.finalWeight": "Final weight (g)",
+  "recipes.finalWeightHelp":
+    "Weigh the finished dish. Per-100-g values need it; without it the recipe is only an ingredient list.",
+  "recipes.servings": "Servings",
+  "recipes.servingsCount": "Servings: {count}",
+  "recipes.batchWeight": "{grams} g prepared",
+  "recipes.noWeight": "no final weight yet",
+  "recipes.batchTotals": "Totals for the whole batch",
+  "recipes.batchKcal": "Batch: {kcal} kcal",
+  "recipes.batchKcalLabel": "Whole batch",
+  "recipes.perServingKcal": "{kcal} kcal per serving",
+  "recipes.perServingLabel": "One serving",
+  "recipes.perServingKcalShort": "Per serving",
+  "recipes.per100Summary": "{kcal} kcal per 100 g",
+  "recipes.per100UnknownEnergy": "Energy per 100 g is unknown.",
+  "recipes.servingWeight": "Nominal serving weight",
+  "recipes.servingWeightHint": "One serving is about {grams} g.",
+  "recipes.weightCaveat":
+    "Final weight only scales portions. Cooking can lose or add water, and drained liquid or absorbed oil is not accounted for.",
+  "recipes.incomplete":
+    "Some ingredients have unknown nutrient values. Those stay unknown and are not counted as zero.",
+  "recipes.needFinalWeight":
+    "Add the final prepared weight before logging this recipe by weight.",
+  "recipes.needFinalWeightHint":
+    "Add a final weight to get per-100-g and per-serving values.",
+  "recipes.log": "Log recipe",
+  "recipes.logTitle": "Log “{name}”",
+  "recipes.logIntro":
+    "Choose an amount of the finished dish. The entry stores a snapshot, so later edits do not change it.",
+  "recipes.logMode": "How to enter the amount",
+  "recipes.byWeight": "Grams",
+  "recipes.byServing": "Servings",
+  "recipes.grams": "Grams eaten",
+  "recipes.gramsHint": "Enter the weight of the portion in grams.",
+  "recipes.logConfirm": "Add to diary",
+  "recipes.logged": "Recipe added to your diary.",
+  "recipes.logFailed": "We could not add that recipe. Please try again.",
+  "recipes.amountInvalid": "Enter an amount greater than zero.",
+  "recipes.snapshotNote":
+    "Logged as one entry using the recipe's per-100-g values.",
+
   "error.loadFailed": "We could not load your diary. Please refresh the page.",
   "error.invalidRequest": "That request was not valid.",
   "error.unauthorised": "Please sign in to continue.",

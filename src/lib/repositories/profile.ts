@@ -2,6 +2,7 @@ import "server-only";
 import { queryOne } from "../db";
 import type {
   ActivityLevel,
+  DashboardNutrient,
   GoalMode,
   Language,
   Sex,
@@ -63,6 +64,18 @@ export async function updateUsdaPreference(
     `UPDATE profiles SET usda_enabled = $2
       WHERE user_id = $1 RETURNING user_id`,
     [userId, usdaEnabled],
+  );
+  return Boolean(row);
+}
+
+export async function updateDashboardNutrients(
+  userId: string,
+  nutrients: DashboardNutrient[],
+): Promise<boolean> {
+  const row = await queryOne<{ user_id: string }>(
+    `UPDATE profiles SET dashboard_nutrients = $2
+      WHERE user_id = $1 RETURNING user_id`,
+    [userId, nutrients],
   );
   return Boolean(row);
 }

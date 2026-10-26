@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { getTranslator } from "@/i18n";
-import type { FoodSource, Language } from "@/lib/types";
+import type { FoodSource, Language, Preparation } from "@/lib/types";
 import { Icon } from "./icons";
 
 export function ProgressBar({
@@ -35,6 +35,28 @@ export function ProgressBar({
         style={{ width: `${percent}%` }}
       />
     </div>
+  );
+}
+
+/** Shown only when the source or the user actually stated a preparation. */
+export function PreparationBadge({
+  preparation,
+  language,
+}: {
+  preparation: Preparation;
+  language: Language;
+}) {
+  if (preparation === "unspecified") return null;
+  const t = getTranslator(language);
+  return (
+    <span
+      className={`badge prep-${preparation}`}
+      title={t(
+        preparation === "raw" ? "preparation.rawHelp" : "preparation.cookedHelp",
+      )}
+    >
+      {t(preparation === "raw" ? "preparation.raw" : "preparation.cooked")}
+    </span>
   );
 }
 

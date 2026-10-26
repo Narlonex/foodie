@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { isValidIsoDate } from "./dates";
-import { MEALS, NUTRIENT_KEYS } from "./types";
+import {
+  DASHBOARD_NUTRIENTS,
+  MEALS,
+  NUTRIENT_KEYS,
+  PREPARATION_STATES,
+} from "./types";
 
 export const emailSchema = z
   .string()
@@ -32,6 +37,15 @@ export const displayAmountUnitSchema = z.enum([
   "serving",
 ]);
 export const foodSourceSchema = z.enum(["off", "usda", "custom"]);
+export const preparationSchema = z.enum(PREPARATION_STATES);
+export const dashboardNutrientSchema = z.enum(DASHBOARD_NUTRIENTS);
+export const packageUnitSchema = z.enum(["g", "ml"]);
+export const optionalPositiveMeasure = z
+  .number()
+  .finite("validation.package")
+  .positive("validation.package")
+  .max(100_000, "validation.package")
+  .nullable();
 export const sexSchema = z.enum(["female", "male", "other"]);
 export const activityLevelSchema = z.enum([
   "sedentary",
@@ -89,6 +103,10 @@ export const foodInputSchema = z
     servingUnit: z.enum(["g", "ml"]).nullable(),
     nutrients: nutrientsSchema,
     imageUrl: z.string().trim().max(2048).nullable().default(null),
+    preparation: preparationSchema.default("unspecified"),
+    packageQuantity: optionalPositiveMeasure.default(null),
+    packageUnit: packageUnitSchema.nullable().default(null),
+    drainedWeight: optionalPositiveMeasure.default(null),
   })
   .superRefine((value, context) => {
     if (value.basisType === "serving" && value.servingSize === null) {
@@ -124,6 +142,11 @@ export const customFoodSchema = z
     servingSize: z.number().finite().positive("validation.servingSize").max(100_000).nullable(),
     servingUnit: z.enum(["g", "ml"]).nullable(),
     nutrients: nutrientsSchema,
+    /** How the food was prepared; never inferred for user-created foods. */
+    preparation: preparationSchema.default("unspecified"),
+    packageQuantity: optionalPositiveMeasure.default(null),
+    packageUnit: packageUnitSchema.nullable().default(null),
+    drainedWeight: optionalPositiveMeasure.default(null),
     /** Optional data URL (client-downscaled JPEG/PNG/WebP) for a custom photo. */
     photo: z.string().max(3_000_000).optional().default(""),
   })
@@ -140,6 +163,31 @@ export const customFoodSchema = z
         code: "custom",
         path: ["servingSize"],
         message: "validation.servingSize",
+      });
+    }
+    if (value.packageQuantity === null && value.packageUnit !== null) {
+      context.addIssue({
+        code: "custom",
+        path: ["packageQuantity"],
+        message: "validation.package",
+      });
+    }
+    if (value.packageQuantity !== null && value.packageUnit === null) {
+      context.addIssue({
+        code: "custom",
+        path: ["packageUnit"],
+        message: "validation.package",
+      });
+    }
+    if (
+      value.packageQuantity !== null &&
+      value.drainedWeight !== null &&
+      value.drainedWeight > value.packageQuantity
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["drainedWeight"],
+        message: "validation.package",
       });
     }
   });

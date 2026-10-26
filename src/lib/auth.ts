@@ -4,6 +4,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { queryOne } from "./db";
+import { normaliseDashboardNutrients } from "./dashboard";
 import type {
   ActivityLevel,
   GoalMode,
@@ -85,6 +86,7 @@ interface ViewerRow {
   sex: Sex | null;
   activity_level: ActivityLevel | null;
   onboarding_completed: boolean;
+  dashboard_nutrients: string[] | null;
 }
 
 const getViewerCached = cache(async (): Promise<Viewer | null> => {
@@ -96,7 +98,7 @@ const getViewerCached = cache(async (): Promise<Viewer | null> => {
     `SELECT p.user_id, u.email, p.language, p.theme, p.unit_system, p.goal_mode,
             p.maintenance_calories, p.default_day_type_id, p.usda_enabled,
             p.height_cm, p.weight_kg, p.age, p.sex, p.activity_level,
-            p.onboarding_completed
+            p.onboarding_completed, p.dashboard_nutrients
        FROM sessions s
        JOIN users u ON u.id = s.user_id
        JOIN profiles p ON p.user_id = u.id
@@ -122,6 +124,7 @@ const getViewerCached = cache(async (): Promise<Viewer | null> => {
     sex: row.sex,
     activityLevel: row.activity_level,
     onboardingCompleted: row.onboarding_completed,
+    dashboardNutrients: normaliseDashboardNutrients(row.dashboard_nutrients),
   };
   return { user: { id: row.user_id, email: row.email }, profile };
 });

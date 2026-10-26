@@ -57,6 +57,78 @@ describe("Open Food Facts product normalization", () => {
     expect(result.nutrients.salt).toBe(0.1);
   });
 
+  it("prefers manufacturer values over a mis-read packaging table", () => {
+    const result = normalizeOffProduct({
+      ...v2Product,
+      nutrition: {
+        input_sets: [
+          {
+            per: "100g",
+            per_quantity: 100,
+            per_unit: "g",
+            source: "packaging",
+            nutrients: {
+              "energy-kcal": { value: 539 },
+              proteins: { value: 7 },
+              carbohydrates: { value: 56 },
+              sugars: { value: 55 },
+              fat: { value: 31 },
+              "saturated-fat": { value: 11 },
+              fiber: { value: 0 },
+              salt: { value: 0.2 },
+            },
+          },
+          {
+            per: "100g",
+            per_quantity: 100,
+            per_unit: "g",
+            source: "manufacturer",
+            nutrients: {
+              "energy-kcal": { value: 539 },
+              proteins: { value: 6.3 },
+              carbohydrates: { value: 57.5 },
+              sugars: { value: 56.3 },
+              fat: { value: 30.9 },
+              "saturated-fat": { value: 10.6 },
+              salt: { value: 0.107 },
+            },
+          },
+        ],
+      },
+    });
+    expect(result.nutrients.protein).toBe(6.3);
+    expect(result.nutrients.carbs).toBe(57.5);
+    expect(result.nutrients.fat).toBe(30.9);
+    expect(result.nutrients.satFat).toBe(10.6);
+    expect(result.nutrients.salt).toBe(0.107);
+  });
+
+  it("drops a packaging table whose rows do not add up", () => {
+    const result = normalizeOffProduct({
+      ...v2Product,
+      nutrition: {
+        input_sets: [
+          {
+            per: "100g",
+            per_quantity: 100,
+            per_unit: "g",
+            source: "packaging",
+            nutrients: { proteins: { value: 30 }, carbohydrates: { value: 15 }, fat: { value: 10 }, salt: { value: 60 } },
+          },
+          {
+            per: "100g",
+            per_quantity: 100,
+            per_unit: "g",
+            source: "manufacturer",
+            nutrients: { "energy-kcal": { value: 539 }, proteins: { value: 6.3 }, carbohydrates: { value: 57.5 }, fat: { value: 30.9 } },
+          },
+        ],
+      },
+    });
+    expect(result.nutrients.protein).toBe(6.3);
+    expect(result.nutrients.salt).toBeNull();
+  });
+
   it("normalizes a per-100 ml product from its quantity", () => {
     const result = normalizeOffProduct({
       ...v2Product,

@@ -16,7 +16,8 @@ const FOOD_COLUMNS = `
   id, source, external_id, barcode, name, brand, image_url,
   (image_data IS NOT NULL) AS has_image, basis_type, serving_size,
   serving_unit, kcal, kj, protein_g, carbs_g, sugars_g, fat_g, sat_fat_g,
-  fiber_g, salt_g, energy_source, is_favorite
+  fiber_g, salt_g, energy_source, preparation, is_favorite,
+  package_quantity, package_unit, drained_weight
 `;
 
 const FOOD_COLUMNS_QUALIFIED = `
@@ -24,7 +25,8 @@ const FOOD_COLUMNS_QUALIFIED = `
   (f.image_data IS NOT NULL) AS has_image, f.basis_type,
   f.serving_size, f.serving_unit, f.kcal, f.kj, f.protein_g, f.carbs_g,
   f.sugars_g, f.fat_g, f.sat_fat_g, f.fiber_g, f.salt_g, f.energy_source,
-  f.is_favorite
+  f.preparation, f.is_favorite, f.package_quantity, f.package_unit,
+  f.drained_weight
 `;
 
 export interface FoodDraft {
@@ -40,6 +42,10 @@ export interface FoodDraft {
   imageUrl: string | null;
   imageData?: Buffer | null;
   imageMime?: string | null;
+  preparation?: FoodInput["preparation"];
+  packageQuantity?: number | null;
+  packageUnit?: "g" | "ml" | null;
+  drainedWeight?: number | null;
 }
 
 export function foodInputToDraft(input: FoodInput): FoodDraft {
@@ -56,6 +62,10 @@ export function foodInputToDraft(input: FoodInput): FoodDraft {
     imageUrl: input.imageUrl,
     imageData: null,
     imageMime: null,
+    preparation: input.preparation ?? "unspecified",
+    packageQuantity: input.packageQuantity ?? null,
+    packageUnit: input.packageUnit ?? null,
+    drainedWeight: input.drainedWeight ?? null,
   };
 }
 
@@ -100,6 +110,10 @@ export async function persistFoodDraft(
     normalized.nutrients.salt,
     normalized.energySource,
     favorite,
+    normalized.preparation ?? "unspecified",
+    normalized.packageQuantity ?? null,
+    normalized.packageUnit ?? null,
+    normalized.drainedWeight ?? null,
   ];
 
   if (normalized.source === "custom" && !existingId) {
@@ -108,10 +122,11 @@ export async function persistFoodDraft(
         user_id, source, external_id, barcode, name, brand, basis_type,
         serving_size, serving_unit, image_url, image_data, image_mime,
         kcal, kj, protein_g, carbs_g, sugars_g, fat_g, sat_fat_g, fiber_g,
-        salt_g, energy_source, is_favorite
+        salt_g, energy_source, is_favorite, preparation, package_quantity,
+        package_unit, drained_weight
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
-        $15, $16, $17, $18, $19, $20, $21, $22, $23
+        $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27
       ) RETURNING ${FOOD_COLUMNS}`,
       params,
     );
@@ -129,7 +144,8 @@ export async function persistFoodDraft(
         image_mime = COALESCE($11, image_mime), kcal = $12, kj = $13,
         protein_g = $14, carbs_g = $15, sugars_g = $16, fat_g = $17,
         sat_fat_g = $18, fiber_g = $19, salt_g = $20, energy_source = $21,
-        is_favorite = is_favorite OR $22
+        is_favorite = is_favorite OR $22, preparation = $23,
+        package_quantity = $24, package_unit = $25, drained_weight = $26
       WHERE id = $2 AND user_id = $1 AND source = 'custom'
       RETURNING ${FOOD_COLUMNS}`,
       [
@@ -155,6 +171,10 @@ export async function persistFoodDraft(
         normalized.nutrients.salt,
         normalized.energySource,
         favorite,
+        normalized.preparation ?? "unspecified",
+        normalized.packageQuantity ?? null,
+        normalized.packageUnit ?? null,
+        normalized.drainedWeight ?? null,
       ],
     );
     const row = result.rows[0];
@@ -171,10 +191,11 @@ export async function persistFoodDraft(
       user_id, source, external_id, barcode, name, brand, basis_type,
       serving_size, serving_unit, image_url, image_data, image_mime,
       kcal, kj, protein_g, carbs_g, sugars_g, fat_g, sat_fat_g, fiber_g,
-      salt_g, energy_source, is_favorite
+      salt_g, energy_source, is_favorite, preparation, package_quantity,
+      package_unit, drained_weight
     ) VALUES (
       $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14,
-      $15, $16, $17, $18, $19, $20, $21, $22, $23
+      $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27
     )
     ON CONFLICT (user_id, source, external_id) WHERE external_id IS NOT NULL
     DO UPDATE SET
@@ -197,6 +218,10 @@ export async function persistFoodDraft(
       fiber_g = EXCLUDED.fiber_g,
       salt_g = EXCLUDED.salt_g,
       energy_source = EXCLUDED.energy_source,
+      preparation = EXCLUDED.preparation,
+      package_quantity = COALESCE(EXCLUDED.package_quantity, foods.package_quantity),
+      package_unit = COALESCE(EXCLUDED.package_unit, foods.package_unit),
+      drained_weight = COALESCE(EXCLUDED.drained_weight, foods.drained_weight),
       is_favorite = foods.is_favorite OR EXCLUDED.is_favorite,
       updated_at = now()
     RETURNING ${FOOD_COLUMNS}`,

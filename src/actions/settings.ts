@@ -6,6 +6,7 @@ import { requireViewer, setPreferenceCookies } from "@/lib/auth";
 import {
   completeOnboarding,
   updateBodyMetrics,
+  updateDashboardNutrients,
   updateGoals,
   updateLanguage,
   updateTheme,
@@ -15,6 +16,11 @@ import {
 import { updateDayTypeTargets } from "@/lib/repositories/dayTypes";
 import { suggestedMacroTargets } from "@/lib/macroTargets";
 import { estimateMaintenanceCalories } from "@/lib/metrics";
+import {
+  DEFAULT_DASHBOARD_NUTRIENTS,
+  isDashboardNutrient,
+  normaliseDashboardNutrients,
+} from "@/lib/dashboard";
 import {
   activityLevelSchema,
   bodyMetricsSchema,
@@ -97,6 +103,25 @@ export async function updateUsdaEnabledAction(
   if (!changed) return failure("settings.saveError");
   revalidatePath("/", "layout");
   return success(enabled ? "foodData.usdaOn" : "foodData.usdaOff");
+}
+
+export async function updateDashboardNutrientsAction(
+  _previous: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const viewer = await requireViewer();
+  const reset = formData.get("reset") === "1";
+  const selected = formData.getAll("nutrients").map(String);
+  if (!reset && !selected.every(isDashboardNutrient)) {
+    return failure("settings.saveError");
+  }
+  const nutrients = reset
+    ? [...DEFAULT_DASHBOARD_NUTRIENTS]
+    : normaliseDashboardNutrients(selected);
+  const changed = await updateDashboardNutrients(viewer.user.id, nutrients);
+  if (!changed) return failure("settings.saveError");
+  revalidatePath("/", "layout");
+  return success("dashboard.saved");
 }
 
 export async function updateGoalsAction(
