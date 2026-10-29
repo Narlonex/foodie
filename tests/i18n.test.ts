@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  cs,
   dictionaries,
   en,
   extraTranslationKeys,
@@ -16,13 +17,15 @@ function placeholders(value: string): string[] {
 }
 
 describe("translation dictionaries", () => {
-  it("has no missing English keys in either language", () => {
+  it("has no missing English keys in any language", () => {
     expect(missingTranslationKeys(sk)).toEqual([]);
+    expect(missingTranslationKeys(cs)).toEqual([]);
     expect(missingTranslationKeys(en)).toEqual([]);
   });
 
   it("has no extra keys outside the English dictionary", () => {
     expect(extraTranslationKeys(sk)).toEqual([]);
+    expect(extraTranslationKeys(cs)).toEqual([]);
     expect(extraTranslationKeys(en)).toEqual([]);
   });
 
@@ -34,9 +37,12 @@ describe("translation dictionaries", () => {
     }
   });
 
-  it("uses the same interpolation placeholders in both languages", () => {
+  it("uses the same interpolation placeholders in every language", () => {
     for (const key of translationKeys()) {
       expect(placeholders(sk[key]), `${key} placeholders`).toEqual(
+        placeholders(en[key]),
+      );
+      expect(placeholders(cs[key]), `${key} placeholders`).toEqual(
         placeholders(en[key]),
       );
     }
@@ -54,6 +60,7 @@ describe("translation dictionaries", () => {
       "sources.usdaShort",
       "dashboard.mealTotal",
       "dayTypes.caloriesShort",
+      "nav.menu",
       "language.slovak",
       "foodData.offTitle",
       "foodData.usdaTitle",
@@ -73,6 +80,7 @@ describe("translation dictionaries", () => {
 describe("translator behaviour", () => {
   it("returns the requested language", () => {
     expect(translate("sk", "common.save")).toBe("Uložiť");
+    expect(translate("cs", "common.save")).toBe("Uložit");
     expect(translate("en", "common.save")).toBe("Save");
   });
 
@@ -93,6 +101,7 @@ describe("translator behaviour", () => {
 
   it("produces a usable translator per language", () => {
     expect(getTranslator("sk")("common.cancel")).toBe("Zrušiť");
+    expect(getTranslator("cs")("common.cancel")).toBe("Zrušit");
     expect(getTranslator("en")("common.cancel")).toBe("Cancel");
   });
 });

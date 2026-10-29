@@ -119,6 +119,7 @@ export function AuthForm({
               >
                 <option value="en">{t("language.english")}</option>
                 <option value="sk">{t("language.slovak")}</option>
+                <option value="cs">{t("language.czech")}</option>
               </select>
             </div>
           ) : null}

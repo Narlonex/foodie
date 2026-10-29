@@ -579,6 +579,56 @@ describeDb("database-backed Foodie flows", () => {
     expect(copyId).not.toBe(recipeId);
   });
 
+  it("moves a single diary entry to another day without changing it", async () => {
+    const rice = (await foods.listCustomFoods(userA)).find(
+      (food) => food.name === "Recipe rice",
+    );
+    if (!rice?.id) throw new Error("Missing rice food.");
+    const entry = await diary.logFoodById(
+      userA,
+      rice.id,
+      "2026-11-05",
+      "lunch",
+      100,
+      "g",
+    );
+
+    const moved = await diary.moveEntry(userA, entry.id, "2026-11-06");
+    expect(moved?.date).toBe("2026-11-06");
+    expect(moved?.amount).toBe(100);
+    expect(moved?.meal).toBe("lunch");
+    expect(moved?.nutrients).toEqual(entry.nutrients);
+    expect((await diary.getDayTotals(userA, "2026-11-05")).entries).toHaveLength(
+      0,
+    );
+    expect(
+      (await diary.getDayTotals(userA, "2026-11-06")).entries.map(
+        (item) => item.id,
+      ),
+    ).toContain(entry.id);
+
+    expect(await diary.moveEntry(userB, entry.id, "2026-11-07")).toBeNull();
+    expect(await diary.getEntry(userA, entry.id)).toMatchObject({
+      date: "2026-11-06",
+    });
+  });
+
+  it("persists Czech and rejects an unsupported profile language", async () => {
+    const profile = await import("@/lib/repositories/profile");
+    expect(await profile.updateLanguage(userA, "cs")).toBe(true);
+    const rows = await db.query<{ language: string }>(
+      "SELECT language FROM profiles WHERE user_id = $1",
+      [userA],
+    );
+    expect(rows[0]?.language).toBe("cs");
+    await expect(
+      db.query("UPDATE profiles SET language = 'de' WHERE user_id = $1", [
+        userA,
+      ]),
+    ).rejects.toThrow();
+    expect(await profile.updateLanguage(userA, "sk")).toBe(true);
+  });
+
   it("stores preparation, package data and dashboard preferences", async () => {
     const skyr = await foods.createCustomFood(userA, {
       ...foodDraft("Skyr natural"),

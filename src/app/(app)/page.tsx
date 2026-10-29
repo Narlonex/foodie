@@ -38,11 +38,11 @@ export default async function DashboardPage({
 
   return (
     <DashboardView
+      key={date}
       date={date}
       today={today}
       language={viewer.profile.language}
       unitSystem={viewer.profile.unitSystem}
-      dayType={day.dayType}
       assignedDayTypeId={day.assignedDayTypeId}
       dayTypes={dayTypes}
       defaultDayTypeId={viewer.profile.defaultDayTypeId}

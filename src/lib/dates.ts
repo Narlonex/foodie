@@ -1,4 +1,5 @@
 import { env } from "./env";
+import type { Language } from "./types";
 
 export const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -73,11 +74,11 @@ export function isToday(iso: string): boolean {
   return iso === todayIso();
 }
 
-export function localeFor(language: "en" | "sk"): string {
-  return language === "sk" ? "sk-SK" : "en-GB";
+export function localeFor(language: Language): string {
+  return language === "sk" ? "sk-SK" : language === "cs" ? "cs-CZ" : "en-GB";
 }
 
-export function formatLongDate(iso: string, language: "en" | "sk"): string {
+export function formatLongDate(iso: string, language: Language): string {
   const parts = new Intl.DateTimeFormat(localeFor(language), {
     weekday: "long",
     day: "numeric",
@@ -90,12 +91,12 @@ export function formatLongDate(iso: string, language: "en" | "sk"): string {
   // Punctuation is assembled here because CLDR versions disagree about the
   // comma after the weekday; relying on `format()` renders a different string
   // on the server than in the browser and breaks hydration.
-  return language === "sk"
-    ? `${part("weekday")} ${part("day")}. ${part("month")} ${part("year")}`
-    : `${part("weekday")}, ${part("day")} ${part("month")} ${part("year")}`;
+  return language === "en"
+    ? `${part("weekday")}, ${part("day")} ${part("month")} ${part("year")}`
+    : `${part("weekday")} ${part("day")}. ${part("month")} ${part("year")}`;
 }
 
-export function formatShortDate(iso: string, language: "en" | "sk"): string {
+export function formatShortDate(iso: string, language: Language): string {
   return new Intl.DateTimeFormat(localeFor(language), {
     weekday: "short",
     day: "numeric",
@@ -104,7 +105,7 @@ export function formatShortDate(iso: string, language: "en" | "sk"): string {
   }).format(toUtcDate(iso));
 }
 
-export function formatWeekRange(startIso: string, language: "en" | "sk"): string {
+export function formatWeekRange(startIso: string, language: Language): string {
   const endIso = addDays(startIso, 6);
   const formatter = new Intl.DateTimeFormat(localeFor(language), {
     day: "numeric",
@@ -117,7 +118,7 @@ export function formatWeekRange(startIso: string, language: "en" | "sk"): string
 
 export function formatDateTime(
   isoDateTime: string,
-  language: "en" | "sk",
+  language: Language,
 ): string {
   return new Intl.DateTimeFormat(localeFor(language), {
     dateStyle: "medium",

@@ -1,11 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { assignDayTypeAction } from "@/actions/dayTypes";
+import { setDayTypeForDateAction } from "@/actions/dayTypes";
 import { getTranslator, type TranslationKey, type Translator } from "@/i18n";
-import { addDays, formatLongDate } from "@/lib/dates";
+import {
+  addDays,
+  formatLongDate,
+  startOfWeek,
+  weekDates,
+} from "@/lib/dates";
 import {
   formatGrams,
   formatKcal,
@@ -17,8 +22,8 @@ import { entryPortion, totalNutrients } from "@/lib/nutrition";
 import {
   MEALS,
   NUTRIENT_KEYS,
-  type DayType,
   type DashboardNutrient,
+  type DayType,
   type DiaryEntry,
   type DiaryTotals,
   type Food,
@@ -30,7 +35,11 @@ import {
 import { AddFoodDialog } from "./add-food-dialog";
 import { AddSavedMealDialog } from "./add-saved-meal-dialog";
 import { CopyDayDialog, RepeatMealDialog } from "./copy-day-dialog";
-import { DeleteEntryDialog, EditEntryDialog } from "./entry-dialogs";
+import {
+  DeleteEntryDialog,
+  EditEntryDialog,
+  MoveEntryDialog,
+} from "./entry-dialogs";
 import { FoodThumb } from "./food-thumb";
 import { Icon } from "./icons";
 import {
@@ -55,7 +64,6 @@ export function DashboardView({
   today,
   language,
   unitSystem,
-  dayType,
   assignedDayTypeId,
   dayTypes,
   defaultDayTypeId,
@@ -72,7 +80,6 @@ export function DashboardView({
   today: string;
   language: Language;
   unitSystem: UnitSystem;
-  dayType: DayType | null;
   assignedDayTypeId: string | null;
   dayTypes: DayType[];
   defaultDayTypeId: string | null;
@@ -89,17 +96,42 @@ export function DashboardView({
   const router = useRouter();
   const [addMeal, setAddMeal] = useState<Meal | null>(null);
   const [editingEntry, setEditingEntry] = useState<DiaryEntry | null>(null);
+  const [movingEntry, setMovingEntry] = useState<DiaryEntry | null>(null);
   const [deletingEntry, setDeletingEntry] = useState<DiaryEntry | null>(null);
   const [repeatMeal, setRepeatMeal] = useState<Meal | null>(null);
   const [copyOpen, setCopyOpen] = useState(false);
   const [savedMealOpen, setSavedMealOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [selectedDayTypeId, setSelectedDayTypeId] = useState(
+    assignedDayTypeId ?? "default",
+  );
+  const [switchingDayType, startDayTypeSwitch] = useTransition();
 
   useEffect(() => {
     if (!toast) return;
     const timer = window.setTimeout(() => setToast(null), 4500);
     return () => window.clearTimeout(timer);
   }, [toast]);
+
+  const currentDayType =
+    selectedDayTypeId === "default"
+      ? (dayTypes.find((type) => type.id === defaultDayTypeId) ?? null)
+      : (dayTypes.find((type) => type.id === selectedDayTypeId) ?? null);
+
+  function changeDayType(next: string) {
+    if (next === selectedDayTypeId) return;
+    const previous = selectedDayTypeId;
+    setSelectedDayTypeId(next);
+    startDayTypeSwitch(async () => {
+      const result = await setDayTypeForDateAction(date, next);
+      if (!result.ok) {
+        setSelectedDayTypeId(previous);
+        setToast(t("common.error"));
+        return;
+      }
+      router.refresh();
+    });
+  }
 
   const byMeal = useMemo(() => {
     const map = new Map<Meal, DiaryEntry[]>();
@@ -123,7 +155,7 @@ export function DashboardView({
     dashboardNutrients.includes(macro.key),
   );
   const consumed = displayNutrients.kcal.value;
-  const target = dayType?.kcal ?? null;
+  const target = currentDayType?.kcal ?? null;
   const remaining =
     target !== null && consumed !== null ? target - consumed : null;
   const over = remaining !== null && remaining < 0;
@@ -136,6 +168,7 @@ export function DashboardView({
   function finish(message: string) {
     setAddMeal(null);
     setEditingEntry(null);
+    setMovingEntry(null);
     setDeletingEntry(null);
     setRepeatMeal(null);
     setCopyOpen(false);
@@ -146,25 +179,54 @@ export function DashboardView({
 
   return (
     <>
-      <div className="page-header">
+      <div className="page-header dashboard-hero">
         <div>
-          <p className="eyebrow">{t("dashboard.title")}</p>
-          <h1>{formatLongDate(date, language)}</h1>
+          <p className="eyebrow">{t("nav.dashboard")}</p>
+          <h1>{t("dashboard.today")}</h1>
           <p className="page-subtitle">
-            {dayType
-              ? assignedDayTypeId
-                ? t("dashboard.dayTypeAssigned", { name: dayType.name })
-                : t("dashboard.dayTypeDefault", { name: dayType.name })
-              : t("dashboard.noDayTypeHelp")}
+            {formatLongDate(date, language)}
+            {currentDayType
+              ? ` · ${t(
+                  selectedDayTypeId === "default"
+                    ? "dashboard.dayTypeDefault"
+                    : "dashboard.dayTypeAssigned",
+                  { name: currentDayType.name },
+                )}`
+              : ""}
           </p>
         </div>
-        <DateNavigation
-          date={date}
-          today={today}
-          language={language}
-          onChange={(next) => router.push(`/?date=${next}`)}
-        />
+        <div className="date-nav">
+          <label className="sr-only" htmlFor="dashboard-date">
+            {t("dashboard.pickDate")}
+          </label>
+          <input
+            id="dashboard-date"
+            type="date"
+            className="date-input"
+            value={date}
+            onChange={(event) => {
+              if (event.target.value) {
+                router.push(`/?date=${event.target.value}`);
+              }
+            }}
+          />
+          <button
+            type="button"
+            className="button secondary small"
+            onClick={() => router.push(`/?date=${today}`)}
+            disabled={date === today}
+          >
+            {t("dashboard.today")}
+          </button>
+        </div>
       </div>
+
+      <WeekStrip
+        date={date}
+        today={today}
+        language={language}
+        onChange={(next) => router.push(`/?date=${next}`)}
+      />
 
       <div className="dashboard-grid">
         <div className="stack">
@@ -239,17 +301,22 @@ export function DashboardView({
             </div>
 
             <div className="calorie-summary">
-              <div>
-                <h2 id="calorie-summary" className="card-title">
-                  {t("dashboard.dailyTotals")}
-                </h2>
-                <p className="card-hint">
-                  {dayType
-                    ? t("dashboard.ofTarget", {
-                        target: formatKcal(target, language),
-                      })
-                    : t("dashboard.noTarget")}
-                </p>
+              <div className="row-between">
+                <div>
+                  <h2 id="calorie-summary" className="card-title">
+                    {t("dashboard.dailyTotals")}
+                  </h2>
+                  <p className="card-hint">
+                    {currentDayType
+                      ? t("dashboard.ofTarget", {
+                          target: formatKcal(target, language),
+                        })
+                      : t("dashboard.noTarget")}
+                  </p>
+                </div>
+                {currentDayType ? (
+                  <span className="badge accent">{currentDayType.name}</span>
+                ) : null}
               </div>
               <div className="summary-stats">
                 <div className="summary-stat">
@@ -264,6 +331,25 @@ export function DashboardView({
                   <strong>{formatNumber(entries.length, language, 0)}</strong>
                   <span>{t("history.entries")}</span>
                 </div>
+              </div>
+              <div className="macro-grid">
+                {visibleMacros.map((macro) => (
+                  <MacroCard
+                    key={macro.key}
+                    name={t(macro.label)}
+                    color={macro.key}
+                    consumed={displayNutrients[macro.key]}
+                    target={currentDayType?.[macro.key] ?? null}
+                    language={language}
+                    t={t}
+                  />
+                ))}
+              </div>
+              <div className="row-between">
+                <Link href="/settings/dashboard" className="button-link small">
+                  {t("dashboard.editVisibleNutrients")}
+                </Link>
+                <span className="small muted">{t("dashboard.macrosHelp")}</span>
               </div>
               {remaining !== null && over ? (
                 <p className="badge danger" style={{ justifySelf: "start" }}>
@@ -287,64 +373,56 @@ export function DashboardView({
             </div>
           </section>
 
-          <section aria-labelledby="macro-heading" className="stack-sm">
-            <div className="row-between">
-              <h2 id="macro-heading" className="card-title">
-                {t("dashboard.macros")}
-              </h2>
-              <span className="small muted">{t("dashboard.macrosHelp")}</span>
-            </div>
-            <div className="macro-grid">
-              {visibleMacros.map((macro) => (
-                <MacroCard
-                  key={macro.key}
-                  name={t(macro.label)}
-                  color={macro.key}
-                  consumed={displayNutrients[macro.key]}
-                  target={dayType?.[macro.key] ?? null}
-                  language={language}
-                  t={t}
-                />
-              ))}
-            </div>
-            <Link href="/settings/dashboard" className="button-link small">
-              {t("dashboard.editVisibleNutrients")}
-            </Link>
-          </section>
-
           {entries.length === 0 ? (
-            <div className="card card-pad">
-              <EmptyState
-                icon="bowl"
-                title={t("dashboard.noEntriesToday")}
-                action={
-                  <div className="row" style={{ justifyContent: "center" }}>
-                    <button
-                      type="button"
-                      className="button small"
-                      onClick={() => setAddMeal("breakfast")}
-                    >
-                      <Icon name="plus" size={16} />
-                      {t("dashboard.addFood")}
-                    </button>
-                    <button
-                      type="button"
-                      className="button secondary small"
-                      onClick={() => setCopyOpen(true)}
-                    >
-                      <Icon name="copy" size={16} />
-                      {t("dashboard.copyDay")}
-                    </button>
-                  </div>
-                }
-              >
-                {t("dashboard.noEntriesHelp")}
-              </EmptyState>
-            </div>
+            <section className="dashboard-empty" aria-label={t("dashboard.noEntriesToday")}>
+              <span className="dashboard-empty-icon">
+                <Icon name="bowl" size={22} />
+              </span>
+              <div className="dashboard-empty-copy">
+                <strong>{t("dashboard.noEntriesToday")}</strong>
+                <p>{t("dashboard.noEntriesHelp")}</p>
+              </div>
+              <div className="dashboard-empty-actions">
+                <button
+                  type="button"
+                  className="button small"
+                  onClick={() => setAddMeal("breakfast")}
+                >
+                  <Icon name="plus" size={16} />
+                  {t("dashboard.addFood")}
+                </button>
+                <button
+                  type="button"
+                  className="button secondary small"
+                  onClick={() => setCopyOpen(true)}
+                >
+                  <Icon name="copy" size={16} />
+                  {t("dashboard.copyDay")}
+                </button>
+              </div>
+            </section>
           ) : null}
 
+          <div className="meals-head">
+            <h2>
+              {t("dashboard.mealsTitle")}
+              <span className="meals-count">
+                {entries.length === 1
+                  ? t("dashboard.entryCountOne")
+                  : t("dashboard.entryCount", { count: entries.length })}
+              </span>
+            </h2>
+            <button
+              type="button"
+              className="button small"
+              onClick={() => setAddMeal("breakfast")}
+            >
+              <Icon name="plus" size={15} />
+              {t("dashboard.addFood")}
+            </button>
+          </div>
+
           <section className="meals-section" aria-label={t("dashboard.mealsTitle")}>
-            <h2 className="sr-only">{t("dashboard.mealsTitle")}</h2>
             {MEALS.map((meal) => {
               const mealEntries = byMeal.get(meal) ?? [];
               return (
@@ -358,6 +436,7 @@ export function DashboardView({
                   onAdd={() => setAddMeal(meal)}
                   onRepeat={() => setRepeatMeal(meal)}
                   onEdit={setEditingEntry}
+                  onMove={setMovingEntry}
                   onDelete={setDeletingEntry}
                 />
               );
@@ -369,40 +448,46 @@ export function DashboardView({
           <section className="card side-card day-type-card">
             <div className="row-between">
               <h2>{t("dashboard.dayType")}</h2>
-              {dayType ? (
+              {currentDayType ? (
                 <span className="badge accent">
-                  {assignedDayTypeId
-                    ? t("dashboard.assigned")
-                    : t("dashboard.automatic")}
+                  {selectedDayTypeId === "default"
+                    ? t("dashboard.automatic")
+                    : t("dashboard.assigned")}
                 </span>
               ) : null}
             </div>
-            {dayType ? (
+            {currentDayType ? (
               <>
                 <div>
-                  <p className="day-type-name">{dayType.name}</p>
+                  <p className="day-type-name">{currentDayType.name}</p>
                   <p className="card-hint">{t("dashboard.dayTypePartial")}</p>
                 </div>
                 <div className="target-grid">
                   <div className="target-item">
                     <span>{t("nutrients.kcal")}</span>
-                    <strong>{formatKcal(dayType.kcal, language)}</strong>
+                    <strong>{formatKcal(currentDayType.kcal, language)}</strong>
                   </div>
                   <div className="target-item">
                     <span>{t("nutrients.protein")}</span>
-                    <strong>{formatGrams(dayType.protein, language)} g</strong>
+                    <strong>
+                      {formatGrams(currentDayType.protein, language)} g
+                    </strong>
                   </div>
                   <div className="target-item">
                     <span>{t("nutrients.carbs")}</span>
-                    <strong>{formatGrams(dayType.carbs, language)} g</strong>
+                    <strong>
+                      {formatGrams(currentDayType.carbs, language)} g
+                    </strong>
                   </div>
                   <div className="target-item">
                     <span>{t("nutrients.fat")}</span>
-                    <strong>{formatGrams(dayType.fat, language)} g</strong>
+                    <strong>
+                      {formatGrams(currentDayType.fat, language)} g
+                    </strong>
                   </div>
                 </div>
                 <Link
-                  href={`/settings/day-types/${dayType.id}`}
+                  href={`/settings/day-types/${currentDayType.id}`}
                   className="button secondary small"
                 >
                   <Icon name="pencil" size={15} />
@@ -425,43 +510,39 @@ export function DashboardView({
             )}
 
             {dayTypes.length > 0 ? (
-              <form action={assignDayTypeAction} className="stack-sm">
-                <input type="hidden" name="date" value={date} />
-                <div className="field">
-                  <label htmlFor="day-type-select">
-                    {t("dayTypes.selectLabel")}
-                  </label>
-                  <select
-                    id="day-type-select"
-                    name="dayTypeId"
-                    className="select"
-                    defaultValue={assignedDayTypeId ?? "default"}
-                    aria-describedby="day-type-help"
-                  >
-                    <option value="default">
-                      {t("dashboard.useDefault")}
-                      {defaultDayTypeId
-                        ? ` · ${
-                            dayTypes.find(
-                              (type) => type.id === defaultDayTypeId,
-                            )?.name ?? ""
-                          }`
-                        : ""}
+              <div className="field">
+                <label htmlFor="day-type-select">
+                  {t("dayTypes.selectLabel")}
+                </label>
+                <select
+                  id="day-type-select"
+                  name="dayTypeId"
+                  className="select"
+                  value={selectedDayTypeId}
+                  disabled={switchingDayType}
+                  aria-describedby="day-type-help"
+                  onChange={(event) => changeDayType(event.currentTarget.value)}
+                >
+                  <option value="default">
+                    {t("dashboard.useDefault")}
+                    {defaultDayTypeId
+                      ? ` · ${
+                          dayTypes.find(
+                            (type) => type.id === defaultDayTypeId,
+                          )?.name ?? ""
+                        }`
+                      : ""}
+                  </option>
+                  {dayTypes.map((type) => (
+                    <option value={type.id} key={type.id}>
+                      {type.name} · {formatKcal(type.kcal, language)} kcal
                     </option>
-                    {dayTypes.map((type) => (
-                      <option value={type.id} key={type.id}>
-                        {type.name} · {formatKcal(type.kcal, language)} kcal
-                      </option>
-                    ))}
-                  </select>
-                  <p className="field-hint" id="day-type-help">
-                    {t("dayTypes.assignHelp")}
-                  </p>
-                </div>
-                <button type="submit" className="button secondary small">
-                  {t("common.change")}
-                </button>
-              </form>
+                  ))}
+                </select>
+                <p className="field-hint" id="day-type-help">
+                  {t("dayTypes.assignHelp")}
+                </p>
+              </div>
             ) : null}
           </section>
 
@@ -573,6 +654,15 @@ export function DashboardView({
         />
       ) : null}
 
+      {movingEntry ? (
+        <MoveEntryDialog
+          entry={movingEntry}
+          language={language}
+          onClose={() => setMovingEntry(null)}
+          onDone={finish}
+        />
+      ) : null}
+
       {deletingEntry ? (
         <DeleteEntryDialog
           entry={deletingEntry}
@@ -622,7 +712,7 @@ export function DashboardView({
   );
 }
 
-function DateNavigation({
+function WeekStrip({
   date,
   today,
   language,
@@ -634,43 +724,45 @@ function DateNavigation({
   onChange: (date: string) => void;
 }) {
   const t = getTranslator(language);
+  const days = weekDates(startOfWeek(date));
+  const labels = [
+    "mon",
+    "tue",
+    "wed",
+    "thu",
+    "fri",
+    "sat",
+    "sun",
+  ] as const;
   return (
-    <div className="date-nav" aria-label={t("dashboard.pickDate")}>
+    <div className="week-strip" aria-label={t("dashboard.pickDate")}>
       <button
         type="button"
-        className="icon-button"
+        className="week-nav-button"
         aria-label={t("dashboard.previousDay")}
-        onClick={() => onChange(addDays(date, -1))}
+        onClick={() => onChange(addDays(date, -7))}
       >
-        <Icon name="chevron-left" size={18} />
+        <Icon name="chevron-left" size={16} />
       </button>
-      <label className="sr-only" htmlFor="dashboard-date">
-        {t("dashboard.pickDate")}
-      </label>
-      <input
-        id="dashboard-date"
-        type="date"
-        className="date-input"
-        value={date}
-        onChange={(event) => {
-          if (event.target.value) onChange(event.target.value);
-        }}
-      />
+      {days.map((iso, index) => (
+        <button
+          key={iso}
+          type="button"
+          className={`week-day${iso === today ? " is-today" : ""}`}
+          aria-current={iso === date ? "date" : undefined}
+          onClick={() => onChange(iso)}
+        >
+          <span>{t(`weekdays.${labels[index]}` as TranslationKey)}</span>
+          <b>{Number(iso.slice(8, 10))}</b>
+        </button>
+      ))}
       <button
         type="button"
-        className="icon-button"
+        className="week-nav-button"
         aria-label={t("dashboard.nextDay")}
-        onClick={() => onChange(addDays(date, 1))}
+        onClick={() => onChange(addDays(date, 7))}
       >
-        <Icon name="chevron-right" size={18} />
-      </button>
-      <button
-        type="button"
-        className="button secondary small"
-        onClick={() => onChange(today)}
-        disabled={date === today}
-      >
-        {t("dashboard.today")}
+        <Icon name="chevron-right" size={16} />
       </button>
     </div>
   );
@@ -704,21 +796,19 @@ function MacroCard({
         })
       : name;
   return (
-    <div className="macro-card">
-      <div className="macro-top">
-        <span>
+    <div className={`macro-tile ${color}`}>
+      <div className="macro-line">
+        <span className="macro-name">
           <span className={`macro-dot ${color}`} />
           {name}
         </span>
-        {consumed.missingEntries > 0 ? (
-          <span className="badge warning">{t("history.partial")}</span>
-        ) : null}
+        <span className="macro-figure">
+          {target !== null ? `${formatGrams(target, language)} g` : "—"}
+        </span>
       </div>
       <div className="macro-value">
-        {formatGrams(value, language)} g{" "}
-        <small>
-          / {target !== null ? `${formatGrams(target, language)} g` : "—"}
-        </small>
+        {formatGrams(value, language)}
+        <small>g</small>
       </div>
       <ProgressBar
         value={value}
@@ -727,22 +817,19 @@ function MacroCard({
         colorClass={color}
         over={over}
       />
-      <div className="progress-caption">
-        <span>{t("dashboard.consumed")}</span>
-        <span>
-          {value === null
-            ? t("common.unknown")
-            : target === null
-              ? t("dashboard.targetNotSet")
-              : remaining !== null && over
-                ? t("dashboard.macroOver", {
-                    value: formatGrams(Math.abs(remaining), language),
-                  })
-                : t("dashboard.macroRemaining", {
-                    value: formatGrams(remaining, language),
-                  })}
-        </span>
-      </div>
+      <span className="macro-caption">
+        {consumed.missingEntries > 0
+          ? t("history.partial")
+          : remaining !== null
+            ? over
+              ? t("dashboard.macroOver", {
+                  value: formatGrams(Math.abs(remaining), language),
+                })
+              : t("dashboard.macroRemaining", {
+                  value: formatGrams(remaining, language),
+                })
+            : t("dashboard.targetNotSet")}
+      </span>
     </div>
   );
 }
@@ -756,6 +843,7 @@ function MealSection({
   onAdd,
   onRepeat,
   onEdit,
+  onMove,
   onDelete,
 }: {
   meal: Meal;
@@ -766,6 +854,7 @@ function MealSection({
   onAdd: () => void;
   onRepeat: () => void;
   onEdit: (entry: DiaryEntry) => void;
+  onMove: (entry: DiaryEntry) => void;
   onDelete: (entry: DiaryEntry) => void;
 }) {
   const mealLabel = t(`meals.${meal}` as TranslationKey);
@@ -800,13 +889,12 @@ function MealSection({
         )
     : [];
   return (
-    <article className="meal-card">
+    <article className="meal-card" data-meal={meal}>
       <div className="meal-header">
         <MealIcon meal={meal} />
         <div className="meal-heading">
           <strong>{mealLabel}</strong>
           <span>
-            {subtotal} ·{" "}
             {entries.length === 1
               ? t("dashboard.entryCountOne")
               : t("dashboard.entryCount", { count: entries.length })}
@@ -814,27 +902,30 @@ function MealSection({
             {macroBits.length > 0 ? ` · ${macroBits.join(" · ")}` : ""}
           </span>
         </div>
+        <span className="meal-kcal">{subtotal}</span>
         <div className="meal-actions">
           {entries.length > 0 ? (
-            <button
-              type="button"
-              className="icon-button small ghost"
-              onClick={onRepeat}
-              aria-label={`${t("dashboard.repeatMeal")} · ${mealLabel}`}
-              title={t("dashboard.repeatMeal")}
-            >
-              <Icon name="repeat" size={16} />
-            </button>
+            <>
+              <button
+                type="button"
+                className="icon-button small ghost"
+                onClick={onRepeat}
+                aria-label={`${t("dashboard.repeatMeal")} · ${mealLabel}`}
+                title={t("dashboard.repeatMeal")}
+              >
+                <Icon name="repeat" size={16} />
+              </button>
+              <button
+                type="button"
+                className="button small secondary"
+                onClick={onAdd}
+                aria-label={t("dashboard.addFoodTo", { meal: mealLabel })}
+              >
+                <Icon name="plus" size={16} />
+                <span>{t("dashboard.addFood")}</span>
+              </button>
+            </>
           ) : null}
-          <button
-            type="button"
-            className="button small secondary"
-            onClick={onAdd}
-            aria-label={t("dashboard.addFoodTo", { meal: mealLabel })}
-          >
-            <Icon name="plus" size={16} />
-            <span>{t("dashboard.addFood")}</span>
-          </button>
         </div>
       </div>
 
@@ -912,6 +1003,15 @@ function MealSection({
                     title={t("common.edit")}
                   >
                     <Icon name="pencil" size={15} />
+                  </button>
+                  <button
+                    type="button"
+                    className="icon-button small ghost"
+                    onClick={() => onMove(entry)}
+                    aria-label={t("entry.move", { name: entry.name })}
+                    title={t("entry.moveTitle")}
+                  >
+                    <Icon name="calendar" size={15} />
                   </button>
                   <button
                     type="button"

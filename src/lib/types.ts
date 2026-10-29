@@ -33,7 +33,7 @@ export const DASHBOARD_NUTRIENTS = [
 ] as const;
 export type DashboardNutrient = (typeof DASHBOARD_NUTRIENTS)[number];
 export type EnergySource = "provided" | "calculated" | "unknown";
-export type Language = "en" | "sk";
+export type Language = "en" | "sk" | "cs";
 export type Theme = "dark" | "light";
 export type UnitSystem = "metric" | "imperial";
 export type GoalMode = "cut" | "maintenance" | "bulk";

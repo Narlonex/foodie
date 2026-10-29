@@ -171,6 +171,7 @@ export function LanguageForm({
             [
               ["en", t("language.english"), "English"],
               ["sk", t("language.slovak"), "Slovenčina"],
+              ["cs", t("language.czech"), "Čeština"],
             ] as [Language, string, string][]
           ).map(([value, label, native]) => (
             <label className="radio-row" key={value}>

@@ -205,6 +205,21 @@ export async function updateEntry(
   });
 }
 
+export async function moveEntry(
+  userId: string,
+  entryId: string,
+  date: string,
+): Promise<DiaryEntry | null> {
+  const row = await queryOne<EntryRow>(
+    `UPDATE diary_entries
+        SET date = $3
+      WHERE id = $1 AND user_id = $2
+      RETURNING ${ENTRY_COLUMNS}`,
+    [entryId, userId, date],
+  );
+  return row ? mapEntry(row) : null;
+}
+
 export async function deleteEntry(
   userId: string,
   entryId: string,

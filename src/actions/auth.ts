@@ -53,7 +53,7 @@ async function requestIp(): Promise<string> {
 }
 
 function languageFrom(value: FormDataEntryValue | null): Language {
-  return value === "sk" ? "sk" : "en";
+  return value === "sk" || value === "cs" ? value : "en";
 }
 
 export async function registerAction(

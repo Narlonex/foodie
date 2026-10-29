@@ -37,22 +37,38 @@ export function AppShell({
             aria-label={`${t("app.name")} – ${t("nav.dashboard")}`}
           >
             <BrandMark />
-            <span>
+            <span className="brand-copy">
               <span className="brand-text">{t("app.name")}</span>
               <span className="brand-sub">{t("app.tagline")}</span>
             </span>
           </Link>
 
-          <NavLinks
-            items={items}
-            ariaLabel={t("nav.primary")}
-            variant="desktop"
-          />
+          <div className="nav-block">
+            <span className="nav-label" aria-hidden="true">
+              {t("nav.menu")}
+            </span>
+            <NavLinks
+              items={items}
+              ariaLabel={t("nav.primary")}
+              variant="desktop"
+            />
+          </div>
 
           <div className="header-actions">
-            <div className="account-chip">
-              <Icon name="user" size={16} />
-              <span>{viewer.user.email}</span>
+            <div className="account-identity">
+              <span className="avatar" aria-hidden="true">
+                {viewer.user.email.slice(0, 1).toUpperCase()}
+              </span>
+              <span className="account-copy">
+                <span className="account-label">{t("nav.account")}</span>
+                <span className="account-email">{viewer.user.email}</span>
+              </span>
+            </div>
+            <div className="account-actions">
+              <ThemeToggle
+                theme={viewer.profile.theme}
+                language={viewer.profile.language}
+              />
               <form action={logoutAction}>
                 <button
                   type="submit"
@@ -64,10 +80,6 @@ export function AppShell({
                 </button>
               </form>
             </div>
-            <ThemeToggle
-              theme={viewer.profile.theme}
-              language={viewer.profile.language}
-            />
           </div>
         </div>
       </header>

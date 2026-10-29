@@ -165,14 +165,18 @@ export async function setDefaultDayTypeAction(formData: FormData): Promise<void>
   redirect("/settings/day-types?saved=default");
 }
 
-export async function assignDayTypeAction(formData: FormData): Promise<void> {
+export async function setDayTypeForDateAction(
+  date: string,
+  dayTypeId: string | null,
+): Promise<{ ok: boolean }> {
   const viewer = await requireViewer();
-  const dateParsed = isoDateSchema.safeParse(formData.get("date"));
-  if (!dateParsed.success) redirect("/");
-  const selected = String(formData.get("dayTypeId") ?? "");
-  const dayTypeId =
-    selected === "" || selected === "default" ? null : selected;
-  await setDayTypeForDate(viewer.user.id, dateParsed.data, dayTypeId);
-  revalidatePath("/", "layout");
-  redirect(`/?date=${dateParsed.data}`);
+  const parsed = isoDateSchema.safeParse(date);
+  if (!parsed.success) return { ok: false };
+  const id =
+    dayTypeId === null || dayTypeId === "" || dayTypeId === "default"
+      ? null
+      : dayTypeId;
+  const ok = await setDayTypeForDate(viewer.user.id, parsed.data, id);
+  if (ok) revalidatePath("/", "layout");
+  return { ok };
 }

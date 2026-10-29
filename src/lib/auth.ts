@@ -166,7 +166,11 @@ export async function getRequestPreferences(): Promise<{
   const cookieLanguage = cookieStore.get(LOCALE_COOKIE)?.value;
   const cookieTheme = cookieStore.get(THEME_COOKIE)?.value;
   const language: Language =
-    cookieLanguage === "sk" || cookieLanguage === "en" ? cookieLanguage : "en";
+    cookieLanguage === "sk" ||
+    cookieLanguage === "cs" ||
+    cookieLanguage === "en"
+      ? cookieLanguage
+      : "en";
   const theme: Theme = cookieTheme === "light" ? "light" : "dark";
   return { language, theme };
 }

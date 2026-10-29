@@ -21,7 +21,7 @@ export const passwordSchema = z
   .max(200, "validation.passwordLength")
   .regex(/[A-Z]/, "validation.passwordUppercase");
 
-export const languageSchema = z.enum(["en", "sk"]);
+export const languageSchema = z.enum(["en", "sk", "cs"]);
 export const themeSchema = z.enum(["dark", "light"]);
 export const unitSystemSchema = z.enum(["metric", "imperial"]);
 export const goalModeSchema = z.enum(["cut", "maintenance", "bulk"]);

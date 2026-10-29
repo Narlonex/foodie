@@ -986,7 +986,7 @@ export function AddFoodDialog({
               <label htmlFor="food-amount">
                 {packageMode ? t("package.packs") : t("search.amount")}
               </label>
-              <div className="row" style={{ alignItems: "stretch" }}>
+              <div className="amount-row" style={{ alignItems: "stretch" }}>
                 {packageMode ? (
                   <input
                     id="food-amount"

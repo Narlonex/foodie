@@ -1,10 +1,23 @@
 import type { Metadata } from "next";
+import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
 import { ConfigError } from "@/components/config-error";
 import { getRequestPreferences, getViewer } from "@/lib/auth";
 import { isDatabaseConfigured } from "@/lib/env";
 import type { Language, Theme } from "@/lib/types";
 import { getTranslator } from "@/i18n";
+
+const inter = Inter({
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const fraunces = Fraunces({
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-fraunces",
+  display: "swap",
+});
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +55,12 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang={language} data-theme={theme} suppressHydrationWarning>
+    <html
+      lang={language}
+      data-theme={theme}
+      className={`${inter.variable} ${fraunces.variable}`}
+      suppressHydrationWarning
+    >
       <body>
         {isDatabaseConfigured() ? (
           children

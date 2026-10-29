@@ -1,3 +1,4 @@
+import { cs } from "./cs";
 import { en } from "./en";
 import { sk } from "./sk";
 
@@ -5,7 +6,7 @@ export type TranslationKey = keyof typeof en;
 export type TranslationParams = Record<string, string | number>;
 export type Translator = (key: TranslationKey, params?: TranslationParams) => string;
 
-export const dictionaries = { en, sk } as const;
+export const dictionaries = { en, sk, cs } as const;
 export type Language = keyof typeof dictionaries;
 
 export function interpolate(
@@ -24,7 +25,8 @@ export function translate(
   key: TranslationKey,
   params?: TranslationParams,
 ): string {
-  const dictionary = language === "sk" ? sk : en;
+  const dictionary =
+    dictionaries[language as Language] ?? en;
   const template = dictionary[key] ?? en[key] ?? key;
   return interpolate(template, params);
 }
@@ -50,4 +52,4 @@ export function extraTranslationKeys(
   return Object.keys(dictionary).filter((key) => !known.has(key));
 }
 
-export { en, sk };
+export { cs, en, sk };

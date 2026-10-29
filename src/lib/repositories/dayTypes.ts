@@ -334,7 +334,14 @@ export async function getDayTypesForDates(
 export const DEFAULT_DAY_TYPE_KCAL = 2000;
 
 export function defaultDayTypeName(language: Language): string {
-  return language === "sk" ? "Štandardný deň" : "Standard day";
+  switch (language) {
+    case "sk":
+      return "Štandardný deň";
+    case "cs":
+      return "Standardní den";
+    default:
+      return "Standard day";
+  }
 }
 
 export function defaultDayTypeInput(language: Language): DayTypeFormInput {

@@ -1,9 +1,14 @@
 "use client";
 
 import { useActionState, useEffect, useMemo, useState, useTransition } from "react";
-import { deleteEntryAction, updateEntryAction } from "@/actions/diary";
+import {
+  deleteEntryAction,
+  moveEntryAction,
+  updateEntryAction,
+} from "@/actions/diary";
 import { initialFormState } from "@/actions/types";
 import { getTranslator, translate, type TranslationKey } from "@/i18n";
+import { formatLongDate } from "@/lib/dates";
 import { formatNumber, unitTranslationKey } from "@/lib/format";
 import { fromBaseAmount, scaleNutrients, toBaseAmount } from "@/lib/nutrition";
 import {
@@ -190,6 +195,91 @@ export function EditEntryDialog({
             <p className="field-error">{t("entry.amountInvalid")}</p>
           )}
         </div>
+      </form>
+    </Dialog>
+  );
+}
+
+export function MoveEntryDialog({
+  entry,
+  language,
+  onClose,
+  onDone,
+}: {
+  entry: DiaryEntry;
+  language: Language;
+  onClose: () => void;
+  onDone: (message: string) => void;
+}) {
+  const t = getTranslator(language);
+  const [date, setDate] = useState(entry.date);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function move(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!date || date === entry.date) {
+      setError(t("entry.moveSameDate"));
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      const result = await moveEntryAction(entry.id, date);
+      if (!result.ok) {
+        setError(translate(language, result.error as TranslationKey));
+        return;
+      }
+      onDone(
+        translate(language, "entry.moved", {
+          date: formatLongDate(date, language),
+        }),
+      );
+    });
+  }
+
+  return (
+    <Dialog
+      open
+      onClose={onClose}
+      title={t("entry.moveTitle")}
+      description={entry.name}
+      language={language}
+      footer={
+        <>
+          <button type="button" className="button secondary" onClick={onClose}>
+            {t("common.cancel")}
+          </button>
+          <button
+            type="submit"
+            form="move-entry-form"
+            className="button"
+            disabled={pending}
+          >
+            {pending ? t("common.saving") : t("entry.moveConfirm")}
+          </button>
+        </>
+      }
+    >
+      <form id="move-entry-form" className="stack" onSubmit={move}>
+        <p className="card-hint">{t("entry.moveHelp")}</p>
+        <div className="field">
+          <label htmlFor="entry-move-date">{t("entry.moveDate")}</label>
+          <input
+            id="entry-move-date"
+            type="date"
+            className="input"
+            value={date}
+            onChange={(event) => setDate(event.target.value)}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? "entry-move-error" : undefined}
+            data-autofocus
+          />
+        </div>
+        {error ? (
+          <p className="notice error" id="entry-move-error" role="alert">
+            {error}
+          </p>
+        ) : null}
       </form>
     </Dialog>
   );

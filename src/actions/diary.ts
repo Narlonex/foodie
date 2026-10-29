@@ -7,6 +7,7 @@ import {
   copyDay,
   deleteEntry,
   getEntry,
+  moveEntry,
   previewCopyDay,
   previewRepeatMeal,
   repeatMeal,
@@ -81,6 +82,26 @@ export async function updateEntryAction(
   if (!updated) return { status: "error", message: "entry.error" };
   revalidateDiary();
   return { status: "success", message: "entry.saved" };
+}
+
+export async function moveEntryAction(
+  entryId: string,
+  targetDate: string,
+): Promise<ActionResult> {
+  const viewer = await requireViewer();
+  const entryParsed = z.string().uuid().safeParse(entryId);
+  const dateParsed = isoDateSchema.safeParse(targetDate);
+  if (!entryParsed.success || !dateParsed.success) {
+    return { ok: false, error: "entry.moveError" };
+  }
+  const moved = await moveEntry(
+    viewer.user.id,
+    entryParsed.data,
+    dateParsed.data,
+  );
+  if (!moved) return { ok: false, error: "entry.moveError" };
+  revalidateDiary();
+  return { ok: true, message: "entry.moved" };
 }
 
 export async function deleteEntryAction(

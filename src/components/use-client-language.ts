@@ -12,11 +12,13 @@ function cookieLanguage(): Language {
     .split(";")
     .map((part) => part.trim())
     .find((part) => part.startsWith("foodie_locale="));
-  return match?.endsWith("sk") ? "sk" : "en";
+  const value = match?.split("=")[1];
+  return value === "sk" || value === "cs" ? value : "en";
 }
 
 function htmlLanguage(): Language {
-  return document.documentElement.lang === "sk" ? "sk" : "en";
+  const value = document.documentElement.lang;
+  return value === "sk" || value === "cs" ? value : "en";
 }
 
 /**

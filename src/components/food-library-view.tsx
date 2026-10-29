@@ -186,20 +186,24 @@ export function FoodLibraryView({
       <div className="tab-bar" role="tablist" aria-label={t("foods.title")}>
         {(
           [
-            ["custom", t("foods.customTab")],
-            ["favorites", t("foods.favoritesTab")],
-            ["recent", t("foods.recentTab")],
-            ["meals", t("foods.savedMealsTab")],
-          ] as [Tab, string][]
-        ).map(([value, label]) => (
+            ["custom", t("foods.customTab"), t("foods.customTabShort")],
+            ["favorites", t("foods.favoritesTab"), t("foods.favoritesTabShort")],
+            ["recent", t("foods.recentTab"), t("foods.recentTabShort")],
+            ["meals", t("foods.savedMealsTab"), t("foods.savedMealsTabShort")],
+          ] as [Tab, string, string][]
+        ).map(([value, label, shortLabel]) => (
           <button
             key={value}
             type="button"
             role="tab"
             aria-selected={tab === value}
+            aria-label={label}
             onClick={() => setTab(value)}
           >
-            {label}
+            <span className="tab-label-full">{label}</span>
+            <span className="tab-label-short" aria-hidden="true">
+              {shortLabel}
+            </span>
           </button>
         ))}
       </div>
