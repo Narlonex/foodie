@@ -510,7 +510,29 @@ export const sk: Dictionary = {
   "foodData.docs": "Dokumentácia API Open Food Facts",
   "foodData.usdaDocs": "Sprievodca API USDA FoodData Central",
   "foodData.cameraNote":
-    "Skenovanie čiarových kódov kamerou nie je súčasťou. Zadanie a vyhľadanie kódu funguje cez produktové API.",
+    "Skenovanie kamerou je dostupné v mobilnom rozhraní. Otvorte appku na telefóne cez HTTPS a naskenujte obal; na počítači zostáva manuálne zadanie kódu.",
+
+  "scanner.title": "Skenovať čiarový kód",
+  "scanner.scanButton": "Skenovať kamerou",
+  "scanner.hint":
+    "Namierte kameru na čiarový kód na obale. Držte telefón pokojne.",
+  "scanner.starting": "Spúšťam kameru…",
+  "scanner.close": "Zavrieť skener",
+  "scanner.manual": "Zadať kód ručne",
+  "scanner.retry": "Skúsiť znova",
+  "scanner.switchCamera": "Prepnúť kameru",
+  "scanner.torchOn": "Zapnúť svetlo",
+  "scanner.torchOff": "Vypnúť svetlo",
+  "scanner.note":
+    "Skenovanie kamerou je dostupné na mobile. Ak sa kód nepodarí načítať, zadajte ho ručne.",
+  "scanner.insecure":
+    "Skenovanie kamerou funguje iba na zabezpečenej HTTPS adrese. Otvorte appku cez HTTPS.",
+  "scanner.unsupported": "Tento prehliadač nepodporuje skenovanie kamerou.",
+  "scanner.permissionDenied":
+    "Prístup ku kamere je zamietnutý. Povoľte kameru v nastaveniach prehliadača alebo zadajte kód ručne.",
+  "scanner.noCamera": "Na tomto zariadení sa nenašla kamera.",
+  "scanner.error":
+    "Kameru sa nepodarilo spustiť. Skúste to znova alebo zadajte kód ručne.",
 
   "account.title": "Účet",
   "account.email": "Prihlásený ako",

@@ -15,6 +15,7 @@ import {
   toggleFavoriteAction,
 } from "@/actions/foods";
 import { getTranslator, translate, type TranslationKey } from "@/i18n";
+import { barcodeLookupCandidates, normalizeBarcode } from "@/lib/barcode";
 import { formatKcal, formatNumber, unitTranslationKey } from "@/lib/format";
 import { scaleNutrients, toBaseAmount } from "@/lib/nutrition";
 import {
@@ -34,6 +35,7 @@ import {
   type Nutrients,
   type UnitSystem,
 } from "@/lib/types";
+import { BarcodeScanner } from "./barcode-scanner";
 import { Dialog } from "./dialog";
 import { FoodThumb } from "./food-thumb";
 import { Icon } from "./icons";
@@ -114,6 +116,7 @@ export function AddFoodDialog({
   const [barcode, setBarcode] = useState("");
   const [barcodeError, setBarcodeError] = useState<string | null>(null);
   const [barcodeLoading, setBarcodeLoading] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [selection, setSelection] = useState<Selection | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
@@ -262,6 +265,7 @@ export function AddFoodDialog({
     libraryId: string | null,
     needsDetail: boolean,
   ) {
+    setScannerOpen(false);
     const key = libraryId ? `id:${libraryId}` : externalKey(food);
     const favorite = libraryId
       ? favoriteKeys.has(`id:${libraryId}`)
@@ -366,34 +370,52 @@ export function AddFoodDialog({
     }
   }
 
-  async function lookupBarcode(event: React.FormEvent) {
-    event.preventDefault();
-    const code = barcode.trim();
+  async function lookupBarcodeCode(rawCode: string) {
+    const code = normalizeBarcode(rawCode);
     setBarcodeError(null);
-    if (!/^[0-9]{6,20}$/.test(code)) {
+    if (!code) {
       setBarcodeError(t("search.invalidBarcode"));
       return;
     }
     setBarcodeLoading(true);
     try {
-      const response = await fetch(
-        `/api/foods/barcode?code=${encodeURIComponent(code)}`,
-        { headers: { Accept: "application/json" } },
-      );
-      const payload = (await response.json().catch(() => ({}))) as {
-        food?: FoodCandidate;
-        error?: string;
-      };
-      if (!response.ok || !payload.food) {
-        setBarcodeError(tr(payload.error) ?? t("search.barcodeNotFound"));
-        return;
+      let lastError: string | null = null;
+      for (const candidate of barcodeLookupCandidates(code)) {
+        const response = await fetch(
+          `/api/foods/barcode?code=${encodeURIComponent(candidate)}`,
+          { headers: { Accept: "application/json" } },
+        );
+        const payload = (await response.json().catch(() => ({}))) as {
+          food?: FoodCandidate;
+          error?: string;
+        };
+        if (response.ok && payload.food) {
+          chooseFood(payload.food, null, false);
+          return;
+        }
+        if (!response.ok && response.status !== 404) {
+          setBarcodeError(tr(payload.error) ?? t("search.barcodeNotFound"));
+          return;
+        }
+        lastError = payload.error ?? "search.barcodeNotFound";
       }
-      chooseFood(payload.food, null, false);
+      setBarcodeError(tr(lastError) ?? t("search.barcodeNotFound"));
     } catch {
       setBarcodeError(t("search.networkError"));
     } finally {
       setBarcodeLoading(false);
     }
+  }
+
+  async function lookupBarcode(event: React.FormEvent) {
+    event.preventDefault();
+    await lookupBarcodeCode(barcode);
+  }
+
+  function handleScannerDetected(code: string) {
+    setBarcode(code);
+    setScannerOpen(false);
+    void lookupBarcodeCode(code);
   }
 
   async function submit(event: React.FormEvent) {
@@ -583,15 +605,37 @@ export function AddFoodDialog({
                 </p>
               ) : null}
             </div>
-            <button
-              type="submit"
-              className="button secondary"
-              disabled={barcodeLoading}
-            >
-              <Icon name="barcode" size={17} />
-              {barcodeLoading ? t("common.loading") : t("search.lookup")}
-            </button>
+            <div className="barcode-actions">
+              <button
+                type="button"
+                className="button secondary barcode-scan-button"
+                disabled={scannerOpen || barcodeLoading}
+                onClick={() => {
+                  setBarcodeError(null);
+                  setScannerOpen(true);
+                }}
+              >
+                <Icon name="camera" size={17} />
+                <span>{t("scanner.scanButton")}</span>
+              </button>
+              <button
+                type="submit"
+                className="button secondary"
+                disabled={barcodeLoading}
+              >
+                <Icon name="barcode" size={17} />
+                {barcodeLoading ? t("common.loading") : t("search.lookup")}
+              </button>
+            </div>
           </form>
+
+          {scannerOpen ? (
+            <BarcodeScanner
+              language={language}
+              onDetected={handleScannerDetected}
+              onClose={() => setScannerOpen(false)}
+            />
+          ) : null}
 
           <div aria-live="polite" className="small muted">
             {searchStatus === "loading" ? t("search.loading") : null}
@@ -1118,7 +1162,10 @@ export function AddFoodDialog({
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={() => {
+        setScannerOpen(false);
+        onClose();
+      }}
       title={selection ? t("search.detailTitle") : t("search.dialogTitle")}
       description={
         selection ? undefined : t("search.dialogDescription")
@@ -1144,7 +1191,10 @@ export function AddFoodDialog({
                 type="button"
                 role="tab"
                 aria-selected={tab === value}
-                onClick={() => setTab(value)}
+                onClick={() => {
+                  setScannerOpen(false);
+                  setTab(value);
+                }}
               >
                 {label}
               </button>

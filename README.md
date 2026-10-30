@@ -2,12 +2,13 @@
 
 Foodie is a full-stack nutrition and meal tracker built with Next.js (App Router), TypeScript, PostgreSQL and the Open Food Facts API. It is designed for a premium dark-first, green-accented experience with a complete light theme and English/Slovak interfaces.
 
-The application is a working MVP, not a clickable mockup: accounts, diaries, custom foods, favorites, saved meals, day types, settings and weekly history are persisted in PostgreSQL and scoped to the signed-in user.
+The application is a working MVP, not a clickable mockup: accounts, diaries, custom foods, favorites, saved meals, day types, settings and weekly history are persisted in PostgreSQL and scoped to the signed-in user. The mobile food dialog can also scan product barcodes with the phone camera.
 
 ## Features
 
 - **Daily dashboard and diary** — previous/next day navigation, a date picker, calories consumed/remaining, macro progress, meal subtotals, and additional nutrients (sugars, saturated fat, fibre, salt).
 - **Real food lookup** — server-side search and barcode lookup through Open Food Facts. Results are normalized, ranked with a preference for Slovak/Czech products while retaining international results, and clearly attributed.
+- **Mobile barcode scanning** — the mobile food dialog scans EAN-13, EAN-8, UPC-A and UPC-E codes with the phone camera, then uses the same barcode lookup as manual entry. Desktop keeps manual entry only.
 - **Normal food-entry flow** — open a meal, search, choose a product, enter grams/millilitres/servings, preview the calculated nutrition, confirm the meal, and save. Breakfast, Lunch, Dinner and Snacks are the meal groups.
 - **Trust the data** — every result shows its source (Open Food Facts, USDA FoodData Central or user-created), serving basis, barcode/brand when available, and whether data is complete. Missing nutrients stay **Unknown**; they are never replaced with zero.
 - **Custom foods** — create, edit and delete user-entered foods with a serving basis and only the nutrition fields the user knows.
@@ -27,7 +28,7 @@ The application is a working MVP, not a clickable mockup: accounts, diaries, cus
 
 - **No Smart Add.** There is no free-text multi-food parser, hidden button, disabled menu item or placeholder.
 - **No AI features.** There is no AI nutrition estimate, image recognition, fake AI endpoint or AI-generated food data.
-- **No camera barcode scanner in this build.** Manual barcode entry and API lookup are implemented. Camera scanning is deferred rather than mocked; see [Deferred work](#deferred-work).
+- **No desktop camera scanner.** Camera scanning is intentionally limited to the mobile layout; desktop keeps manual barcode entry.
 
 ## Stack
 
@@ -236,11 +237,10 @@ tests/                     Vitest unit and optional integration tests
 - Every private read/write is scoped by the authenticated user; repository integration tests cover cross-user isolation.
 - SQL uses parameterized queries; external API payloads are validated at the boundary.
 - Server actions validate input and use Next.js origin protections; errors shown to users are translated generic messages, not SQL/stack details.
-- A restrictive Content Security Policy, `nosniff`, frame denial, referrer policy and production HSTS are applied. Camera/microphone/geolocation permissions are disabled because no such feature is implemented.
+- A restrictive Content Security Policy, `nosniff`, frame denial, referrer policy and production HSTS are applied. Camera is allowed for the first-party mobile scanner; microphone, geolocation and payment stay disabled.
 
 ## Deferred work
 
-- **Camera barcode scanning** is not implemented. It would require a tested scanner library, device permissions and HTTPS; the build intentionally avoids a fake camera button. Manual barcode entry is available in the food dialog.
 - **USDA** works through the public `DEMO_KEY` with low limits; a personal API key is recommended for regular use. The rest of the app does not depend on it.
 - Original planning-conversation details such as exact day-type names, if any, could not be verified. They are configurable rather than hardcoded, and the defaults above are documented assumptions.
 

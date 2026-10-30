@@ -510,7 +510,29 @@ export const en = {
   "foodData.docs": "Open Food Facts API documentation",
   "foodData.usdaDocs": "USDA FoodData Central API guide",
   "foodData.cameraNote":
-    "Camera barcode scanning is not included. Barcode entry and lookup work with the product API.",
+    "Camera scanning is available in the mobile layout. Open the app on a phone over HTTPS to scan a package; desktop keeps manual barcode entry.",
+
+  "scanner.title": "Scan barcode",
+  "scanner.scanButton": "Scan with camera",
+  "scanner.hint":
+    "Point the camera at the barcode on the package. Hold the phone steady.",
+  "scanner.starting": "Starting camera…",
+  "scanner.close": "Close scanner",
+  "scanner.manual": "Enter code manually",
+  "scanner.retry": "Try again",
+  "scanner.switchCamera": "Switch camera",
+  "scanner.torchOn": "Turn light on",
+  "scanner.torchOff": "Turn light off",
+  "scanner.note":
+    "Camera scanning is available on mobile. If a code does not scan, enter it manually.",
+  "scanner.insecure":
+    "Camera scanning works only on a secure HTTPS address. Open the app over HTTPS.",
+  "scanner.unsupported": "This browser does not support camera scanning.",
+  "scanner.permissionDenied":
+    "Camera access is blocked. Allow camera access in your browser settings or enter the code manually.",
+  "scanner.noCamera": "No camera was found on this device.",
+  "scanner.error":
+    "The camera could not start. Try again or enter the code manually.",
 
   "account.title": "Account",
   "account.email": "Signed in as",
