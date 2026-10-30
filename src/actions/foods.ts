@@ -218,7 +218,7 @@ export async function createCustomFoodAction(
     };
   }
   try {
-    await createCustomFood(viewer.user.id, {
+    const food = await createCustomFood(viewer.user.id, {
       source: "custom",
       externalId: null,
       barcode: parsed.data.barcode || null,
@@ -239,6 +239,7 @@ export async function createCustomFoodAction(
     return {
       status: "success",
       message: "foods.created",
+      createdFood: food,
     };
   } catch {
     return { status: "error", message: "foods.error" };

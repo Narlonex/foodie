@@ -569,6 +569,8 @@ export const en = {
   "foods.editCustomFood": "Edit custom food",
   "foods.customHint":
     "Enter values per 100 g, per 100 ml, or per serving. Leave anything you do not know blank.",
+  "foods.customBarcodeHint":
+    "Barcode {barcode} is not in Open Food Facts or USDA yet. Enter the values from the label once; this food is saved with the barcode for next time.",
   "foods.name": "Food name",
   "foods.brand": "Brand",
   "foods.barcode": "Barcode",
@@ -783,6 +785,7 @@ export const en = {
   "search.barcodePlaceholder": "e.g. 3017620422003",
   "search.lookup": "Look up",
   "search.barcodeNotFound": "No product was found for that barcode.",
+  "search.createFromBarcode": "Create this food from the label",
   "search.invalidBarcode": "Enter a barcode of 6 to 20 digits.",
   "search.offAttribution":
     "Results from Open Food Facts, © Open Food Facts contributors (ODbL).",

@@ -35,6 +35,7 @@ export function Dialog({
   const titleId = useId();
   const descriptionId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
   const restoreRef = useRef<HTMLElement | null>(null);
   const onCloseRef = useRef(onClose);
   const t = getTranslator(language);
@@ -57,7 +58,16 @@ export function Dialog({
       dialog?.querySelector<HTMLElement>(FOCUSABLE);
     window.setTimeout(() => focusTarget?.focus(), 30);
 
+    // Dialogs can stack (for example "create food" opened over "add food").
+    // Only the topmost layer may close or trap keys, otherwise Escape closes
+    // the parent underneath as well.
+    function isTopmost() {
+      const layers = document.querySelectorAll(".dialog-backdrop");
+      return layers[layers.length - 1] === backdropRef.current;
+    }
+
     function onKeyDown(event: KeyboardEvent) {
+      if (!isTopmost()) return;
       if (event.key === "Escape") {
         event.preventDefault();
         onCloseRef.current();
@@ -83,7 +93,13 @@ export function Dialog({
     document.addEventListener("keydown", onKeyDown);
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = previousOverflow;
+      // The child dialog unmounts before its parent; only release the page
+      // scroll lock once no layer is left.
+      window.setTimeout(() => {
+        if (!document.querySelector(".dialog-backdrop")) {
+          document.body.style.overflow = previousOverflow;
+        }
+      }, 0);
       restoreRef.current?.focus?.();
     };
   }, [open]);
@@ -93,6 +109,7 @@ export function Dialog({
   return (
     <div
       className="dialog-backdrop"
+      ref={backdropRef}
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}

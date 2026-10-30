@@ -569,6 +569,8 @@ export const cs: Dictionary = {
   "foods.editCustomFood": "Upravit vlastní potravinu",
   "foods.customHint":
     "Zadejte hodnoty na 100 g, 100 ml nebo na porci. Co nevíte, nechte prázdné.",
+  "foods.customBarcodeHint":
+    "Kód {barcode} zatím není v Open Food Facts ani USDA. Zadejte jednou hodnoty z etikety; potravina se uloží s tímto kódem pro příště.",
   "foods.name": "Název potraviny",
   "foods.brand": "Značka",
   "foods.barcode": "Čárový kód",
@@ -783,6 +785,7 @@ export const cs: Dictionary = {
   "search.barcodePlaceholder": "např. 3017620422003",
   "search.lookup": "Vyhledat",
   "search.barcodeNotFound": "Pro tento čárový kód se nenašel žádný produkt.",
+  "search.createFromBarcode": "Vytvořit potravinu z etikety",
   "search.invalidBarcode": "Zadejte čárový kód s 6 až 20 číslicemi.",
   "search.offAttribution":
     "Výsledky z Open Food Facts, © přispěvatelé Open Food Facts (ODbL).",

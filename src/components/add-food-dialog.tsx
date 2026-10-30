@@ -36,6 +36,7 @@ import {
   type UnitSystem,
 } from "@/lib/types";
 import { BarcodeScanner } from "./barcode-scanner";
+import { CustomFoodDialog } from "./custom-food-dialog";
 import { Dialog } from "./dialog";
 import { FoodThumb } from "./food-thumb";
 import { Icon } from "./icons";
@@ -115,6 +116,8 @@ export function AddFoodDialog({
   const [unavailableSources, setUnavailableSources] = useState<SourceKind[]>([]);
   const [barcode, setBarcode] = useState("");
   const [barcodeError, setBarcodeError] = useState<string | null>(null);
+  const [unknownBarcode, setUnknownBarcode] = useState<string | null>(null);
+  const [customBarcode, setCustomBarcode] = useState<string | null>(null);
   const [barcodeLoading, setBarcodeLoading] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [selection, setSelection] = useState<Selection | null>(null);
@@ -373,6 +376,7 @@ export function AddFoodDialog({
   async function lookupBarcodeCode(rawCode: string) {
     const code = normalizeBarcode(rawCode);
     setBarcodeError(null);
+    setUnknownBarcode(null);
     if (!code) {
       setBarcodeError(t("search.invalidBarcode"));
       return;
@@ -400,6 +404,7 @@ export function AddFoodDialog({
         lastError = payload.error ?? "search.barcodeNotFound";
       }
       setBarcodeError(tr(lastError) ?? t("search.barcodeNotFound"));
+      setUnknownBarcode(code);
     } catch {
       setBarcodeError(t("search.networkError"));
     } finally {
@@ -600,9 +605,18 @@ export function AddFoodDialog({
                 {t("search.barcodeHelp")}
               </p>
               {barcodeError ? (
-                <p className="field-error" id="barcode-error" role="alert">
-                  {barcodeError}
-                </p>
+                <div id="barcode-error" role="alert">
+                  <p className="field-error">{barcodeError}</p>
+                  {unknownBarcode ? (
+                    <button
+                      type="button"
+                      className="button-link"
+                      onClick={() => setCustomBarcode(unknownBarcode)}
+                    >
+                      {t("search.createFromBarcode")}
+                    </button>
+                  ) : null}
+                </div>
               ) : null}
             </div>
             <div className="barcode-actions">
@@ -634,6 +648,24 @@ export function AddFoodDialog({
               language={language}
               onDetected={handleScannerDetected}
               onClose={() => setScannerOpen(false)}
+            />
+          ) : null}
+
+          {customBarcode ? (
+            <CustomFoodDialog
+              initialBarcode={customBarcode}
+              language={language}
+              onClose={() => setCustomBarcode(null)}
+              onDone={(message, createdFood) => {
+                setCustomBarcode(null);
+                if (createdFood) {
+                  setBarcodeError(null);
+                  setUnknownBarcode(null);
+                  chooseFood(createdFood, createdFood.id ?? null, false);
+                  return;
+                }
+                onAdded(message);
+              }}
             />
           ) : null}
 

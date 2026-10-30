@@ -1,5 +1,6 @@
 import "server-only";
 import { env } from "../env";
+import { parsePackageSize } from "../package";
 import { detectPreparation } from "./preparation";
 import { normalizeNutrients } from "../nutrition";
 import { EMPTY_NUTRIENTS, type FoodCandidate, type Nutrients } from "../types";
@@ -33,7 +34,12 @@ interface UsdaFood {
   fdcId?: number;
   description?: string;
   brandOwner?: string;
+  brandName?: string;
   dataType?: string;
+  gtinUpc?: string;
+  packageWeight?: string;
+  servingSize?: number;
+  servingSizeUnit?: string;
   foodNutrients?: UsdaNutrient[];
 }
 
@@ -95,7 +101,7 @@ export function normalizeUsdaFood(raw: UsdaFood): FoodCandidate | null {
     externalId: String(raw.fdcId),
     barcode: null,
     name: raw.description,
-    brand: raw.brandOwner?.trim() || null,
+    brand: raw.brandName?.trim() || raw.brandOwner?.trim() || null,
     basisType: "100g",
     servingSize: null,
     servingUnit: null,
@@ -114,7 +120,13 @@ export function normalizeUsdaFood(raw: UsdaFood): FoodCandidate | null {
   };
 }
 
-export async function searchUsda(query: string): Promise<FoodCandidate[]> {
+interface UsdaSearchInput {
+  query: string;
+  dataType: string[];
+  pageSize: number;
+}
+
+async function requestUsdaFoods(input: UsdaSearchInput): Promise<UsdaFood[]> {
   if (!env.usdaApiKey) {
     throw new FoodApiError("unavailable", "USDA FoodData Central is not configured.");
   }
@@ -131,9 +143,9 @@ export async function searchUsda(query: string): Promise<FoodCandidate[]> {
         "User-Agent": env.offUserAgent,
       },
       body: JSON.stringify({
-        query,
-        dataType: ["Foundation", "SR Legacy"],
-        pageSize: 16,
+        query: input.query,
+        dataType: input.dataType,
+        pageSize: input.pageSize,
         pageNumber: 1,
       }),
       signal: AbortSignal.timeout(9_000),
@@ -155,10 +167,18 @@ export async function searchUsda(query: string): Promise<FoodCandidate[]> {
   } catch {
     throw new FoodApiError("invalid", "USDA FoodData Central returned malformed data.");
   }
-  if (!Array.isArray(payload.foods)) return [];
+  return Array.isArray(payload.foods) ? payload.foods : [];
+}
+
+export async function searchUsda(query: string): Promise<FoodCandidate[]> {
+  const foods = await requestUsdaFoods({
+    query,
+    dataType: ["Foundation", "SR Legacy"],
+    pageSize: 16,
+  });
   const seen = new Set<string>();
   const results: FoodCandidate[] = [];
-  for (const food of payload.foods) {
+  for (const food of foods) {
     const candidate = normalizeUsdaFood(food);
     if (!candidate || !candidate.externalId) continue;
     if (seen.has(candidate.externalId)) continue;
@@ -166,4 +186,87 @@ export async function searchUsda(query: string): Promise<FoodCandidate[]> {
     results.push(candidate);
   }
   return results;
+}
+
+/** GTINs are printed with different zero padding on labels and in FDC. */
+function gtinKey(value: string | undefined | null): string | null {
+  const digits = (value ?? "").replace(/\D/g, "");
+  if (!digits) return null;
+  return digits.replace(/^0+/, "") || "0";
+}
+
+function servingFields(raw: UsdaFood): {
+  servingSize: number | null;
+  servingUnit: "g" | "ml" | null;
+} {
+  const size = numberValue(raw.servingSize);
+  const unit = (raw.servingSizeUnit ?? "").trim().toLowerCase();
+  if (size === null || size <= 0) return { servingSize: null, servingUnit: null };
+  if (unit === "g" || unit === "grm" || unit === "gram") {
+    return { servingSize: size, servingUnit: "g" };
+  }
+  if (unit === "ml" || unit === "mlt" || unit === "milliliter") {
+    return { servingSize: size, servingUnit: "ml" };
+  }
+  return { servingSize: null, servingUnit: null };
+}
+
+function packageFields(raw: UsdaFood): {
+  packageQuantity: number | null;
+  packageUnit: "g" | "ml" | null;
+} {
+  const text = raw.packageWeight?.trim();
+  if (!text) return { packageQuantity: null, packageUnit: null };
+  // Branded records often print dual units, e.g. "0.84 oz/24 g" or
+  // "12 fl oz/355 mL". Parse each part and use the metric one; never convert
+  // an ounce guess into a package size.
+  const parts = [text, ...text.split("/").map((part) => part.trim())];
+  for (const part of parts) {
+    const parsed = parsePackageSize(part);
+    if (parsed) return { packageQuantity: parsed.quantity, packageUnit: parsed.unit };
+  }
+  return { packageQuantity: null, packageUnit: null };
+}
+
+/**
+ * Normalizes a branded USDA record into a barcode product. Branded nutrient
+ * values are published per 100 g, so the basis stays 100 g even when a serving
+ * size is printed; the serving size is kept for display only.
+ */
+export function normalizeUsdaBarcode(
+  raw: UsdaFood,
+  barcode: string,
+): FoodCandidate | null {
+  const base = normalizeUsdaFood(raw);
+  if (!base) return null;
+  const serving = servingFields(raw);
+  const pkg = packageFields(raw);
+  return {
+    ...base,
+    barcode,
+    brand: raw.brandName?.trim() || base.brand,
+    servingSize: serving.servingSize,
+    servingUnit: serving.servingUnit,
+    packageQuantity: pkg.packageQuantity,
+    packageUnit: pkg.packageUnit,
+    drainedWeight: null,
+  };
+}
+
+export async function lookupUsdaBarcode(barcode: string): Promise<FoodCandidate> {
+  const foods = await requestUsdaFoods({
+    query: barcode,
+    dataType: ["Branded"],
+    pageSize: 10,
+  });
+  const wanted = gtinKey(barcode);
+  const matches = foods.filter((food) => gtinKey(food.gtinUpc) === wanted);
+  for (const food of matches) {
+    const candidate = normalizeUsdaBarcode(food, barcode);
+    if (candidate) return candidate;
+  }
+  if (matches.length > 0) {
+    throw new FoodApiError("no-data", "The branded record has no nutrition data.");
+  }
+  throw new FoodApiError("not-found", "Product not found.");
 }

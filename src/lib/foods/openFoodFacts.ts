@@ -384,7 +384,10 @@ function retryDelay(attempt: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function requestJson(url: string): Promise<unknown> {
+async function requestJson(
+  url: string,
+  options?: { notFoundIsMiss?: boolean },
+): Promise<unknown> {
   let lastError: FoodApiError | null = null;
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
@@ -423,6 +426,9 @@ async function requestJson(url: string): Promise<unknown> {
         "rate-limited",
         "The food database is rate limiting requests.",
       );
+    }
+    if (response.status === 404 && options?.notFoundIsMiss) {
+      throw new FoodApiError("not-found", "Product not found.");
     }
     if (!response.ok) {
       throw new FoodApiError("unavailable", "The food database is unavailable.");
@@ -521,7 +527,7 @@ export async function fetchOpenFoodFactsProduct(
   ].join(",");
   const url = `${PRODUCT_URL}/${encodeURIComponent(barcode)}?fields=${fields}`;
   try {
-    const payload = await requestJson(url);
+    const payload = await requestJson(url, { notFoundIsMiss: true });
     const product =
       payload && typeof payload === "object"
         ? (payload as { product?: unknown }).product
@@ -540,7 +546,7 @@ export async function fetchOpenFoodFactsProduct(
         barcode,
       )}.json?fields=code,product_name,brands,quantity,serving_size,nutriments,image_front_small_url,image_front_url,image_url`;
       try {
-        const legacy = await requestJson(legacyUrl);
+        const legacy = await requestJson(legacyUrl, { notFoundIsMiss: true });
         const product =
           legacy && typeof legacy === "object"
             ? (legacy as { product?: unknown }).product

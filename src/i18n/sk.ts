@@ -569,6 +569,8 @@ export const sk: Dictionary = {
   "foods.editCustomFood": "Upraviť vlastnú potravinu",
   "foods.customHint":
     "Zadajte hodnoty na 100 g, 100 ml alebo na porciu. Čo neviete, nechajte prázdne.",
+  "foods.customBarcodeHint":
+    "Kód {barcode} zatiaľ nie je v Open Food Facts ani USDA. Zadajte raz hodnoty z etikety; potravina sa uloží s týmto kódom pre nabudúce.",
   "foods.name": "Názov potraviny",
   "foods.brand": "Značka",
   "foods.barcode": "Čiarový kód",
@@ -783,6 +785,7 @@ export const sk: Dictionary = {
   "search.barcodePlaceholder": "napr. 3017620422003",
   "search.lookup": "Vyhľadať",
   "search.barcodeNotFound": "Pre tento čiarový kód sa nenašiel žiadny produkt.",
+  "search.createFromBarcode": "Vytvoriť potravinu z etikety",
   "search.invalidBarcode": "Zadajte čiarový kód s 6 až 20 číslicami.",
   "search.offAttribution":
     "Výsledky z Open Food Facts, © prispievatelia Open Food Facts (ODbL).",

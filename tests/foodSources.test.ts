@@ -1,12 +1,13 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   FoodApiError,
+  fetchOpenFoodFactsProduct,
   missingNutrientKeys,
   normalizeOffProduct,
   normalizeOffSearchHit,
   searchOpenFoodFacts,
 } from "@/lib/foods/openFoodFacts";
-import { normalizeUsdaFood } from "@/lib/foods/usda";
+import { normalizeUsdaBarcode, normalizeUsdaFood } from "@/lib/foods/usda";
 
 const v2Product = {
   code: "8580000000001",
@@ -405,6 +406,14 @@ describe("Open Food Facts transient failures", () => {
     });
     expect(calls()).toBe(1);
   });
+
+  it("treats a 404 product as a miss, not an outage", async () => {
+    const calls = stubFetch([404, 404]);
+    await expect(fetchOpenFoodFactsProduct("0000000000000")).rejects.toMatchObject(
+      { kind: "not-found" },
+    );
+    expect(calls()).toBe(2);
+  });
 });
 
 describe("Food API errors", () => {
@@ -487,5 +496,38 @@ describe("USDA FoodData Central normalization", () => {
         ],
       }),
     ).toBeNull();
+  });
+
+  it("keeps the scanned barcode, branded name and metric package size", () => {
+    const result = normalizeUsdaBarcode(
+      {
+        fdcId: 2678649,
+        description: "COCA-COLA, COLA",
+        brandName: "Coca-Cola",
+        dataType: "Branded",
+        gtinUpc: "04963406",
+        packageWeight: "12 fl oz/355 mL",
+        servingSize: 355,
+        servingSizeUnit: "ml",
+        foodNutrients: [
+          { nutrientId: 1008, value: 42 },
+          { nutrientId: 1003, value: 0 },
+          { nutrientId: 1005, value: 10.6 },
+          { nutrientId: 1004, value: 0 },
+        ],
+      },
+      "04963406",
+    );
+    expect(result).toMatchObject({
+      source: "usda",
+      barcode: "04963406",
+      name: "COCA-COLA, COLA",
+      brand: "Coca-Cola",
+      basisType: "100g",
+      servingSize: 355,
+      servingUnit: "ml",
+      packageQuantity: 355,
+      packageUnit: "ml",
+    });
   });
 });
