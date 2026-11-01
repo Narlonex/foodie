@@ -16,6 +16,7 @@ import { recipeNutrition } from "@/lib/recipes";
 import {
   basisLabel,
   type AmountUnit,
+  type DiaryEntry,
   type Food,
   type FoodCandidate,
   type Language,
@@ -61,8 +62,49 @@ function mergeFoods(foods: Food[], savedMeal: SavedMeal | null): Food[] {
   return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
+function rowsFromEntries(
+  entries: DiaryEntry[],
+  foods: Food[],
+  unitSystem: UnitSystem,
+  language: Language,
+): BuilderRow[] {
+  const byId = new Map(
+    foods.flatMap((food) => (food.id ? [[food.id, food] as const] : [])),
+  );
+  const totals = new Map<string, { key: string; foodId: string; value: number }>();
+  for (const entry of entries) {
+    if (!entry.foodId) continue;
+    const food = byId.get(entry.foodId);
+    if (!food) continue;
+    const baseUnit =
+      food.basisType === "serving"
+        ? "serving"
+        : food.basisType === "100ml"
+          ? "ml"
+          : "g";
+    if (entry.amountUnit !== baseUnit) continue;
+    const converted = fromBaseAmount(entry.amount, entry.amountUnit, unitSystem);
+    const existing = totals.get(entry.foodId);
+    if (existing) {
+      existing.value += converted.value;
+      continue;
+    }
+    totals.set(entry.foodId, {
+      key: entry.id,
+      foodId: entry.foodId,
+      value: converted.value,
+    });
+  }
+  return Array.from(totals.values()).map((row) => ({
+    key: row.key,
+    foodId: row.foodId,
+    amount: formatNumber(row.value, language, 2),
+  }));
+}
+
 export function RecipeBuilderDialog({
   savedMeal,
+  initialEntries = [],
   availableFoods,
   language,
   unitSystem,
@@ -71,6 +113,7 @@ export function RecipeBuilderDialog({
   onDone,
 }: {
   savedMeal: SavedMeal | null;
+  initialEntries?: DiaryEntry[];
   availableFoods: Food[];
   language: Language;
   unitSystem: UnitSystem;
@@ -79,9 +122,8 @@ export function RecipeBuilderDialog({
   onDone: (message: string, recipe?: SavedMeal) => void;
 }) {
   const t = getTranslator(language);
-  const [foods, setFoods] = useState<Food[]>(() =>
-    mergeFoods(availableFoods, savedMeal),
-  );
+  const seedFoods = mergeFoods(availableFoods, savedMeal);
+  const [foods, setFoods] = useState<Food[]>(seedFoods);
   const [name, setName] = useState(savedMeal?.name ?? "");
   const [finalWeight, setFinalWeight] = useState(
     savedMeal?.finalWeightG ? String(savedMeal.finalWeightG) : "",
@@ -90,15 +132,17 @@ export function RecipeBuilderDialog({
     savedMeal?.servings ? String(savedMeal.servings) : "",
   );
   const [rows, setRows] = useState<BuilderRow[]>(() =>
-    (savedMeal?.items ?? []).map((item) => ({
-      key: item.id,
-      foodId: item.food.id ?? "",
-      amount: formatNumber(
-        fromBaseAmount(item.amount, item.amountUnit, unitSystem).value,
-        language,
-        2,
-      ),
-    })),
+    savedMeal
+      ? savedMeal.items.map((item) => ({
+          key: item.id,
+          foodId: item.food.id ?? "",
+          amount: formatNumber(
+            fromBaseAmount(item.amount, item.amountUnit, unitSystem).value,
+            language,
+            2,
+          ),
+        }))
+      : rowsFromEntries(initialEntries, seedFoods, unitSystem, language),
   );
   const [query, setQuery] = useState("");
   const [searchStatus, setSearchStatus] = useState<"idle" | "loading" | "done" | "error">(

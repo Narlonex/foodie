@@ -848,6 +848,7 @@ export function DashboardView({
       {recipeMeal ? (
         <RecipeBuilderDialog
           savedMeal={null}
+          initialEntries={byMeal.get(recipeMeal) ?? []}
           availableFoods={[...customFoods, ...favorites, ...recent]}
           language={language}
           unitSystem={unitSystem}
