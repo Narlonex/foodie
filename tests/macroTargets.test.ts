@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_SPLIT,
+  adjustmentModeFromTargets,
+  adjustmentTargets,
   deriveMacroTargets,
   splitFromGrams,
   suggestedCalories,
@@ -54,6 +56,40 @@ describe("deriveMacroTargets modes", () => {
     expect(targets.carbs).toBe(200);
     expect(targets.fat).toBeCloseTo(66.67, 2);
     expect(targetEnergyDifference(targets)).toBeCloseTo(0, 1);
+  });
+
+  it("lets carbs and fats share the remainder while protein stays fixed", () => {
+    const targets = successful({ ...base, adjustmentMode: "carbs,fats" });
+    expect(targets.protein).toBe(160);
+    expect(targets.carbs).toBeCloseTo(194.29, 2);
+    expect(targets.fat).toBeCloseTo(64.76, 2);
+    expect(targetEnergyDifference(targets)).toBeCloseTo(0, 1);
+  });
+
+  it("lets carbs and protein share the remainder while fat stays fixed", () => {
+    const targets = successful({ ...base, adjustmentMode: "carbs,proteins" });
+    expect(targets.fat).toBe(80);
+    expect(targets.carbs).toBeCloseTo(182.86, 2);
+    expect(targets.protein).toBeCloseTo(137.14, 2);
+    expect(targetEnergyDifference(targets)).toBeCloseTo(0, 1);
+  });
+
+  it("lets fat and protein share the remainder while carbs stay fixed", () => {
+    const targets = successful({ ...base, adjustmentMode: "fats,proteins" });
+    expect(targets.carbs).toBe(200);
+    expect(targets.fat).toBeCloseTo(66.67, 2);
+    expect(targets.protein).toBe(150);
+    expect(targetEnergyDifference(targets)).toBeCloseTo(0, 1);
+  });
+
+  it("treats all three selected targets like the canonical all mode", () => {
+    const mixed = successful({ ...base, adjustmentMode: "carbs,fats,proteins" });
+    const all = successful({ ...base, adjustmentMode: "all" });
+    expect(mixed).toMatchObject({
+      protein: all.protein,
+      carbs: all.carbs,
+      fat: all.fat,
+    });
   });
 
   it("gives each mode a distinct result", () => {
@@ -115,6 +151,26 @@ describe("invalid macro combinations", () => {
     if (!result.ok) expect(result.code).toBe("negative-proteins");
   });
 
+  it("refuses a negative remainder when several macros are selected", () => {
+    const result = deriveMacroTargets({
+      ...base,
+      protein: 600,
+      adjustmentMode: "carbs,fats",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe("negative-macros");
+  });
+
+  it("refuses a mixed selection whose selected split shares are all zero", () => {
+    const result = deriveMacroTargets({
+      ...base,
+      split: { protein: 100, carbs: 0, fat: 0 },
+      adjustmentMode: "carbs,fats",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe("split");
+  });
+
   it("validates calories, macros and the energy split", () => {
     expect(deriveMacroTargets({ ...base, kcal: 0, adjustmentMode: "carbs" })).toMatchObject({
       ok: false,
@@ -172,6 +228,24 @@ describe("decimal, zero and rounding behaviour", () => {
     });
     expect(targets.carbs).toBeGreaterThanOrEqual(0);
     expect(targets.carbs).toBeLessThan(1);
+  });
+});
+
+describe("macro adjustment selection helpers", () => {
+  it("expands the canonical all mode into every target", () => {
+    expect(adjustmentTargets("all")).toEqual(["carbs", "fats", "proteins"]);
+  });
+
+  it("keeps only the selected targets from a stored combination", () => {
+    expect(adjustmentTargets("carbs,fats")).toEqual(["carbs", "fats"]);
+  });
+
+  it("canonicalizes a full selection back to all", () => {
+    expect(
+      adjustmentModeFromTargets(["proteins", "fats", "carbs"]),
+    ).toBe("all");
+    expect(adjustmentModeFromTargets(["fats", "carbs"])).toBe("carbs,fats");
+    expect(adjustmentModeFromTargets([])).toBeNull();
   });
 });
 

@@ -248,7 +248,7 @@ export const sk: Dictionary = {
   "dayTypes.fat": "Cieľ tukov",
   "dayTypes.adjustmentTitle": "Keď sa zmenia kalórie",
   "dayTypes.adjustmentHelp":
-    "Vyberte, ktoré makro sa prepočíta pri zmene kalorického cieľa. Ostatné makrá zostanú na vami zadaných gramoch.",
+    "Zaškrtnite všetky makroživiny, ktoré sa majú prepočítať pri zmene kalorického cieľa. Nezaškrtnuté zostanú na vami zadaných gramoch.",
   "dayTypes.changeCarbs": "Zmeniť sacharidy",
   "dayTypes.changeFats": "Zmeniť tuky",
   "dayTypes.changeProteins": "Zmeniť bielkoviny",
@@ -261,9 +261,11 @@ export const sk: Dictionary = {
     "Sacharidy a tuky si zachovajú gramy. Zvyšné kalórie prevezmú bielkoviny.",
   "dayTypes.changeAllHelp":
     "Všetky tri makrá sa riadia energetickým pomerom nižšie. Úpravou pomeru zmeníte rozdelenie.",
-  "dayTypes.split": "Energetický pomer pre „Zmeniť všetko“",
+  "dayTypes.changeMixHelp":
+    "Vybrané makroživiny si rozdelia zvyšné kalórie v pomere percent nižšie. Nezaškrtnuté zostanú fixné.",
+  "dayTypes.split": "Energetický pomer pre prepočítavané makrá",
   "dayTypes.splitHelp":
-    "Percentá kalorického cieľa. Musia dať spolu 100 %. Pomer sa ukladá s typom dňa.",
+    "Percentá kalorického cieľa. Musia dať spolu 100 %. Pri viacerých vybraných makrách si podľa nich rozdelia zvyšné kalórie; pomer sa ukladá s typom dňa.",
   "dayTypes.splitProtein": "Podiel bielkovín",
   "dayTypes.splitCarbs": "Podiel sacharidov",
   "dayTypes.splitFat": "Podiel tukov",
@@ -307,6 +309,10 @@ export const sk: Dictionary = {
     "Bielkoviny a sacharidy už spotrebúvajú viac kalórií, ako je tento cieľ. Znížte jednu z hodnôt alebo zvýšte kalorický cieľ.",
   "dayTypes.errorNegativeProteins":
     "Sacharidy a tuky už spotrebúvajú viac kalórií, ako je tento cieľ. Znížte jednu z hodnôt alebo zvýšte kalorický cieľ.",
+  "dayTypes.errorNegativeMacros":
+    "Nevybrané fixné makrá už spotrebúvajú viac kalórií, ako je tento cieľ. Znížte ich alebo zvýšte kalorický cieľ.",
+  "dayTypes.errorAdjustmentEmpty":
+    "Vyberte aspoň jednu makroživinu, ktorá sa má prepočítavať.",
   "dayTypes.saveFailed": "Typ dňa sa nepodarilo uložiť. Skontrolujte hodnoty.",
   "dayTypes.assignTitle": "Typ dňa pre tento dátum",
   "dayTypes.assignHelp":

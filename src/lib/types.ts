@@ -46,7 +46,24 @@ export const ACTIVITY_LEVELS = [
   "very_active",
 ] as const;
 export type ActivityLevel = (typeof ACTIVITY_LEVELS)[number];
-export type MacroAdjustmentMode = "carbs" | "fats" | "proteins" | "all";
+export const MACRO_ADJUSTMENT_TARGETS = [
+  "carbs",
+  "fats",
+  "proteins",
+] as const;
+export type MacroAdjustmentTarget =
+  (typeof MACRO_ADJUSTMENT_TARGETS)[number];
+/**
+ * Which macros absorb a calorie change. "all" is the canonical form of
+ * selecting all three targets; the other values list a subset in storage order.
+ */
+export type MacroAdjustmentMode =
+  | "all"
+  | MacroAdjustmentTarget
+  | "carbs,fats"
+  | "carbs,proteins"
+  | "fats,proteins"
+  | "carbs,fats,proteins";
 
 export interface MacroSplit {
   protein: number;

@@ -149,6 +149,30 @@ describeDb("database-backed Foodie flows", () => {
     expect(fallback.assignedDayTypeId).toBeNull();
   });
 
+  it("stores a mixed macro selection and its combined targets", async () => {
+    const created = await dayTypes.createDayType(userB, {
+      name: "Mixed Day",
+      kcal: 2000,
+      protein: 150,
+      carbs: 200,
+      fat: 66.67,
+      adjustmentMode: "carbs,fats",
+      proteinPct: 30,
+      carbsPct: 40,
+      fatPct: 30,
+    });
+    expect(created.ok).toBe(true);
+    expect(created.dayType?.adjustmentMode).toBe("carbs,fats");
+    expect(created.dayType?.protein).toBe(150);
+    expect(created.dayType?.carbs).toBeCloseTo(200, 2);
+    expect(created.dayType?.fat).toBeCloseTo(66.67, 2);
+    if (created.dayType) {
+      expect(await dayTypes.deleteDayType(userB, created.dayType.id)).toMatchObject({
+        ok: true,
+      });
+    }
+  });
+
   it("does not let another user assign or read a day type", async () => {
     expect(
       await dayTypes.setDayTypeForDate(userB, "2026-10-21", workoutId),

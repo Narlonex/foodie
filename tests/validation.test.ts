@@ -146,6 +146,35 @@ describe("day type validation", () => {
     const result = dayTypeFormSchema.safeParse({ ...valid, kcal: "abc" });
     expect(result.success).toBe(false);
   });
+
+  it("accepts every combination of adjusted macros", () => {
+    for (const adjustmentMode of [
+      "carbs",
+      "fats",
+      "proteins",
+      "all",
+      "carbs,fats",
+      "carbs,proteins",
+      "fats,proteins",
+      "carbs,fats,proteins",
+    ]) {
+      expect(
+        dayTypeFormSchema.safeParse({ ...valid, adjustmentMode }).success,
+      ).toBe(true);
+    }
+  });
+
+  it("rejects an empty or duplicated macro selection", () => {
+    expect(
+      dayTypeFormSchema.safeParse({ ...valid, adjustmentMode: "" }).success,
+    ).toBe(false);
+    expect(
+      dayTypeFormSchema.safeParse({
+        ...valid,
+        adjustmentMode: "carbs,carbs",
+      }).success,
+    ).toBe(false);
+  });
 });
 
 describe("manual nutrition targets", () => {

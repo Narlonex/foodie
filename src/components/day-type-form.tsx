@@ -10,14 +10,20 @@ import { initialFormState } from "@/actions/types";
 import { getTranslator, translate, type TranslationKey } from "@/i18n";
 import {
   DEFAULT_SPLIT,
+  adjustmentModeFromTargets,
+  adjustmentTargets,
   deriveMacroTargets,
   type MacroErrorCode,
+  type MacroResult,
 } from "@/lib/macroTargets";
 import { macroEnergy } from "@/lib/nutrition";
 import { formatGrams, formatKcal, formatNumber } from "@/lib/format";
-import type { DayType, Language, MacroAdjustmentMode } from "@/lib/types";
-
-const MODES: MacroAdjustmentMode[] = ["carbs", "fats", "proteins", "all"];
+import {
+  MACRO_ADJUSTMENT_TARGETS,
+  type DayType,
+  type Language,
+  type MacroAdjustmentTarget,
+} from "@/lib/types";
 
 function toNumber(value: string): number {
   const normalized = value.replace(",", ".").trim();
@@ -37,6 +43,10 @@ function modeErrorKey(code: MacroErrorCode): TranslationKey {
       return "dayTypes.errorNegativeFats";
     case "negative-proteins":
       return "dayTypes.errorNegativeProteins";
+    case "negative-macros":
+      return "dayTypes.errorNegativeMacros";
+    case "adjustment":
+      return "dayTypes.errorAdjustmentEmpty";
     default:
       return "dayTypes.errorMacro";
   }
@@ -68,48 +78,61 @@ export function DayTypeForm({
   );
   const [carbs, setCarbs] = useState(dayType ? String(dayType.carbs) : "200");
   const [fat, setFat] = useState(dayType ? String(dayType.fat) : "66.67");
-  const [mode, setMode] = useState<MacroAdjustmentMode>(
-    dayType?.adjustmentMode ?? "all",
+  const [targets, setTargets] = useState<MacroAdjustmentTarget[]>(() =>
+    adjustmentTargets(dayType?.adjustmentMode ?? "all"),
   );
+  const mode = adjustmentModeFromTargets(targets);
   const [proteinPct, setProteinPct] = useState(String(initialSplit.protein));
   const [carbsPct, setCarbsPct] = useState(String(initialSplit.carbs));
   const [fatPct, setFatPct] = useState(String(initialSplit.fat));
 
-  const result = useMemo(
-    () =>
-      deriveMacroTargets({
-        kcal: toNumber(kcal),
-        protein: toNumber(protein),
-        carbs: toNumber(carbs),
-        fat: toNumber(fat),
-        adjustmentMode: mode,
-        split: {
-          protein: toNumber(proteinPct),
-          carbs: toNumber(carbsPct),
-          fat: toNumber(fatPct),
-        },
-      }),
-    [kcal, protein, carbs, fat, mode, proteinPct, carbsPct, fatPct],
-  );
+  const result = useMemo<MacroResult>(() => {
+    if (!mode) {
+      return { ok: false, code: "adjustment", kcalAvailableForMacro: 0 };
+    }
+    return deriveMacroTargets({
+      kcal: toNumber(kcal),
+      protein: toNumber(protein),
+      carbs: toNumber(carbs),
+      fat: toNumber(fat),
+      adjustmentMode: mode,
+      split: {
+        protein: toNumber(proteinPct),
+        carbs: toNumber(carbsPct),
+        fat: toNumber(fatPct),
+      },
+    });
+  }, [kcal, protein, carbs, fat, mode, proteinPct, carbsPct, fatPct]);
 
   const splitSum =
     toNumber(proteinPct) + toNumber(carbsPct) + toNumber(fatPct);
-  const modeHelp: Record<MacroAdjustmentMode, TranslationKey> = {
-    carbs: "dayTypes.changeCarbsHelp",
-    fats: "dayTypes.changeFatsHelp",
-    proteins: "dayTypes.changeProteinsHelp",
-    all: "dayTypes.changeAllHelp",
-  };
-
   const derived = result.ok ? result.targets : null;
+  const modeHelp: TranslationKey =
+    targets.length === 0
+      ? "dayTypes.errorAdjustmentEmpty"
+      : targets.length === MACRO_ADJUSTMENT_TARGETS.length
+        ? "dayTypes.changeAllHelp"
+        : targets.length === 2
+          ? "dayTypes.changeMixHelp"
+          : targets[0] === "carbs"
+            ? "dayTypes.changeCarbsHelp"
+            : targets[0] === "fats"
+              ? "dayTypes.changeFatsHelp"
+              : "dayTypes.changeProteinsHelp";
 
-  function switchMode(next: MacroAdjustmentMode) {
+  function toggleTarget(target: MacroAdjustmentTarget) {
+    // Freeze the numbers currently shown before the selection changes, so a
+    // second toggle does not silently compound the previous recalculation.
     if (derived) {
       setProtein(String(derived.protein));
       setCarbs(String(derived.carbs));
       setFat(String(derived.fat));
     }
-    setMode(next);
+    setTargets((current) =>
+      current.includes(target)
+        ? current.filter((value) => value !== target)
+        : [...current, target],
+    );
   }
 
   const generalError =
@@ -118,9 +141,9 @@ export function DayTypeForm({
       : null;
 
   const editable = {
-    protein: mode !== "proteins" && mode !== "all",
-    carbs: mode !== "carbs" && mode !== "all",
-    fat: mode !== "fats" && mode !== "all",
+    protein: !targets.includes("proteins"),
+    carbs: !targets.includes("carbs"),
+    fat: !targets.includes("fats"),
   };
 
   const macroField = (
@@ -166,7 +189,7 @@ export function DayTypeForm({
       {dayType ? (
         <input type="hidden" name="dayTypeId" value={dayType.id} />
       ) : null}
-      <input type="hidden" name="adjustmentMode" value={mode} />
+      <input type="hidden" name="adjustmentMode" value={mode ?? ""} />
 
       {generalError ? (
         <p className="notice error" role="alert">
@@ -222,41 +245,47 @@ export function DayTypeForm({
         </div>
         <div
           className="mode-switch-list"
-          role="radiogroup"
+          role="group"
           aria-label={t("dayTypes.adjustmentTitle")}
         >
-          {MODES.map((value) => (
-            <label
-              key={value}
-              className={`mode-switch ${mode === value ? "selected" : ""}`}
-            >
-              <span className="mode-switch-copy">
-                {value === "carbs"
-                  ? t("dayTypes.changeCarbs")
-                  : value === "fats"
-                    ? t("dayTypes.changeFats")
-                    : value === "proteins"
-                      ? t("dayTypes.changeProteins")
-                      : t("dayTypes.changeAll")}
-              </span>
-              <input
-                type="radio"
-                className="mode-switch-input"
-                name="modeChoice"
-                value={value}
-                checked={mode === value}
-                onChange={() => switchMode(value)}
-              />
-              <span
-                className={`switch ${mode === value ? "is-on" : ""}`}
-                aria-hidden="true"
+          {MACRO_ADJUSTMENT_TARGETS.map((value) => {
+            const selected = targets.includes(value);
+            return (
+              <label
+                key={value}
+                className={`mode-switch ${selected ? "selected" : ""}`}
               >
-                <span className="switch-thumb" />
-              </span>
-            </label>
-          ))}
+                <span className="mode-switch-copy">
+                  {value === "carbs"
+                    ? t("dayTypes.changeCarbs")
+                    : value === "fats"
+                      ? t("dayTypes.changeFats")
+                      : t("dayTypes.changeProteins")}
+                </span>
+                <input
+                  type="checkbox"
+                  className="mode-switch-input"
+                  name="modeChoice"
+                  value={value}
+                  checked={selected}
+                  onChange={() => toggleTarget(value)}
+                />
+                <span
+                  className={`switch ${selected ? "is-on" : ""}`}
+                  aria-hidden="true"
+                >
+                  <span className="switch-thumb" />
+                </span>
+              </label>
+            );
+          })}
         </div>
-        <p className="mode-detail">{t(modeHelp[mode])}</p>
+        <p
+          className={`mode-detail ${targets.length === 0 ? "field-error" : ""}`}
+          role={targets.length === 0 ? "alert" : undefined}
+        >
+          {t(modeHelp)}
+        </p>
 
         <div className="form-grid">
           {macroField("protein", t("dayTypes.protein"), protein, setProtein)}

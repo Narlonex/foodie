@@ -25,7 +25,16 @@ export const languageSchema = z.enum(["en", "sk", "cs"]);
 export const themeSchema = z.enum(["dark", "light"]);
 export const unitSystemSchema = z.enum(["metric", "imperial"]);
 export const goalModeSchema = z.enum(["cut", "maintenance", "bulk"]);
-export const adjustmentModeSchema = z.enum(["carbs", "fats", "proteins", "all"]);
+export const adjustmentModeSchema = z.enum([
+  "all",
+  "carbs",
+  "fats",
+  "proteins",
+  "carbs,fats",
+  "carbs,proteins",
+  "fats,proteins",
+  "carbs,fats,proteins",
+]);
 export const mealSchema = z.enum(MEALS);
 export const basisTypeSchema = z.enum(["100g", "100ml", "serving"]);
 export const amountUnitSchema = z.enum(["g", "ml", "serving"]);

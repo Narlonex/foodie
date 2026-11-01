@@ -32,6 +32,10 @@ function macroErrorKey(code: MacroErrorCode): string {
       return "dayTypes.errorNegativeFats";
     case "negative-proteins":
       return "dayTypes.errorNegativeProteins";
+    case "negative-macros":
+      return "dayTypes.errorNegativeMacros";
+    case "adjustment":
+      return "dayTypes.errorAdjustmentEmpty";
     default:
       return "dayTypes.errorMacro";
   }

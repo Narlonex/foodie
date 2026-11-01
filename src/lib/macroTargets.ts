@@ -5,7 +5,13 @@ import {
   macroEnergy,
   roundTo,
 } from "./nutrition";
-import type { GoalMode, MacroAdjustmentMode, MacroSplit } from "./types";
+import {
+  MACRO_ADJUSTMENT_TARGETS,
+  type GoalMode,
+  type MacroAdjustmentMode,
+  type MacroAdjustmentTarget,
+  type MacroSplit,
+} from "./types";
 
 export const DEFAULT_SPLIT: MacroSplit = { protein: 30, carbs: 40, fat: 30 };
 
@@ -30,7 +36,9 @@ export type MacroErrorCode =
   | "split"
   | "negative-carbs"
   | "negative-fats"
-  | "negative-proteins";
+  | "negative-proteins"
+  | "negative-macros"
+  | "adjustment";
 
 export interface MacroTargets {
   kcal: number;
@@ -60,13 +68,43 @@ function validNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
+/** Expands a stored mode into the macros it adjusts. */
+export function adjustmentTargets(
+  mode: MacroAdjustmentMode,
+): MacroAdjustmentTarget[] {
+  if (mode === "all") return [...MACRO_ADJUSTMENT_TARGETS];
+  const parts = mode.split(",");
+  return MACRO_ADJUSTMENT_TARGETS.filter((target) => parts.includes(target));
+}
+
+/** Canonical storage value for a selection; null means nothing is selected. */
+export function adjustmentModeFromTargets(
+  targets: readonly MacroAdjustmentTarget[],
+): MacroAdjustmentMode | null {
+  const unique = MACRO_ADJUSTMENT_TARGETS.filter((target) =>
+    targets.includes(target),
+  );
+  if (unique.length === 0) return null;
+  if (unique.length === MACRO_ADJUSTMENT_TARGETS.length) return "all";
+  return unique.join(",") as MacroAdjustmentMode;
+}
+
+function negativeRemainderCode(
+  targets: MacroAdjustmentTarget[],
+): MacroErrorCode {
+  if (targets.length !== 1) return "negative-macros";
+  if (targets[0] === "carbs") return "negative-carbs";
+  if (targets[0] === "fats") return "negative-fats";
+  return "negative-proteins";
+}
+
 /**
  * Applies the selected macro adjustment mode to a calorie target.
  *
- * - carbs: protein and fat are fixed; carbs absorb the remaining calories
- * - fats: protein and carbs are fixed; fat absorbs the remaining calories
- * - proteins: carbs and fat are fixed; protein absorbs the remaining calories
- * - all: every macro follows the stored energy split percentages
+ * Every unselected macro keeps its entered grams. The selected macros share
+ * the remaining calories in proportion to their stored split percentages, so
+ * one, two or all three may be adjusted. With one selected macro the split is
+ * irrelevant because that macro receives the entire remainder.
  *
  * The result is deterministic and never includes a negative macro. The caller
  * must present the returned error to the user instead of saving.
@@ -97,40 +135,63 @@ export function deriveMacroTargets(input: MacroInput): MacroResult {
     return { ok: false, code: "split", kcalAvailableForMacro: kcal };
   }
 
-  let nextProtein = protein;
-  let nextCarbs = carbs;
-  let nextFat = fat;
-
-  if (adjustmentMode === "all") {
-    nextProtein = (kcal * split.protein) / 100 / KCAL_PER_GRAM_PROTEIN;
-    nextCarbs = (kcal * split.carbs) / 100 / KCAL_PER_GRAM_CARBS;
-    nextFat = (kcal * split.fat) / 100 / KCAL_PER_GRAM_FAT;
-  } else if (adjustmentMode === "carbs") {
-    const remaining =
-      kcal - protein * KCAL_PER_GRAM_PROTEIN - fat * KCAL_PER_GRAM_FAT;
-    if (remaining < -0.01) {
-      return { ok: false, code: "negative-carbs", kcalAvailableForMacro: remaining };
-    }
-    nextCarbs = Math.max(0, remaining) / KCAL_PER_GRAM_CARBS;
-  } else if (adjustmentMode === "fats") {
-    const remaining =
-      kcal - protein * KCAL_PER_GRAM_PROTEIN - carbs * KCAL_PER_GRAM_CARBS;
-    if (remaining < -0.01) {
-      return { ok: false, code: "negative-fats", kcalAvailableForMacro: remaining };
-    }
-    nextFat = Math.max(0, remaining) / KCAL_PER_GRAM_FAT;
-  } else {
-    const remaining =
-      kcal - carbs * KCAL_PER_GRAM_CARBS - fat * KCAL_PER_GRAM_FAT;
-    if (remaining < -0.01) {
-      return {
-        ok: false,
-        code: "negative-proteins",
-        kcalAvailableForMacro: remaining,
-      };
-    }
-    nextProtein = Math.max(0, remaining) / KCAL_PER_GRAM_PROTEIN;
+  const targets = adjustmentTargets(adjustmentMode);
+  if (targets.length === 0) {
+    return { ok: false, code: "adjustment", kcalAvailableForMacro: 0 };
   }
+
+  const energyPerGram = {
+    protein: KCAL_PER_GRAM_PROTEIN,
+    carbs: KCAL_PER_GRAM_CARBS,
+    fat: KCAL_PER_GRAM_FAT,
+  };
+  const splitShare = {
+    protein: split.protein,
+    carbs: split.carbs,
+    fat: split.fat,
+  };
+  const next = { protein, carbs, fat };
+  const targetKey = {
+    carbs: "carbs",
+    fats: "fat",
+    proteins: "protein",
+  } as const;
+  const selected = new Set(
+    targets.map((target) => targetKey[target]),
+  );
+
+  // Only unselected macros stay fixed; their energy is what the selected
+  // macros have to fit into.
+  let fixedEnergy = 0;
+  for (const key of ["protein", "carbs", "fat"] as const) {
+    if (!selected.has(key)) fixedEnergy += next[key] * energyPerGram[key];
+  }
+  const remaining = kcal - fixedEnergy;
+  if (remaining < -0.01) {
+    return {
+      ok: false,
+      code: negativeRemainderCode(targets),
+      kcalAvailableForMacro: remaining,
+    };
+  }
+
+  const selectedWeight = targets.reduce(
+    (sum, target) => sum + splitShare[targetKey[target]],
+    0,
+  );
+  if (targets.length > 1 && selectedWeight <= 0.01) {
+    return { ok: false, code: "split", kcalAvailableForMacro: remaining };
+  }
+
+  for (const target of targets) {
+    const key = targetKey[target];
+    const share = targets.length === 1 ? 1 : splitShare[key] / selectedWeight;
+    next[key] = (Math.max(0, remaining) * share) / energyPerGram[key];
+  }
+
+  const nextProtein = next.protein;
+  const nextCarbs = next.carbs;
+  const nextFat = next.fat;
 
   return {
     ok: true,

@@ -244,7 +244,7 @@ export const en = {
   "dayTypes.fat": "Fat target",
   "dayTypes.adjustmentTitle": "When calories change",
   "dayTypes.adjustmentHelp":
-    "Choose which macro may be recalculated whenever you change the calorie target. The other macros stay fixed at the gram values you set.",
+    "Tick every macro that should be recalculated when the calorie target changes. Unticked macros stay fixed at the gram values you set.",
   "dayTypes.changeCarbs": "Change carbs",
   "dayTypes.changeFats": "Change fats",
   "dayTypes.changeProteins": "Change proteins",
@@ -257,9 +257,11 @@ export const en = {
     "Carbohydrates and fat keep their gram values. Protein absorbs the remaining calories.",
   "dayTypes.changeAllHelp":
     "All three macros follow the energy split below. Adjust the split to change the distribution.",
-  "dayTypes.split": "Energy split for “Change all”",
+  "dayTypes.changeMixHelp":
+    "The selected macros share the remaining calories in proportion to the split below. Unticked macros stay fixed.",
+  "dayTypes.split": "Energy split for recalculated macros",
   "dayTypes.splitHelp":
-    "Percentages of the calorie target. They must add up to 100%. This split is stored with the day type.",
+    "Percentages of the calorie target. They must add up to 100%. When several macros are selected, these shares divide the remaining calories; the split is stored with the day type.",
   "dayTypes.splitProtein": "Protein share",
   "dayTypes.splitCarbs": "Carbohydrate share",
   "dayTypes.splitFat": "Fat share",
@@ -303,6 +305,10 @@ export const en = {
     "Protein and carbohydrates already use more calories than this target. Lower one of them or raise the calorie target.",
   "dayTypes.errorNegativeProteins":
     "Carbohydrates and fat already use more calories than this target. Lower one of them or raise the calorie target.",
+  "dayTypes.errorNegativeMacros":
+    "The fixed macros already use more calories than this target. Lower them or raise the calorie target.",
+  "dayTypes.errorAdjustmentEmpty":
+    "Select at least one macro to recalculate.",
   "dayTypes.saveFailed": "We could not save this day type. Please review the values.",
   "dayTypes.assignTitle": "Day type for this date",
   "dayTypes.assignHelp":
