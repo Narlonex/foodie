@@ -1,6 +1,7 @@
 import { FoodLibraryView } from "@/components/food-library-view";
 import { requireViewer } from "@/lib/auth";
 import { todayIso } from "@/lib/dates";
+import { isUsdaConfigured } from "@/lib/env";
 import {
   listCustomFoods,
   listFavoriteFoods,
@@ -31,6 +32,7 @@ export default async function FoodsPage() {
       favorites={favorites}
       recent={recent}
       savedMeals={savedMeals}
+      usdaEnabled={viewer.profile.usdaEnabled && isUsdaConfigured()}
     />
   );
 }

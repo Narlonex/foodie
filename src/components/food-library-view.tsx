@@ -7,15 +7,12 @@ import { deleteFoodAction, toggleFavoriteAction } from "@/actions/foods";
 import {
   deleteSavedMealAction,
   duplicateSavedMealAction,
-  saveMealAction,
 } from "@/actions/savedMeals";
 import { getTranslator, translate, type TranslationKey } from "@/i18n";
-import { formatGrams, formatKcal, formatNumber, formatPortion, unitTranslationKey } from "@/lib/format";
-import { fromBaseAmount, toBaseAmount } from "@/lib/nutrition";
+import { formatGrams, formatKcal, formatNumber, formatPortion } from "@/lib/format";
 import { recipeNutrition } from "@/lib/recipes";
 import {
   basisLabel,
-  type AmountUnit,
   type Food,
   type Language,
   type SavedMeal,
@@ -27,6 +24,7 @@ import { Dialog } from "./dialog";
 import { FoodThumb } from "./food-thumb";
 import { Icon } from "./icons";
 import { QuickAddFoodDialog } from "./quick-add-food-dialog";
+import { RecipeBuilderDialog } from "./recipe-builder-dialog";
 import { RecipeLogDialog } from "./recipe-log-dialog";
 import { EmptyState, PreparationBadge, SourceBadge } from "./ui";
 
@@ -40,6 +38,7 @@ export function FoodLibraryView({
   favorites,
   recent,
   savedMeals,
+  usdaEnabled = false,
 }: {
   language: Language;
   unitSystem: UnitSystem;
@@ -48,6 +47,7 @@ export function FoodLibraryView({
   favorites: Food[];
   recent: Food[];
   savedMeals: SavedMeal[];
+  usdaEnabled?: boolean;
 }) {
   const t = getTranslator(language);
   const router = useRouter();
@@ -449,13 +449,14 @@ export function FoodLibraryView({
       ) : null}
 
       {builder ? (
-        <SavedMealBuilderDialog
+        <RecipeBuilderDialog
           savedMeal={builder === "new" ? null : builder}
           availableFoods={allFoods}
           language={language}
           unitSystem={unitSystem}
+          usdaEnabled={usdaEnabled}
           onClose={() => setBuilder(null)}
-          onDone={done}
+          onDone={(message) => done(message)}
         />
       ) : null}
 
@@ -662,444 +663,6 @@ function DeleteFoodDialog({
         </p>
       ) : (
         <p className="source-note">{t("sources.customNote")}</p>
-      )}
-    </Dialog>
-  );
-}
-
-interface BuilderRow {
-  key: string;
-  foodId: string;
-  amount: string;
-}
-
-function displayUnitFor(food: Food, unitSystem: UnitSystem): string {
-  if (food.basisType === "serving") return "serving";
-  if (food.basisType === "100ml") return unitSystem === "imperial" ? "floz" : "ml";
-  return unitSystem === "imperial" ? "oz" : "g";
-}
-
-function defaultDisplayAmount(food: Food, unitSystem: UnitSystem): string {
-  if (food.basisType === "serving") return "1";
-  if (unitSystem === "imperial") return food.basisType === "100ml" ? "3.4" : "3.5";
-  return "100";
-}
-
-function SavedMealBuilderDialog({
-  savedMeal,
-  availableFoods,
-  language,
-  unitSystem,
-  onClose,
-  onDone,
-}: {
-  savedMeal: SavedMeal | null;
-  availableFoods: Food[];
-  language: Language;
-  unitSystem: UnitSystem;
-  onClose: () => void;
-  onDone: (message: string) => void;
-}) {
-  const t = getTranslator(language);
-  const foods = useMemo(() => {
-    const map = new Map<string, Food>();
-    for (const food of availableFoods) {
-      if (food.id) map.set(food.id, food);
-    }
-    for (const item of savedMeal?.items ?? []) {
-      if (item.food.id) map.set(item.food.id, item.food);
-    }
-    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [availableFoods, savedMeal]);
-
-  const [name, setName] = useState(savedMeal?.name ?? "");
-  const [finalWeight, setFinalWeight] = useState(
-    savedMeal?.finalWeightG ? String(savedMeal.finalWeightG) : "",
-  );
-  const [servings, setServings] = useState(
-    savedMeal?.servings ? String(savedMeal.servings) : "",
-  );
-  const [rows, setRows] = useState<BuilderRow[]>(() =>
-    (savedMeal?.items ?? []).map((item) => ({
-      key: item.id,
-      foodId: item.food.id ?? "",
-      amount: formatNumber(
-        fromBaseAmount(item.amount, item.amountUnit, unitSystem).value,
-        language,
-        2,
-      ),
-    })),
-  );
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
-
-  const components = useMemo(() => {
-    const list: {
-      food: Food;
-      amount: number;
-      amountUnit: AmountUnit;
-    }[] = [];
-    for (const row of rows) {
-      const food = foods.find((candidate) => candidate.id === row.foodId);
-      if (!food) continue;
-      const parsed = Number(row.amount.replace(",", "."));
-      if (!Number.isFinite(parsed) || parsed <= 0) continue;
-      try {
-        const base = toBaseAmount(
-          parsed,
-          displayUnitFor(food, unitSystem) as
-            | "g"
-            | "ml"
-            | "oz"
-            | "floz"
-            | "serving",
-        );
-        list.push({ food, amount: base.amount, amountUnit: base.amountUnit });
-      } catch {
-        // An invalid row simply does not contribute to the live preview.
-      }
-    }
-    return list;
-  }, [foods, rows, unitSystem]);
-
-  const summary = useMemo(() => {
-    if (components.length === 0) return null;
-    const weight = Number(finalWeight.replace(",", "."));
-    const portionCount = Number(servings.replace(",", "."));
-    try {
-      return recipeNutrition(
-        components,
-        Number.isFinite(weight) && weight > 0 ? weight : null,
-        Number.isFinite(portionCount) && portionCount > 0 ? portionCount : null,
-      );
-    } catch {
-      return null;
-    }
-  }, [components, finalWeight, servings]);
-
-  function addRow() {
-    const used = new Set(rows.map((row) => row.foodId));
-    const nextFood = foods.find((food) => food.id && !used.has(food.id));
-    const nextId = nextFood?.id;
-    if (!nextFood || !nextId) return;
-    setRows((current) => [
-      ...current,
-      {
-        key: `row-${Date.now()}-${current.length}`,
-        foodId: nextId,
-        amount: defaultDisplayAmount(nextFood, unitSystem),
-      },
-    ]);
-  }
-
-  function updateRow(key: string, patch: Partial<BuilderRow>) {
-    setRows((current) =>
-      current.map((row) => (row.key === key ? { ...row, ...patch } : row)),
-    );
-  }
-
-  function save() {
-    setError(null);
-    if (!name.trim()) {
-      setError(t("validation.savedMealName"));
-      return;
-    }
-    if (rows.length === 0) {
-      setError(t("savedMeals.needItem"));
-      return;
-    }
-    if (new Set(rows.map((row) => row.foodId)).size !== rows.length) {
-      setError(t("savedMeals.duplicateItem"));
-      return;
-    }
-    const parsedWeight =
-      finalWeight.trim() === "" ? null : Number(finalWeight.replace(",", "."));
-    if (
-      parsedWeight !== null &&
-      (!Number.isFinite(parsedWeight) || parsedWeight <= 0)
-    ) {
-      setError(t("validation.package"));
-      return;
-    }
-    const parsedServings =
-      servings.trim() === "" ? null : Number(servings.replace(",", "."));
-    if (
-      parsedServings !== null &&
-      (!Number.isFinite(parsedServings) || parsedServings <= 0)
-    ) {
-      setError(t("validation.package"));
-      return;
-    }
-    const items: { foodId: string; amount: number; amountUnit: AmountUnit }[] = [];
-    for (const row of rows) {
-      const food = foods.find((candidate) => candidate.id === row.foodId);
-      const parsed = Number(row.amount.replace(",", "."));
-      if (!food || !Number.isFinite(parsed) || parsed <= 0) {
-        setError(t("savedMeals.amountInvalid"));
-        return;
-      }
-      const unit = displayUnitFor(food, unitSystem);
-      try {
-        const base = toBaseAmount(
-          parsed,
-          unit as "g" | "ml" | "oz" | "floz" | "serving",
-        );
-        items.push({ foodId: food.id ?? "", ...base });
-      } catch {
-        setError(t("savedMeals.amountInvalid"));
-        return;
-      }
-    }
-    startTransition(async () => {
-      const result = await saveMealAction({
-        savedMealId: savedMeal?.id,
-        name: name.trim(),
-        items,
-        finalWeightG: parsedWeight,
-        servings: parsedServings,
-      });
-      if (!result.ok) {
-        setError(translate(language, result.error as TranslationKey));
-        return;
-      }
-      onDone(
-        t(
-          savedMeal
-            ? "savedMeals.updated"
-            : "savedMeals.created",
-        ),
-      );
-    });
-  }
-
-  return (
-    <Dialog
-      open
-      onClose={onClose}
-      title={savedMeal ? t("savedMeals.edit") : t("savedMeals.new")}
-      description={t("savedMeals.builderHelp")}
-      language={language}
-      size="medium"
-      footer={
-        <>
-          <button type="button" className="button secondary" onClick={onClose}>
-            {t("common.cancel")}
-          </button>
-          <button
-            type="button"
-            className="button"
-            onClick={save}
-            disabled={pending}
-          >
-            {pending ? t("common.saving") : t("common.save")}
-          </button>
-        </>
-      }
-    >
-      {foods.length === 0 ? (
-        <EmptyState icon="book" title={t("savedMeals.noAvailable")}>
-          {t("foods.emptyCustomHelp")}
-        </EmptyState>
-      ) : (
-        <div className="stack">
-          <div className="form-grid">
-            <div className="field span-2">
-              <label htmlFor="saved-meal-name">{t("savedMeals.name")}</label>
-              <input
-                id="saved-meal-name"
-                className="input"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder={t("savedMeals.namePlaceholder")}
-                data-autofocus
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="recipe-final-weight">
-                {t("recipes.finalWeight")}{" "}
-                <span className="subtle">({t("common.optional")})</span>
-              </label>
-              <input
-                id="recipe-final-weight"
-                className="input"
-                inputMode="decimal"
-                value={finalWeight}
-                onChange={(event) => setFinalWeight(event.target.value)}
-                aria-describedby="recipe-weight-hint"
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="recipe-servings">
-                {t("recipes.servings")}{" "}
-                <span className="subtle">({t("common.optional")})</span>
-              </label>
-              <input
-                id="recipe-servings"
-                className="input"
-                inputMode="decimal"
-                value={servings}
-                onChange={(event) => setServings(event.target.value)}
-              />
-            </div>
-            <p className="field-hint span-2" id="recipe-weight-hint">
-              {t("recipes.finalWeightHelp")}
-            </p>
-          </div>
-
-          <div className="stack-sm">
-            <span className="field-label">{t("savedMeals.items")}</span>
-            {rows.map((row) => {
-              const food = foods.find((candidate) => candidate.id === row.foodId);
-              const unit = food ? displayUnitFor(food, unitSystem) : "g";
-              return (
-                <div className="meal-builder-row" key={row.key}>
-                  <div className="field food-select">
-                    <label className="sr-only" htmlFor={`item-food-${row.key}`}>
-                      {t("savedMeals.selectFood")}
-                    </label>
-                    <select
-                      id={`item-food-${row.key}`}
-                      className="select"
-                      value={row.foodId}
-                      onChange={(event) => {
-                        const selected = foods.find(
-                          (candidate) => candidate.id === event.target.value,
-                        );
-                        updateRow(row.key, {
-                          foodId: event.target.value,
-                          amount: selected
-                            ? defaultDisplayAmount(selected, unitSystem)
-                            : row.amount,
-                        });
-                      }}
-                    >
-                      {foods.map((candidate) => (
-                        <option
-                          value={candidate.id}
-                          key={candidate.id}
-                          disabled={
-                            candidate.id !== row.foodId &&
-                            rows.some((other) => other.foodId === candidate.id)
-                          }
-                        >
-                          {candidate.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="field">
-                    <label className="sr-only" htmlFor={`item-amount-${row.key}`}>
-                      {t("savedMeals.amount")}
-                    </label>
-                    <div className="row" style={{ flexWrap: "nowrap" }}>
-                      <input
-                        id={`item-amount-${row.key}`}
-                        className="input"
-                        inputMode="decimal"
-                        value={row.amount}
-                        onChange={(event) =>
-                          updateRow(row.key, { amount: event.target.value })
-                        }
-                      />
-                      <span className="badge">{t(unitTranslationKey(unit))}</span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    className="icon-button small danger"
-                    onClick={() =>
-                      setRows((current) =>
-                        current.filter((item) => item.key !== row.key),
-                      )
-                    }
-                    aria-label={t("common.remove")}
-                    title={t("common.remove")}
-                  >
-                    <Icon name="trash" size={15} />
-                  </button>
-                </div>
-              );
-            })}
-            <button
-              type="button"
-              className="button secondary small"
-              onClick={addRow}
-              disabled={rows.length >= foods.length}
-            >
-              <Icon name="plus" size={16} />
-              {t("savedMeals.addItem")}
-            </button>
-          </div>
-
-          {summary ? (
-            <div className="preview-panel">
-              <div className="row-between">
-                <strong className="small">{t("recipes.batchTotals")}</strong>
-                <span className="badge">
-                  {summary.per100g !== null
-                    ? t("recipes.per100Summary", {
-                        kcal:
-                          summary.per100g.kcal !== null
-                            ? formatKcal(summary.per100g.kcal, language)
-                            : t("common.unknown"),
-                      })
-                    : t("recipes.needFinalWeightHint")}
-                </span>
-              </div>
-              <div className="kv-list">
-                <div className="kv-row">
-                  <span>{t("recipes.batchKcalLabel")}</span>
-                  <strong>
-                    {summary.batch.nutrients.kcal.value === null
-                      ? t("common.unknown")
-                      : `${formatKcal(summary.batch.nutrients.kcal.value, language)} kcal`}
-                  </strong>
-                </div>
-                {(["protein", "carbs", "fat"] as const).map((key) => {
-                  const value = summary.batch.nutrients[key].value;
-                  return (
-                    <div className="kv-row" key={key}>
-                      <span>{t(`nutrients.${key}` as TranslationKey)}</span>
-                      <strong>
-                        {value === null
-                          ? t("common.unknown")
-                          : `${formatGrams(value, language)} g`}
-                      </strong>
-                    </div>
-                  );
-                })}
-                {summary.perServing ? (
-                  <div className="kv-row">
-                    <span>{t("recipes.perServingLabel")}</span>
-                    <strong>
-                      {summary.perServing.kcal === null
-                        ? t("common.unknown")
-                        : `${formatKcal(summary.perServing.kcal, language)} kcal`}
-                    </strong>
-                  </div>
-                ) : null}
-                {summary.servingWeightGrams !== null ? (
-                  <div className="kv-row">
-                    <span>{t("recipes.servingWeight")}</span>
-                    <strong>
-                      {formatNumber(summary.servingWeightGrams, language, 0)} g
-                    </strong>
-                  </div>
-                ) : null}
-              </div>
-              <p className="source-note">{t("recipes.weightCaveat")}</p>
-              {summary.incomplete ? (
-                <p className="notice warning">{t("recipes.incomplete")}</p>
-              ) : null}
-            </div>
-          ) : null}
-
-          {error ? (
-            <p className="notice error" role="alert">
-              {error}
-            </p>
-          ) : null}
-        </div>
       )}
     </Dialog>
   );

@@ -18,10 +18,42 @@ export function AppShell({
   children: ReactNode;
 }) {
   const items: NavItem[] = [
-    { href: "/", label: t("nav.dashboard"), icon: "dashboard" },
-    { href: "/foods", label: t("nav.foodLibrary"), icon: "book" },
-    { href: "/history", label: t("nav.history"), icon: "chart" },
-    { href: "/settings", label: t("nav.settings"), icon: "settings" },
+    {
+      href: "/",
+      label: t("nav.dashboard"),
+      shortLabel: t("nav.dashboardShort"),
+      icon: "dashboard",
+    },
+    {
+      href: "/progress",
+      label: t("nav.progress"),
+      shortLabel: t("nav.progressShort"),
+      icon: "scale",
+    },
+    {
+      href: "/foods",
+      label: t("nav.foodLibrary"),
+      shortLabel: t("nav.foodLibraryShort"),
+      icon: "book",
+    },
+    {
+      href: "/recipes",
+      label: t("nav.recipes"),
+      shortLabel: t("nav.recipesShort"),
+      icon: "utensils",
+    },
+    {
+      href: "/history",
+      label: t("nav.history"),
+      shortLabel: t("nav.historyShort"),
+      icon: "chart",
+    },
+    {
+      href: "/settings",
+      label: t("nav.settings"),
+      shortLabel: t("nav.settingsShort"),
+      icon: "settings",
+    },
   ];
 
   return (

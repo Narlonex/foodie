@@ -113,6 +113,17 @@ export async function updateBodyMetrics(
   return Boolean(row);
 }
 
+export async function updateProfileWeight(
+  userId: string,
+  weightKg: number,
+): Promise<boolean> {
+  const row = await queryOne<{ user_id: string }>(
+    `UPDATE profiles SET weight_kg = $2 WHERE user_id = $1 RETURNING user_id`,
+    [userId, weightKg],
+  );
+  return Boolean(row);
+}
+
 export async function completeOnboarding(userId: string): Promise<boolean> {
   const row = await queryOne<{ user_id: string }>(
     `UPDATE profiles SET onboarding_completed = true

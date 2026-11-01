@@ -127,6 +127,12 @@ export interface DiaryEntry extends FoodNutrition {
   loggedAt: string;
 }
 
+export interface WeightEntry {
+  id: string;
+  date: string;
+  weightKg: number;
+}
+
 export interface DayType {
   id: string;
   name: string;

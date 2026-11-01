@@ -18,6 +18,7 @@ import {
   formatPortion,
   formatSalt,
 } from "@/lib/format";
+import { suggestMacroFoods } from "@/lib/macroSuggestions";
 import { entryPortion, totalNutrients } from "@/lib/nutrition";
 import {
   MEALS,
@@ -31,6 +32,7 @@ import {
   type Meal,
   type SavedMeal,
   type UnitSystem,
+  type WeightEntry,
 } from "@/lib/types";
 import { AddFoodDialog } from "./add-food-dialog";
 import { AddSavedMealDialog } from "./add-saved-meal-dialog";
@@ -42,6 +44,9 @@ import {
 } from "./entry-dialogs";
 import { FoodThumb } from "./food-thumb";
 import { Icon } from "./icons";
+import { QuickAddFoodDialog } from "./quick-add-food-dialog";
+import { RecipeBuilderDialog } from "./recipe-builder-dialog";
+import { RecipeLogDialog } from "./recipe-log-dialog";
 import {
   EmptyState,
   MealIcon,
@@ -74,6 +79,8 @@ export function DashboardView({
   recent,
   customFoods,
   savedMeals,
+  latestWeight,
+  weightChangePerWeekKg,
   usdaEnabled,
 }: {
   date: string;
@@ -89,6 +96,8 @@ export function DashboardView({
   recent: Food[];
   customFoods: Food[];
   savedMeals: SavedMeal[];
+  latestWeight: WeightEntry | null;
+  weightChangePerWeekKg: number | null;
   usdaEnabled: boolean;
   dashboardNutrients: DashboardNutrient[];
 }) {
@@ -101,6 +110,11 @@ export function DashboardView({
   const [repeatMeal, setRepeatMeal] = useState<Meal | null>(null);
   const [copyOpen, setCopyOpen] = useState(false);
   const [savedMealOpen, setSavedMealOpen] = useState(false);
+  const [recipeMeal, setRecipeMeal] = useState<Meal | null>(null);
+  const [loggingRecipe, setLoggingRecipe] = useState<SavedMeal | null>(null);
+  const [loggingRecipeMeal, setLoggingRecipeMeal] = useState<Meal>("lunch");
+  const [suggestedFood, setSuggestedFood] = useState<Food | null>(null);
+  const [suggestedRecipe, setSuggestedRecipe] = useState<SavedMeal | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [selectedDayTypeId, setSelectedDayTypeId] = useState(
     assignedDayTypeId ?? "default",
@@ -165,7 +179,34 @@ export function DashboardView({
       : 0;
   const ringCircumference = 2 * Math.PI * 70;
 
+  const suggestions = suggestMacroFoods({
+    gaps: {
+      kcal: remaining,
+      protein:
+        currentDayType && displayNutrients.protein.value !== null
+          ? currentDayType.protein - displayNutrients.protein.value
+          : null,
+      carbs:
+        currentDayType && displayNutrients.carbs.value !== null
+          ? currentDayType.carbs - displayNutrients.carbs.value
+          : null,
+      fat:
+        currentDayType && displayNutrients.fat.value !== null
+          ? currentDayType.fat - displayNutrients.fat.value
+          : null,
+    },
+    foods: [...customFoods, ...favorites, ...recent],
+    recipes: savedMeals,
+    favoriteIds: favorites
+      .map((food) => food.id)
+      .filter((id): id is string => Boolean(id)),
+  });
+
   function finish(message: string) {
+    setSuggestedFood(null);
+    setSuggestedRecipe(null);
+    setLoggingRecipe(null);
+    setRecipeMeal(null);
     setAddMeal(null);
     setEditingEntry(null);
     setMovingEntry(null);
@@ -435,6 +476,7 @@ export function DashboardView({
                   t={t}
                   onAdd={() => setAddMeal(meal)}
                   onRepeat={() => setRepeatMeal(meal)}
+                  onCreateRecipe={() => setRecipeMeal(meal)}
                   onEdit={setEditingEntry}
                   onMove={setMovingEntry}
                   onDelete={setDeletingEntry}
@@ -546,6 +588,45 @@ export function DashboardView({
             ) : null}
           </section>
 
+          <section className="card side-card weight-side-card">
+            <div className="row-between">
+              <h2>{t("progress.weight")}</h2>
+              <Link href="/progress" className="button-link small">
+                {t("progress.open")}
+              </Link>
+            </div>
+            {latestWeight ? (
+              <>
+                <div className="weight-side-value">
+                  <strong>
+                    {formatNumber(latestWeight.weightKg, language, 1)}
+                  </strong>
+                  <span>{t("units.kg")}</span>
+                </div>
+                <p className="card-hint">
+                  {weightChangePerWeekKg !== null &&
+                  Math.abs(weightChangePerWeekKg) >= 0.05
+                    ? t("progress.sideTrend", {
+                        value: `${weightChangePerWeekKg > 0 ? "+" : "−"}${formatNumber(
+                          Math.abs(weightChangePerWeekKg),
+                          language,
+                          2,
+                        )}`,
+                      })
+                    : t("progress.sideNoTrend")}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="field-hint">{t("progress.sideEmpty")}</p>
+                <Link href="/progress" className="button secondary small">
+                  <Icon name="plus" size={15} />
+                  {t("progress.addWeight")}
+                </Link>
+              </>
+            )}
+          </section>
+
           <section className="card side-card">
             <h2>{t("dashboard.quickActions")}</h2>
             <div className="quick-actions">
@@ -573,11 +654,71 @@ export function DashboardView({
                 <Icon name="book" size={17} />
                 {t("dashboard.addSavedMeal")}
               </button>
+              <Link href="/recipes" className="quick-action">
+                <Icon name="utensils" size={17} />
+                {t("nav.recipes")}
+              </Link>
               <Link href="/history" className="quick-action">
                 <Icon name="chart" size={17} />
                 {t("dashboard.weekOverview")}
               </Link>
             </div>
+          </section>
+
+          <section className="card side-card macro-suggest-card">
+            <div className="row-between">
+              <h2>{t("suggestions.title")}</h2>
+              <span className="badge">{t("suggestions.badge")}</span>
+            </div>
+            <p className="card-hint">{t("suggestions.help")}</p>
+            {suggestions.length === 0 ? (
+              <p className="field-hint">{t("suggestions.empty")}</p>
+            ) : (
+              <div className="macro-suggest-list">
+                {suggestions.map((suggestion) => (
+                  <button
+                    type="button"
+                    className="macro-suggest-row"
+                    key={`${suggestion.kind}-${suggestion.id}`}
+                    onClick={() => {
+                      if (suggestion.kind === "recipe") {
+                        const recipe = savedMeals.find(
+                          (item) => item.id === suggestion.id,
+                        );
+                        if (recipe) setSuggestedRecipe(recipe);
+                        return;
+                      }
+                      const food = [...customFoods, ...favorites, ...recent].find(
+                        (item) => item.id === suggestion.id,
+                      );
+                      if (food) setSuggestedFood(food);
+                    }}
+                  >
+                    <span className="macro-suggest-main">
+                      <span className="macro-suggest-name">
+                        {suggestion.name}
+                        {suggestion.kind === "recipe" ? (
+                          <span className="badge">{t("suggestions.recipe")}</span>
+                        ) : null}
+                      </span>
+                      <span className="macro-suggest-meta">
+                        {formatNumber(suggestion.amount, language, 0)}{" "}
+                        {suggestion.unit === "ml" ? "ml" : "g"}
+                        {suggestion.protein !== null
+                          ? ` · ${t("dayTypes.proteinShort")} ${formatGrams(suggestion.protein, language)} g`
+                          : ""}
+                        {suggestion.kcal !== null
+                          ? ` · ${formatKcal(suggestion.kcal, language)} kcal`
+                          : ""}
+                      </span>
+                    </span>
+                    <span className="macro-suggest-add">
+                      <Icon name="plus" size={15} />
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </section>
 
           <section className="card side-card">
@@ -639,6 +780,7 @@ export function DashboardView({
           favorites={favorites}
           recent={recent}
           customFoods={customFoods}
+          savedMeals={savedMeals}
           usdaEnabled={usdaEnabled}
           onAdded={finish}
         />
@@ -703,6 +845,61 @@ export function DashboardView({
         />
       ) : null}
 
+      {recipeMeal ? (
+        <RecipeBuilderDialog
+          savedMeal={null}
+          availableFoods={[...customFoods, ...favorites, ...recent]}
+          language={language}
+          unitSystem={unitSystem}
+          usdaEnabled={usdaEnabled}
+          onClose={() => setRecipeMeal(null)}
+          onDone={(message, recipe) => {
+            const meal = recipeMeal;
+            setRecipeMeal(null);
+            setToast(message);
+            if (recipe) {
+              setLoggingRecipe(recipe);
+              setLoggingRecipeMeal(meal);
+            }
+            router.refresh();
+          }}
+        />
+      ) : null}
+
+      {loggingRecipe ? (
+        <RecipeLogDialog
+          recipe={loggingRecipe}
+          date={date}
+          initialMeal={loggingRecipeMeal}
+          language={language}
+          onClose={() => setLoggingRecipe(null)}
+          onDone={finish}
+        />
+      ) : null}
+
+      {suggestedFood ? (
+        <QuickAddFoodDialog
+          food={suggestedFood}
+          date={date}
+          initialMeal={suggestionMeal()}
+          language={language}
+          unitSystem={unitSystem}
+          onClose={() => setSuggestedFood(null)}
+          onDone={finish}
+        />
+      ) : null}
+
+      {suggestedRecipe ? (
+        <RecipeLogDialog
+          recipe={suggestedRecipe}
+          date={date}
+          initialMeal={suggestionMeal()}
+          language={language}
+          onClose={() => setSuggestedRecipe(null)}
+          onDone={finish}
+        />
+      ) : null}
+
       {toast ? (
         <div className="toast" role="status" aria-live="polite">
           {toast}
@@ -710,6 +907,14 @@ export function DashboardView({
       ) : null}
     </>
   );
+}
+
+function suggestionMeal(): Meal {
+  const hour = new Date().getHours();
+  if (hour < 11) return "breakfast";
+  if (hour < 16) return "lunch";
+  if (hour < 21) return "dinner";
+  return "snacks";
 }
 
 function WeekStrip({
@@ -842,6 +1047,7 @@ function MealSection({
   t,
   onAdd,
   onRepeat,
+  onCreateRecipe,
   onEdit,
   onMove,
   onDelete,
@@ -853,6 +1059,7 @@ function MealSection({
   t: Translator;
   onAdd: () => void;
   onRepeat: () => void;
+  onCreateRecipe: () => void;
   onEdit: (entry: DiaryEntry) => void;
   onMove: (entry: DiaryEntry) => void;
   onDelete: (entry: DiaryEntry) => void;
@@ -904,6 +1111,16 @@ function MealSection({
         </div>
         <span className="meal-kcal">{subtotal}</span>
         <div className="meal-actions">
+          <button
+            type="button"
+            className="button small ghost"
+            onClick={onCreateRecipe}
+            aria-label={t("recipes.fromMealTitle", { meal: mealLabel })}
+            title={t("recipes.create")}
+          >
+            <Icon name="utensils" size={15} />
+            <span>{t("recipes.create")}</span>
+          </button>
           {entries.length > 0 ? (
             <>
               <button

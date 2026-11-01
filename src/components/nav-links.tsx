@@ -7,6 +7,8 @@ import { Icon, type IconName } from "./icons";
 export interface NavItem {
   href: string;
   label: string;
+  /** Compact label for the mobile bar, where six items must fit. */
+  shortLabel?: string;
   icon: IconName;
 }
 
@@ -36,8 +38,8 @@ export function NavLinks({
             href={item.href}
             aria-current={active ? "page" : undefined}
           >
-            <Icon name={item.icon} size={variant === "mobile" ? 20 : 17} />
-            <span>{item.label}</span>
+            <Icon name={item.icon} size={variant === "mobile" ? 19 : 17} />
+            <span>{variant === "mobile" ? (item.shortLabel ?? item.label) : item.label}</span>
           </Link>
         );
       })}

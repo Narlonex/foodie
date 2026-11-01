@@ -220,6 +220,17 @@ export const manualTargetsSchema = z.object({
   fat: z.coerce.number().finite("validation.macro").nonnegative("validation.macro").max(1_000, "validation.macro"),
 });
 
+export const weightKgSchema = z
+  .number()
+  .finite("validation.weight")
+  .min(20, "validation.weight")
+  .max(500, "validation.weight");
+
+export const weightEntrySchema = z.object({
+  date: isoDateSchema,
+  weightKg: weightKgSchema,
+});
+
 export const savedMealNameSchema = z
   .string()
   .trim()

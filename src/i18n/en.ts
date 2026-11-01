@@ -56,13 +56,21 @@ export const en = {
   "weekdays.sat": "Sat",
   "weekdays.sun": "Sun",
   "nav.dashboard": "Dashboard",
+  "nav.progress": "Progress",
   "nav.foodLibrary": "Food library",
+  "nav.recipes": "Recipes",
   "nav.history": "Weekly overview",
   "nav.settings": "Settings",
   "nav.signOut": "Sign out",
   "nav.account": "Account",
   "nav.menu": "Menu",
   "nav.primary": "Main navigation",
+  "nav.dashboardShort": "Home",
+  "nav.progressShort": "Progress",
+  "nav.foodLibraryShort": "Foods",
+  "nav.recipesShort": "Recipes",
+  "nav.historyShort": "Week",
+  "nav.settingsShort": "Settings",
 
   "units.g": "g",
   "units.ml": "ml",
@@ -72,6 +80,7 @@ export const en = {
   "units.floz": "fl oz",
   "units.kcal": "kcal",
   "units.kj": "kJ",
+  "units.kg": "kg",
   "units.gramsPer": "{value} g",
   "units.mlPer": "{value} ml",
 
@@ -663,6 +672,25 @@ export const en = {
   "savedMeals.duplicated": "Recipe duplicated.",
   "savedMeals.builderHelp":
     "Choose foods and amounts. Missing nutrition values stay unknown.",
+  "savedMeals.builderSearchHelp":
+    "Search Open Food Facts and USDA, then pick an ingredient. It is added to this recipe once.",
+  "savedMeals.searchPlaceholder": "Search an ingredient by name or brand",
+
+  "recipeImport.open": "Import from a recipe link",
+  "recipeImport.close": "Hide recipe import",
+  "recipeImport.help":
+    "Paste a public recipe URL. We read its schema.org recipe data and list the ingredients for review; quantities are never invented.",
+  "recipeImport.url": "Recipe link",
+  "recipeImport.import": "Read recipe",
+  "recipeImport.loading": "Reading…",
+  "recipeImport.imported": "Found {count} ingredients.",
+  "recipeImport.review":
+    "Tap an ingredient to search for it, then check the amount and add the prepared weight.",
+  "recipeImport.invalidUrl": "Enter a valid public http(s) recipe link.",
+  "recipeImport.fetchError": "We could not open that page. Check the link and try again.",
+  "recipeImport.notHtml": "That link is not a recipe page.",
+  "recipeImport.tooLarge": "That page is too large to read.",
+  "recipeImport.noRecipe": "No recipe data was found on that page.",
 
   "copyDay.title": "Copy another day",
   "copyDay.intro":
@@ -766,6 +794,78 @@ export const en = {
   "history.today": "Today",
   "history.emptyDay": "No entries",
   "history.emptyDayHelp": "No food logged. This is not the same as zero intake.",
+
+  "progress.title": "Progress",
+  "progress.subtitle":
+    "Weight history, trend and a weekly calorie check-in based on your own data.",
+  "progress.latestOn": "Latest · {date}",
+  "progress.noEntries": "No weight logged",
+  "progress.weight": "Weight",
+  "progress.weightHelp":
+    "One weight per day is enough. The trend matters more than a single number.",
+  "progress.addWeight": "Log weight",
+  "progress.date": "Date",
+  "progress.weightKg": "Weight",
+  "progress.saveWeight": "Save weight",
+  "progress.onePerDay":
+    "Saving the same date again updates that day. You can also edit your current weight under Body & metrics.",
+  "progress.checkIn": "Weekly adaptive check-in",
+  "progress.checkInHelp":
+    "We compare your logged intake with the weight trend. It is an estimate, not a medical prescription.",
+  "progress.period": "Last {days} days",
+  "progress.history": "Weight history",
+  "progress.entriesCount": "{count} entries",
+  "progress.noHistory": "No weight entries yet.",
+  "progress.deleteWeight": "Delete weight entry",
+  "progress.insufficient": "Not enough data for a reliable estimate yet.",
+  "progress.needWeights": "{count} of 5 weigh-ins",
+  "progress.needIntake": "{count} of 7 logged days",
+  "progress.needSpan": "{count} of 10 days between first and last weigh-in",
+  "progress.insufficientHelp":
+    "Keep logging food and weight. Empty days are treated as unknown, never as zero.",
+  "progress.implausible":
+    "The estimate of {value} kcal is outside the plausible range, so no target is suggested.",
+  "progress.averageIntake": "Average intake",
+  "progress.weightTrend": "Weight trend",
+  "progress.loggedDays": "Logged days",
+  "progress.kgPerWeek": "kg/week",
+  "progress.implausibleHelp":
+    "Check for missing food entries or a one-off weight spike. If the data is right, keep logging and try again later.",
+  "progress.loggedDaysValue": "{logged} of {total} days logged",
+  "progress.weighIns": "{count} weigh-ins",
+  "progress.estimatedTdee": "Estimated maintenance",
+  "progress.estimateHint": "From intake and weight change",
+  "progress.suggested": "Suggested target",
+  "progress.confidenceGood": "Good data coverage",
+  "progress.confidenceLow": "Low coverage — treat as a rough guide",
+  "progress.currentTarget": "Current: {name}",
+  "progress.noCurrentTarget": "No current calorie target",
+  "progress.apply": "Use for default day type",
+  "progress.noDefaultDayType": "Set a default day type first.",
+  "progress.applyWarning":
+    "This changes the calorie and macro targets of your default day type, including dates assigned to it. Logged food never changes.",
+  "progress.weightSaved": "Weight saved.",
+  "progress.weightDeleted": "Weight entry deleted.",
+  "progress.futureDate": "Choose today or an earlier date.",
+  "progress.saveError": "We could not save that weight. Please try again.",
+  "progress.chartAria": "Weight trend from {first} kg to {last} kg.",
+  "progress.noChart": "Log your first weight to start the chart.",
+  "progress.needMorePoints": "Log at least one more weigh-in to see a trend.",
+  "progress.chartNote":
+    "The line uses your saved weigh-ins only; gaps are not filled in.",
+  "progress.applied": "Default day type updated to {value} kcal.",
+  "progress.open": "Open",
+  "progress.sideTrend": "Trend {value} kg/week",
+  "progress.sideNoTrend": "No clear trend yet",
+  "progress.sideEmpty": "Log your weight to see the trend.",
+
+  "suggestions.title": "Fill your macros",
+  "suggestions.badge": "Smart picks",
+  "suggestions.help":
+    "Foods and saved recipes that fit what is left of today's targets.",
+  "suggestions.empty":
+    "No suggestion fits the remaining calories. Adjust the portion or log less first.",
+  "suggestions.recipe": "Recipe",
 
   "search.title": "Add food",
   "search.dialogTitle": "Find a food",
@@ -941,6 +1041,20 @@ export const en = {
   "package.invalid":
     "Enter a positive number of packages, for example 0.5 or 1/3.",
 
+  "recipes.create": "Create recipe",
+  "recipes.fromMeal": "Save as recipe",
+  "recipes.fromMealTitle": "Create a recipe from {meal}",
+  "recipes.fromMealHelp":
+    "Build a reusable dish from ingredients, weigh the finished batch and log any portion in grams later.",
+  "recipes.title": "Recipes",
+  "recipes.subtitle":
+    "Reusable dishes with ingredient totals, per-100-g values and exact gram portions.",
+  "recipes.empty": "No recipes yet",
+  "recipes.emptyHelp":
+    "Create a dish such as chicken and rice, add its ingredients and the weight of the finished batch.",
+  "recipes.ingredients": "{count} ingredients",
+  "recipes.open": "Open recipe",
+  "recipes.per100Label": "Per 100 g",
   "recipes.finalWeight": "Final weight (g)",
   "recipes.finalWeightHelp":
     "Weigh the finished dish. Per-100-g values need it; without it the recipe is only an ingredient list.",

@@ -14,6 +14,8 @@ import {
   updateUsdaPreference,
 } from "@/lib/repositories/profile";
 import { updateDayTypeTargets } from "@/lib/repositories/dayTypes";
+import { upsertWeightEntry } from "@/lib/repositories/weight";
+import { todayIso } from "@/lib/dates";
 import { suggestedMacroTargets } from "@/lib/macroTargets";
 import { estimateMaintenanceCalories } from "@/lib/metrics";
 import {
@@ -196,6 +198,10 @@ export async function saveBodyMetricsAction(
   }
   const saved = await updateBodyMetrics(viewer.user.id, parsed.data, true);
   if (!saved) return failure("settings.saveError");
+  if (parsed.data.weightKg !== null) {
+    await upsertWeightEntry(viewer.user.id, todayIso(), parsed.data.weightKg);
+    revalidatePath("/progress");
+  }
 
   if (formData.get("applySuggestion") === "on" && viewer.profile.defaultDayTypeId) {
     const maintenance = estimateMaintenanceCalories(parsed.data);

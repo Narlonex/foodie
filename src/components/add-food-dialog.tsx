@@ -14,10 +14,12 @@ import {
   saveFavoriteFoodAction,
   toggleFavoriteAction,
 } from "@/actions/foods";
+import { logRecipeAction } from "@/actions/savedMeals";
 import { getTranslator, translate, type TranslationKey } from "@/i18n";
 import { barcodeLookupCandidates, normalizeBarcode } from "@/lib/barcode";
 import { formatKcal, formatNumber, unitTranslationKey } from "@/lib/format";
 import { scaleNutrients, toBaseAmount } from "@/lib/nutrition";
+import { recipeNutrition } from "@/lib/recipes";
 import {
   packageToAmount,
   parsePackageCount,
@@ -33,6 +35,7 @@ import {
   type Meal,
   type NutrientKey,
   type Nutrients,
+  type SavedMeal,
   type UnitSystem,
 } from "@/lib/types";
 import { BarcodeScanner } from "./barcode-scanner";
@@ -42,7 +45,7 @@ import { FoodThumb } from "./food-thumb";
 import { Icon } from "./icons";
 import { PreparationBadge, ProgressBar, SourceBadge } from "./ui";
 
-type SearchTab = "search" | "favorites" | "recent" | "custom";
+type SearchTab = "search" | "favorites" | "recent" | "custom" | "recipes";
 type SearchStatus = "idle" | "loading" | "done" | "error";
 type SourceKind = "off" | "usda";
 type Source = SourceKind | "both";
@@ -88,6 +91,7 @@ export function AddFoodDialog({
   favorites,
   recent,
   customFoods,
+  savedMeals = [],
   usdaEnabled,
   onAdded,
 }: {
@@ -100,6 +104,7 @@ export function AddFoodDialog({
   favorites: Food[];
   recent: Food[];
   customFoods: Food[];
+  savedMeals?: SavedMeal[];
   usdaEnabled: boolean;
   onAdded: (message: string) => void;
 }) {
@@ -139,6 +144,11 @@ export function AddFoodDialog({
   });
   const [favoritePending, setFavoritePending] = useState<string | null>(null);
   const [favoriteMessage, setFavoriteMessage] = useState<string | null>(null);
+  const [recipe, setRecipe] = useState<SavedMeal | null>(null);
+  const [recipeGrams, setRecipeGrams] = useState("100");
+  const [recipeMeal, setRecipeMeal] = useState<Meal>(initialMeal);
+  const [recipeSaving, setRecipeSaving] = useState(false);
+  const [recipeError, setRecipeError] = useState<string | null>(null);
 
   const searchAbort = useRef<AbortController | null>(null);
   const detailAbort = useRef<AbortController | null>(null);
@@ -319,6 +329,41 @@ export function AddFoodDialog({
       })();
     } else {
       setDetailLoading(false);
+    }
+  }
+
+  function openRecipe(item: SavedMeal) {
+    setRecipe(item);
+    setRecipeGrams("100");
+    setRecipeMeal(initialMeal);
+    setRecipeError(null);
+  }
+
+  async function saveRecipe() {
+    if (!recipe) return;
+    const grams = Number(recipeGrams.replace(",", "."));
+    if (!Number.isFinite(grams) || grams <= 0) {
+      setRecipeError(t("recipes.amountInvalid"));
+      return;
+    }
+    setRecipeSaving(true);
+    setRecipeError(null);
+    try {
+      const result = await logRecipeAction({
+        savedMealId: recipe.id,
+        date,
+        meal: recipeMeal,
+        grams,
+      });
+      if (!result.ok) {
+        setRecipeError(tr(result.error) ?? t("recipes.logFailed"));
+        return;
+      }
+      onAdded(t("recipes.logged"));
+    } catch {
+      setRecipeError(t("recipes.logFailed"));
+    } finally {
+      setRecipeSaving(false);
     }
   }
 
@@ -519,6 +564,85 @@ export function AddFoodDialog({
   }
 
   function renderTabContent() {
+    if (tab === "recipes") {
+      return (
+        <div className="search-shell">
+          {savedMeals.length === 0 ? (
+            <div className="empty-state">
+              <span className="empty-icon">
+                <Icon name="utensils" size={22} />
+              </span>
+              <h3>{t("recipes.empty")}</h3>
+              <p>{t("recipes.emptyHelp")}</p>
+              <Link href="/recipes" className="button secondary small">
+                {t("recipes.create")}
+              </Link>
+            </div>
+          ) : (
+            <>
+              <p className="source-note">{t("recipes.logIntro")}</p>
+              <div className="result-list">
+                {savedMeals.map((item) => {
+                  const summary = recipeNutrition(
+                    item.items.map((entry) => ({
+                      food: entry.food,
+                      amount: entry.amount,
+                      amountUnit: entry.amountUnit,
+                    })),
+                    item.finalWeightG,
+                    item.servings,
+                  );
+                  return (
+                    <div className="result-row" key={item.id}>
+                      <button
+                        type="button"
+                        className="result-button"
+                        onClick={() => openRecipe(item)}
+                        disabled={summary.per100g === null}
+                      >
+                        <span className="empty-icon small-icon">
+                          <Icon name="utensils" size={18} />
+                        </span>
+                        <span className="result-main">
+                          <span className="result-name">{item.name}</span>
+                          <span className="result-meta">
+                            <span>
+                              {t("recipes.ingredients", {
+                                count: item.items.length,
+                              })}
+                            </span>
+                            {item.finalWeightG !== null ? (
+                              <span>
+                                {t("recipes.batchWeight", {
+                                  grams: formatNumber(
+                                    item.finalWeightG,
+                                    language,
+                                    0,
+                                  ),
+                                })}
+                              </span>
+                            ) : null}
+                            <span>
+                              {summary.per100g?.kcal !== null &&
+                              summary.per100g !== null
+                                ? `${formatKcal(summary.per100g.kcal, language)} kcal / 100 g`
+                                : t("recipes.needFinalWeightHint")}
+                            </span>
+                          </span>
+                        </span>
+                        <span className="result-kcal">
+                          <Icon name="plus" size={17} />
+                        </span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      );
+    }
     if (tab === "search") {
       return (
         <div className="search-shell">
@@ -837,6 +961,156 @@ export function AddFoodDialog({
         ) : (
           <div className="result-list">{list.map(libraryRow)}</div>
         )}
+      </div>
+    );
+  }
+
+  function renderRecipeDetail() {
+    if (!recipe) return null;
+    const summary = recipeNutrition(
+      recipe.items.map((item) => ({
+        food: item.food,
+        amount: item.amount,
+        amountUnit: item.amountUnit,
+      })),
+      recipe.finalWeightG,
+      recipe.servings,
+    );
+    const grams = Number(recipeGrams.replace(",", "."));
+    const preview =
+      summary.per100g && Number.isFinite(grams) && grams > 0
+        ? scaleNutrients(
+            {
+              basisType: "100g",
+              servingSize: null,
+              nutrients: summary.per100g,
+              energySource: summary.energySource,
+            },
+            grams,
+            "g",
+          )
+        : null;
+    return (
+      <div className="stack">
+        <button
+          type="button"
+          className="button ghost small"
+          onClick={() => {
+            setRecipe(null);
+            setRecipeError(null);
+          }}
+        >
+          <Icon name="arrow-left" size={16} />
+          {t("search.backToResults")}
+        </button>
+
+        <div>
+          <h3 style={{ fontSize: "1.25rem" }}>{recipe.name}</h3>
+          <div className="result-meta" style={{ marginTop: 6 }}>
+            <span>
+              {t("recipes.ingredients", { count: recipe.items.length })}
+            </span>
+            {recipe.finalWeightG !== null ? (
+              <span>
+                {t("recipes.batchWeight", {
+                  grams: formatNumber(recipe.finalWeightG, language, 0),
+                })}
+              </span>
+            ) : null}
+            {summary.servingWeightGrams !== null ? (
+              <span>
+                {t("recipes.servingWeightHint", {
+                  grams: formatNumber(summary.servingWeightGrams, language, 0),
+                })}
+              </span>
+            ) : null}
+          </div>
+        </div>
+
+        {summary.per100g === null ? (
+          <p className="notice warning" role="status">
+            <Icon name="alert" size={17} />
+            <span>{t("recipes.needFinalWeight")}</span>
+          </p>
+        ) : null}
+
+        <div className="form-grid">
+          <div className="field">
+            <label htmlFor="recipe-portion">{t("recipes.grams")}</label>
+            <input
+              id="recipe-portion"
+              className="input"
+              inputMode="decimal"
+              value={recipeGrams}
+              onChange={(event) => setRecipeGrams(event.target.value)}
+              autoComplete="off"
+            />
+            <div className="row" style={{ gap: 6, marginTop: 8 }}>
+              {[100, 200, 300].map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  className="button secondary small"
+                  onClick={() => setRecipeGrams(String(value))}
+                >
+                  {value} g
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="field">
+            <label htmlFor="recipe-add-meal">{t("search.meal")}</label>
+            <select
+              id="recipe-add-meal"
+              className="select"
+              value={recipeMeal}
+              onChange={(event) => setRecipeMeal(event.target.value as Meal)}
+            >
+              {MEALS.map((option) => (
+                <option value={option} key={option}>
+                  {t(`meals.${option}` as TranslationKey)}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="preview-panel">
+          <div className="row-between">
+            <strong className="small">{t("search.preview")}</strong>
+            <span className="small subtle">
+              {preview
+                ? `${formatNumber(grams, language, 0)} g`
+                : t("common.unknown")}
+            </span>
+          </div>
+          {preview ? (
+            <PreviewNutrients
+              nutrients={preview.nutrients}
+              language={language}
+              energySource={preview.energySource}
+            />
+          ) : (
+            <p className="field-error">{t("recipes.amountInvalid")}</p>
+          )}
+          <p className="source-note">{t("recipes.snapshotNote")}</p>
+        </div>
+
+        {recipeError ? (
+          <p className="notice error" role="alert">
+            {recipeError}
+          </p>
+        ) : null}
+
+        <button
+          type="button"
+          className="button"
+          onClick={() => void saveRecipe()}
+          disabled={recipeSaving || !preview}
+        >
+          <Icon name="plus" size={17} />
+          {recipeSaving ? t("search.saving") : t("recipes.logConfirm")}
+        </button>
       </div>
     );
   }
@@ -1196,16 +1470,30 @@ export function AddFoodDialog({
       open={open}
       onClose={() => {
         setScannerOpen(false);
+        setRecipe(null);
+        setSelection(null);
         onClose();
       }}
-      title={selection ? t("search.detailTitle") : t("search.dialogTitle")}
+      title={
+        recipe
+          ? t("recipes.logTitle", { name: recipe.name })
+          : selection
+            ? t("search.detailTitle")
+            : t("search.dialogTitle")
+      }
       description={
-        selection ? undefined : t("search.dialogDescription")
+        recipe
+          ? t("recipes.logIntro")
+          : selection
+            ? undefined
+            : t("search.dialogDescription")
       }
       size="wide"
       language={language}
     >
-      {selection ? (
+      {recipe ? (
+        renderRecipeDetail()
+      ) : selection ? (
         renderDetail()
       ) : (
         <div className="search-shell">
@@ -1216,6 +1504,7 @@ export function AddFoodDialog({
                 ["favorites", t("search.tabsFavorites")],
                 ["recent", t("search.tabsRecent")],
                 ["custom", t("search.tabsCustom")],
+                ["recipes", t("nav.recipes")],
               ] as [SearchTab, string][]
             ).map(([value, label]) => (
               <button

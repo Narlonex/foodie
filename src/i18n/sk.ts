@@ -60,13 +60,21 @@ export const sk: Dictionary = {
   "weekdays.sat": "So",
   "weekdays.sun": "Ne",
   "nav.dashboard": "Prehľad",
+  "nav.progress": "Vývoj",
   "nav.foodLibrary": "Knižnica potravín",
+  "nav.recipes": "Recepty",
   "nav.history": "Týždenný prehľad",
   "nav.settings": "Nastavenia",
   "nav.signOut": "Odhlásiť sa",
   "nav.account": "Účet",
   "nav.menu": "Menu",
   "nav.primary": "Hlavná navigácia",
+  "nav.dashboardShort": "Doma",
+  "nav.progressShort": "Vývoj",
+  "nav.foodLibraryShort": "Potraviny",
+  "nav.recipesShort": "Recepty",
+  "nav.historyShort": "Týždeň",
+  "nav.settingsShort": "Nastavenia",
 
   "units.g": "g",
   "units.ml": "ml",
@@ -76,6 +84,7 @@ export const sk: Dictionary = {
   "units.floz": "fl oz",
   "units.kcal": "kcal",
   "units.kj": "kJ",
+  "units.kg": "kg",
   "units.gramsPer": "{value} g",
   "units.mlPer": "{value} ml",
 
@@ -663,6 +672,25 @@ export const sk: Dictionary = {
   "savedMeals.duplicated": "Recept bol duplikovaný.",
   "savedMeals.builderHelp":
     "Vyberte potraviny a množstvá. Chýbajúce výživové hodnoty zostávajú neznáme.",
+  "savedMeals.builderSearchHelp":
+    "Hľadajte v Open Food Facts a USDA, potom vyberte surovinu. Do receptu sa pridá raz.",
+  "savedMeals.searchPlaceholder": "Hľadať surovinu podľa názvu alebo značky",
+
+  "recipeImport.open": "Importovať z odkazu na recept",
+  "recipeImport.close": "Skryť import receptu",
+  "recipeImport.help":
+    "Vložte verejný odkaz na recept. Prečítame jeho údaje schema.org a zobrazíme suroviny na kontrolu; množstvá si nevymýšľame.",
+  "recipeImport.url": "Odkaz na recept",
+  "recipeImport.import": "Načítať recept",
+  "recipeImport.loading": "Načítava sa…",
+  "recipeImport.imported": "Našli sme {count} surovín.",
+  "recipeImport.review":
+    "Ťuknutím na surovinu ju vyhľadáte, potom skontrolujte množstvo a doplňte hmotnosť hotového jedla.",
+  "recipeImport.invalidUrl": "Zadajte platný verejný odkaz na recept (http/https).",
+  "recipeImport.fetchError": "Stránku sa nepodarilo otvoriť. Skontrolujte odkaz a skúste znova.",
+  "recipeImport.notHtml": "Tento odkaz nie je stránka s receptom.",
+  "recipeImport.tooLarge": "Stránka je príliš veľká na prečítanie.",
+  "recipeImport.noRecipe": "Na tejto stránke sa nenašli údaje receptu.",
 
   "copyDay.title": "Skopírovať iný deň",
   "copyDay.intro":
@@ -766,6 +794,78 @@ export const sk: Dictionary = {
   "history.today": "Dnes",
   "history.emptyDay": "Bez záznamov",
   "history.emptyDayHelp": "Nie je zapísané jedlo. To nie je to isté ako nulový príjem.",
+
+  "progress.title": "Vývoj",
+  "progress.subtitle":
+    "História váhy, trend a týždenná kontrola kalórií z vašich vlastných dát.",
+  "progress.latestOn": "Naposledy · {date}",
+  "progress.noEntries": "Váha zatiaľ nie je zapísaná",
+  "progress.weight": "Váha",
+  "progress.weightHelp":
+    "Stačí jedna váha za deň. Trend je dôležitejší ako jedno číslo.",
+  "progress.addWeight": "Zapísať váhu",
+  "progress.date": "Dátum",
+  "progress.weightKg": "Váha",
+  "progress.saveWeight": "Uložiť váhu",
+  "progress.onePerDay":
+    "Uložením rovnakého dátumu sa ten deň upraví. Aktuálnu váhu môžete zmeniť aj v časti Telo a miery.",
+  "progress.checkIn": "Týždenná adaptívna kontrola",
+  "progress.checkInHelp":
+    "Porovnávame zapísaný príjem s trendom váhy. Je to odhad, nie lekárska ordinácia.",
+  "progress.period": "Posledných {days} dní",
+  "progress.history": "História váhy",
+  "progress.entriesCount": "Záznamov: {count}",
+  "progress.noHistory": "Zatiaľ nemáte žiadne záznamy váhy.",
+  "progress.deleteWeight": "Odstrániť záznam váhy",
+  "progress.insufficient": "Na spoľahlivý odhad zatiaľ nemáme dosť dát.",
+  "progress.needWeights": "{count} z 5 vážení",
+  "progress.needIntake": "{count} zo 7 zapísaných dní",
+  "progress.needSpan": "{count} z 10 dní medzi prvým a posledným vážením",
+  "progress.insufficientHelp":
+    "Pokračujte v zapisovaní jedla a váhy. Prázdne dni berieme ako neznáme, nikdy nie ako nulu.",
+  "progress.implausible":
+    "Odhad {value} kcal je mimo rozumného rozsahu, preto cieľ nenavrhujeme.",
+  "progress.averageIntake": "Priemerný príjem",
+  "progress.weightTrend": "Trend váhy",
+  "progress.loggedDays": "Zapísané dni",
+  "progress.kgPerWeek": "kg/týždeň",
+  "progress.implausibleHelp":
+    "Skontrolujte chýbajúce záznamy jedla alebo jednorazový výkyv váhy. Ak sú dáta správne, pokračujte v zapisovaní a skúste to neskôr.",
+  "progress.loggedDaysValue": "{logged} z {total} dní so záznamom",
+  "progress.weighIns": "Vážení: {count}",
+  "progress.estimatedTdee": "Odhadovaný výdaj",
+  "progress.estimateHint": "Z príjmu a zmeny váhy",
+  "progress.suggested": "Navrhovaný cieľ",
+  "progress.confidenceGood": "Dobré pokrytie dát",
+  "progress.confidenceLow": "Nízke pokrytie — berte ako hrubý odhad",
+  "progress.currentTarget": "Aktuálne: {name}",
+  "progress.noCurrentTarget": "Žiadny aktuálny kalorický cieľ",
+  "progress.apply": "Použiť na predvolený typ dňa",
+  "progress.noDefaultDayType": "Najprv nastavte predvolený typ dňa.",
+  "progress.applyWarning":
+    "Zmenia sa kalórie a makrá predvoleného typu dňa vrátane priradených dátumov. Zapísané potraviny sa nikdy nemenia.",
+  "progress.weightSaved": "Váha bola uložená.",
+  "progress.weightDeleted": "Záznam váhy bol odstránený.",
+  "progress.futureDate": "Zvoľte dnešný alebo skorší dátum.",
+  "progress.saveError": "Váhu sa nepodarilo uložiť. Skúste to znova.",
+  "progress.chartAria": "Trend váhy z {first} kg na {last} kg.",
+  "progress.noChart": "Zapíšte prvú váhu a graf sa začne zobrazovať.",
+  "progress.needMorePoints": "Zapíšte ešte aspoň jedno váženie, aby bol vidieť trend.",
+  "progress.chartNote":
+    "Čiara používa len uložené váženia; prázdne dni nedopočítavame.",
+  "progress.applied": "Predvolený typ dňa bol upravený na {value} kcal.",
+  "progress.open": "Otvoriť",
+  "progress.sideTrend": "Trend {value} kg/týždeň",
+  "progress.sideNoTrend": "Zatiaľ bez jasného trendu",
+  "progress.sideEmpty": "Zapíšte váhu a uvidíte trend.",
+
+  "suggestions.title": "Doplňte makrá",
+  "suggestions.badge": "Inteligentné tipy",
+  "suggestions.help":
+    "Potraviny a uložené recepty, ktoré zapadnú do zvyšku dnešných cieľov.",
+  "suggestions.empty":
+    "Do zvyšných kalórií sa nezmestí žiadny návrh. Upravte porciu alebo najprv zapíšte menej.",
+  "suggestions.recipe": "Recept",
 
   "search.title": "Pridať jedlo",
   "search.dialogTitle": "Nájsť potravinu",
@@ -941,6 +1041,20 @@ export const sk: Dictionary = {
   "package.invalid":
     "Zadajte kladný počet balení, napríklad 0,5 alebo 1/3.",
 
+  "recipes.create": "Vytvoriť recept",
+  "recipes.fromMeal": "Uložiť ako recept",
+  "recipes.fromMealTitle": "Vytvoriť recept z jedla {meal}",
+  "recipes.fromMealHelp":
+    "Zostavte opakovane použiteľné jedlo zo surovín, odvážte hotovú dávku a neskôr zapíšte ľubovoľnú porciu v gramoch.",
+  "recipes.title": "Recepty",
+  "recipes.subtitle":
+    "Opakovane použiteľné jedlá so súčtami surovín, hodnotami na 100 g a presnými gramovými porciami.",
+  "recipes.empty": "Zatiaľ žiadne recepty",
+  "recipes.emptyHelp":
+    "Vytvorte jedlo ako kuracie mäso s ryžou, pridajte suroviny a hmotnosť hotovej dávky.",
+  "recipes.ingredients": "Surovín: {count}",
+  "recipes.open": "Otvoriť recept",
+  "recipes.per100Label": "Na 100 g",
   "recipes.finalWeight": "Výsledná hmotnosť (g)",
   "recipes.finalWeightHelp":
     "Odvážte hotové jedlo. Hodnoty na 100 g ho potrebujú; bez neho je recept len zoznam surovín.",

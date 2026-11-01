@@ -8,6 +8,7 @@ import {
   deleteFood,
   foodInputToDraft,
   getOwnedFood,
+  saveExternalFood,
   saveExternalFoodAsFavorite,
   setFoodFavorite,
   updateCustomFood,
@@ -21,6 +22,7 @@ import {
   mealSchema,
   positiveAmountSchema,
 } from "@/lib/validation";
+import type { Food } from "@/lib/types";
 import { errorFromZod, type ActionResult, type FormState } from "./types";
 
 function revalidateAll() {
@@ -98,6 +100,27 @@ export async function addSavedFoodAction(
     return { ok: true, data: { entryId: entry.id }, message: "search.added" };
   } catch {
     return { ok: false, error: "food.saveFailed" };
+  }
+}
+
+export async function saveFoodForRecipeAction(
+  food: unknown,
+): Promise<ActionResult<{ food: Food }>> {
+  const viewer = await requireViewer();
+  const parsed = foodInputSchema.safeParse(food);
+  if (!parsed.success || parsed.data.source === "custom") {
+    return { ok: false, error: "savedMeals.saveError" };
+  }
+  try {
+    const saved = await saveExternalFood(viewer.user.id, parsed.data);
+    revalidatePath("/foods");
+    return {
+      ok: true,
+      message: "foods.created",
+      data: { food: saved },
+    };
+  } catch {
+    return { ok: false, error: "savedMeals.saveError" };
   }
 }
 

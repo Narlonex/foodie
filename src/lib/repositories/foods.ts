@@ -355,17 +355,25 @@ export async function setFoodFavorite(
   return Boolean(row?.is_favorite);
 }
 
+export async function saveExternalFood(
+  userId: string,
+  input: FoodInput,
+  favorite = false,
+): Promise<Food> {
+  const draft = foodInputToDraft(input);
+  if (draft.source === "custom" || !draft.externalId) {
+    throw new Error("Only sourced foods can be saved from an external database.");
+  }
+  return withTransaction((client) =>
+    persistFoodDraft(client, userId, draft, favorite),
+  );
+}
+
 export async function saveExternalFoodAsFavorite(
   userId: string,
   input: FoodInput,
 ): Promise<Food> {
-  const draft = foodInputToDraft(input);
-  if (draft.source === "custom" || !draft.externalId) {
-    throw new Error("Only sourced foods can be saved as external favorites.");
-  }
-  return withTransaction((client) =>
-    persistFoodDraft(client, userId, draft, true),
-  );
+  return saveExternalFood(userId, input, true);
 }
 
 export function parseFoodSource(value: string | null): FoodSource | null {

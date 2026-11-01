@@ -1,6 +1,6 @@
 import { DashboardView } from "@/components/dashboard-view";
 import { requireViewer } from "@/lib/auth";
-import { parseDateParam, todayIso } from "@/lib/dates";
+import { addDays, parseDateParam, todayIso } from "@/lib/dates";
 import { isUsdaConfigured } from "@/lib/env";
 import { getDayTotals } from "@/lib/repositories/diary";
 import { listDayTypes } from "@/lib/repositories/dayTypes";
@@ -10,6 +10,8 @@ import {
   listRecentFoods,
 } from "@/lib/repositories/foods";
 import { listSavedMeals } from "@/lib/repositories/savedMeals";
+import { getLatestWeightEntries } from "@/lib/repositories/weight";
+import { calculateWeightTrend } from "@/lib/weightTrend";
 import { pageMetadata } from "@/lib/pageMetadata";
 
 export async function generateMetadata() {
@@ -26,7 +28,7 @@ export default async function DashboardPage({
   const today = todayIso();
   const date = parseDateParam(params.date, today);
 
-  const [day, dayTypes, favorites, recent, customFoods, savedMeals] =
+  const [day, dayTypes, favorites, recent, customFoods, savedMeals, weights] =
     await Promise.all([
       getDayTotals(viewer.user.id, date),
       listDayTypes(viewer.user.id),
@@ -34,7 +36,11 @@ export default async function DashboardPage({
       listRecentFoods(viewer.user.id, 12),
       listCustomFoods(viewer.user.id),
       listSavedMeals(viewer.user.id),
+      getLatestWeightEntries(viewer.user.id, 30),
     ]);
+  const weightTrend = calculateWeightTrend(
+    weights.filter((entry) => entry.date >= addDays(today, -14)),
+  );
 
   return (
     <DashboardView
@@ -52,6 +58,8 @@ export default async function DashboardPage({
       recent={recent}
       customFoods={customFoods}
       savedMeals={savedMeals}
+      latestWeight={weights.at(-1) ?? null}
+      weightChangePerWeekKg={weightTrend?.changePerWeekKg ?? null}
       usdaEnabled={viewer.profile.usdaEnabled && isUsdaConfigured()}
       dashboardNutrients={viewer.profile.dashboardNutrients}
     />
