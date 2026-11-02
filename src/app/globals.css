@@ -6231,6 +6231,12 @@ h2 {
   }
 }
 
+.export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 /* Meal planner, shopping list and pantry */
 .plan-weeknav {
   display: flex;

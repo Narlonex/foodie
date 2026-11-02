@@ -1340,6 +1340,14 @@ export const en = {
   "plan.pantry.expiringSoon": "Use soon",
   "plan.pantry.removed": "Pantry item removed.",
 
+  "export.title": "Export your data",
+  "export.help":
+    "Download a complete JSON backup of your diary, recipes, weight, measurements, habits, meal plan, shopping list and pantry.",
+  "export.json": "Download JSON backup",
+  "export.csv": "Download diary CSV",
+  "export.note":
+    "Files are generated on demand and contain only the signed-in account's data.",
+
   "validation.goalRate": "Enter a pace between 0.05 and 2 kg per week.",
   "validation.measurement": "Enter a measurement between 20 and 300 cm.",
   "validation.measurementRequired": "Enter at least one measurement.",

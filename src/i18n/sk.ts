@@ -1338,6 +1338,14 @@ export const sk: Dictionary = {
   "plan.pantry.expiringSoon": "Spotrebovať čoskoro",
   "plan.pantry.removed": "Položka bola odstránená zo skladu.",
 
+  "export.title": "Exportovať dáta",
+  "export.help":
+    "Stiahnite si kompletnú JSON zálohu denníka, receptov, váhy, mier, návykov, plánu, nákupného zoznamu a skladu.",
+  "export.json": "Stiahnuť JSON zálohu",
+  "export.csv": "Stiahnuť CSV denníka",
+  "export.note":
+    "Súbory sa vytvárajú na požiadanie a obsahujú len dáta prihláseného účtu.",
+
   "validation.goalRate": "Zadajte tempo medzi 0,05 a 2 kg za týždeň.",
   "validation.measurement": "Zadajte mieru medzi 20 a 300 cm.",
   "validation.measurementRequired": "Zadajte aspoň jednu mieru.",

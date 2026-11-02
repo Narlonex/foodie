@@ -28,6 +28,24 @@ export default async function AccountSettingsPage() {
           </button>
         </form>
       </div>
+
+      <div className="card card-pad stack">
+        <div>
+          <h2 className="card-title">{t("export.title")}</h2>
+          <p className="card-hint">{t("export.help")}</p>
+        </div>
+        <div className="export-actions">
+          <a className="button" href="/api/export?format=json" download>
+            <Icon name="database" size={16} />
+            {t("export.json")}
+          </a>
+          <a className="button secondary" href="/api/export?format=csv" download>
+            <Icon name="chart" size={16} />
+            {t("export.csv")}
+          </a>
+        </div>
+        <p className="field-hint">{t("export.note")}</p>
+      </div>
     </SettingsDetail>
   );
 }
