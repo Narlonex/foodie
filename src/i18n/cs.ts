@@ -586,6 +586,21 @@ export const cs: Dictionary = {
     "Zadejte hodnoty na 100 g, 100 ml nebo na porci. Co nevíte, nechte prázdné.",
   "foods.customBarcodeHint":
     "Kód {barcode} zatím není v Open Food Facts ani USDA. Zadejte jednou hodnoty z etikety; potravina se uloží s tímto kódem pro příště.",
+  "foods.labelScanTitle": "Vyplnit z výživové etikety",
+  "foods.labelScanHint":
+    "Vyfoťte výživovou tabulku zblízka a rovně. Aplikace ji přečte v tomto zařízení a vyplní pole níže; hodnoty před uložením zkontrolujte.",
+  "foods.labelScanButton": "Naskenovat etiketu",
+  "foods.labelScanBusy": "Čtu etiketu…",
+  "foods.labelScanProgress": "{percent} %",
+  "foods.labelScanPreview": "Náhled výživové etikety",
+  "foods.labelScanSuccess": "Našel jsem {count} výživových hodnot. Před uložením je zkontrolujte.",
+  "foods.labelScanEmpty":
+    "Nepodařilo se rozpoznat výživové hodnoty. Zkuste ostřejší fotku s dobrým světlem nebo je zadejte ručně.",
+  "foods.labelScanError":
+    "Etiketu se nepodařilo přečíst. Zkuste to znovu s lepším světlem nebo hodnoty zadejte ručně.",
+  "foods.labelScanText": "Rozpoznaný text",
+  "foods.labelScanPrivacy":
+    "Fotka se zpracuje pouze v tomto zařízení a neposílá se na server.",
   "foods.name": "Název potraviny",
   "foods.brand": "Značka",
   "foods.barcode": "Čárový kód",

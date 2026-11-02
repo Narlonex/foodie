@@ -7,7 +7,7 @@ const apkUrl =
 export const androidRelease = {
   available: Boolean(apkUrl),
   apkUrl,
-  versionName: process.env.ANDROID_VERSION_NAME?.trim() || "1.0.0",
+  versionName: process.env.ANDROID_VERSION_NAME?.trim() || "1.1.0",
   sha256: process.env.ANDROID_APK_SHA256?.trim() ?? "",
   notes: process.env.ANDROID_APK_NOTES?.trim() ?? "",
 };

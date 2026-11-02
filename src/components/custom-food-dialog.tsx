@@ -7,6 +7,7 @@ import {
 } from "@/actions/foods";
 import { initialFormState } from "@/actions/types";
 import { getTranslator, translate, type TranslationKey } from "@/i18n";
+import type { LabelScanResult } from "@/lib/label";
 import {
   NUTRIENT_KEYS,
   type Food,
@@ -15,6 +16,7 @@ import {
 } from "@/lib/types";
 import { Dialog } from "./dialog";
 import { FoodPhotoField } from "./food-photo-field";
+import { NutritionLabelScanner } from "./nutrition-label-scanner";
 
 function nutrientUnit(key: NutrientKey): string {
   if (key === "kcal") return "kcal";
@@ -24,6 +26,17 @@ function nutrientUnit(key: NutrientKey): string {
 
 function nutrientLabelKey(key: NutrientKey): string {
   return key === "satFat" ? "nutrients.saturatedFat" : `nutrients.${key}`;
+}
+
+function initialNutrientValues(
+  food: Food | undefined,
+): Record<NutrientKey, string> {
+  return Object.fromEntries(
+    NUTRIENT_KEYS.map((key) => {
+      const value = food?.nutrients[key];
+      return [key, value === null || value === undefined ? "" : String(value)];
+    }),
+  ) as Record<NutrientKey, string>;
 }
 
 export function CustomFoodDialog({
@@ -44,6 +57,25 @@ export function CustomFoodDialog({
   const action = food ? updateCustomFoodAction : createCustomFoodAction;
   const [state, formAction, pending] = useActionState(action, initialFormState);
   const [basis, setBasis] = useState(food?.basisType ?? "100g");
+  const [servingSize, setServingSize] = useState(
+    food?.servingSize === null || food?.servingSize === undefined
+      ? ""
+      : String(food.servingSize),
+  );
+  const [servingUnit, setServingUnit] = useState<"g" | "ml">(
+    food?.servingUnit ?? "g",
+  );
+  const [packageQuantity, setPackageQuantity] = useState(
+    food?.packageQuantity === null || food?.packageQuantity === undefined
+      ? ""
+      : String(food.packageQuantity),
+  );
+  const [packageUnit, setPackageUnit] = useState<"g" | "ml">(
+    food?.packageUnit ?? "g",
+  );
+  const [nutrientValues, setNutrientValues] = useState<
+    Record<NutrientKey, string>
+  >(() => initialNutrientValues(food));
 
   useEffect(() => {
     if (state.status === "success" && state.message) {
@@ -53,6 +85,28 @@ export function CustomFoodDialog({
       );
     }
   }, [state, language, onDone]);
+
+  function applyLabelScan(result: LabelScanResult) {
+    if (result.basisType) setBasis(result.basisType);
+    if (result.servingSize !== null) {
+      setServingSize(String(result.servingSize));
+    }
+    if (result.servingUnit) setServingUnit(result.servingUnit);
+    if (result.packageQuantity !== null) {
+      setPackageQuantity(String(result.packageQuantity));
+    }
+    if (result.packageUnit) setPackageUnit(result.packageUnit);
+
+    setNutrientValues((current) => {
+      const next = { ...current };
+      for (const [key, value] of Object.entries(result.nutrients)) {
+        if (typeof value === "number") {
+          next[key as NutrientKey] = String(value);
+        }
+      }
+      return next;
+    });
+  }
 
   const generalError =
     state.status === "error" && state.message
@@ -183,7 +237,8 @@ export function CustomFoodDialog({
                   name="servingSize"
                   className="input"
                   inputMode="decimal"
-                  defaultValue={food?.servingSize ?? ""}
+                  value={servingSize}
+                  onChange={(event) => setServingSize(event.target.value)}
                   aria-invalid={errorFor("servingSize") ? true : undefined}
                 />
                 {errorFor("servingSize") ? (
@@ -198,7 +253,10 @@ export function CustomFoodDialog({
                   id="food-serving-unit"
                   name="servingUnit"
                   className="select"
-                  defaultValue={food?.servingUnit ?? "g"}
+                  value={servingUnit}
+                  onChange={(event) =>
+                    setServingUnit(event.target.value as "g" | "ml")
+                  }
                 >
                   <option value="g">{t("units.g")}</option>
                   <option value="ml">{t("units.ml")}</option>
@@ -232,7 +290,8 @@ export function CustomFoodDialog({
               name="packageQuantity"
               className="input"
               inputMode="decimal"
-              defaultValue={food?.packageQuantity ?? ""}
+              value={packageQuantity}
+              onChange={(event) => setPackageQuantity(event.target.value)}
               aria-describedby="food-package-hint"
             />
             {errorFor("packageQuantity") ? (
@@ -245,7 +304,10 @@ export function CustomFoodDialog({
               id="food-package-unit"
               name="packageUnit"
               className="select"
-              defaultValue={food?.packageUnit ?? "g"}
+              value={packageUnit}
+              onChange={(event) =>
+                setPackageUnit(event.target.value as "g" | "ml")
+              }
             >
               <option value="g">{t("units.g")}</option>
               <option value="ml">{t("units.ml")}</option>
@@ -272,6 +334,11 @@ export function CustomFoodDialog({
           </div>
         </div>
 
+        <NutritionLabelScanner
+          language={language}
+          onExtracted={applyLabelScan}
+        />
+
         <div className="form-section">
           <div>
             <h3 className="form-section-title">{t("foods.nutrientsSection")}</h3>
@@ -289,7 +356,13 @@ export function CustomFoodDialog({
                   name={key}
                   className="input"
                   inputMode="decimal"
-                  defaultValue={food?.nutrients[key] ?? ""}
+                  value={nutrientValues[key]}
+                  onChange={(event) =>
+                    setNutrientValues((current) => ({
+                      ...current,
+                      [key]: event.target.value,
+                    }))
+                  }
                   placeholder={t("common.unknown")}
                   aria-invalid={errorFor(`nutrients.${key}`) ? true : undefined}
                 />

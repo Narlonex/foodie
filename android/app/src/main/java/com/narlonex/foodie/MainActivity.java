@@ -9,6 +9,11 @@ import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
 import android.webkit.URLUtil;
 import android.webkit.WebView;
+import android.view.View;
+
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.getcapacitor.BridgeActivity;
 
@@ -17,6 +22,18 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Capacitor draws edge-to-edge on Android 15+. Keep the web header
+        // below the status bar instead of letting the clock overlap it.
+        View content = findViewById(android.R.id.content);
+        ViewCompat.setOnApplyWindowInsetsListener(content, (view, windowInsets) -> {
+            Insets statusBars = windowInsets.getInsets(
+                WindowInsetsCompat.Type.statusBars()
+            );
+            view.setPadding(0, statusBars.top, 0, 0);
+            return windowInsets;
+        });
+        ViewCompat.requestApplyInsets(content);
 
         WebView webView = getBridge().getWebView();
         if (webView == null) return;

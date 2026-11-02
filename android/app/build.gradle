@@ -4,8 +4,8 @@ def releaseKeystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
 def releaseKeystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
 def releaseKeyAlias = System.getenv("ANDROID_KEY_ALIAS")
 def releaseKeyPassword = System.getenv("ANDROID_KEY_PASSWORD")
-def appVersionCode = (System.getenv("ANDROID_VERSION_CODE") ?: "1").toInteger()
-def appVersionName = System.getenv("ANDROID_VERSION_NAME") ?: "1.0.0"
+def appVersionCode = (System.getenv("ANDROID_VERSION_CODE") ?: "2").toInteger()
+def appVersionName = System.getenv("ANDROID_VERSION_NAME") ?: "1.1.0"
 
 android {
     namespace = "com.narlonex.foodie"

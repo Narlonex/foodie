@@ -586,6 +586,21 @@ export const en = {
     "Enter values per 100 g, per 100 ml, or per serving. Leave anything you do not know blank.",
   "foods.customBarcodeHint":
     "Barcode {barcode} is not in Open Food Facts or USDA yet. Enter the values from the label once; this food is saved with the barcode for next time.",
+  "foods.labelScanTitle": "Fill from the nutrition label",
+  "foods.labelScanHint":
+    "Take a clear, straight photo of the nutrition table. The app reads it on this device and fills the fields below; check the values before saving.",
+  "foods.labelScanButton": "Scan label",
+  "foods.labelScanBusy": "Reading the label…",
+  "foods.labelScanProgress": "{percent}%",
+  "foods.labelScanPreview": "Nutrition label preview",
+  "foods.labelScanSuccess": "Found {count} nutrition values. Check them before saving.",
+  "foods.labelScanEmpty":
+    "No nutrition values were recognised. Try a sharper, well-lit photo or enter the values manually.",
+  "foods.labelScanError":
+    "The label could not be read. Try again with more light, or enter the values manually.",
+  "foods.labelScanText": "Recognised text",
+  "foods.labelScanPrivacy":
+    "The photo is processed on this device and is not uploaded.",
   "foods.name": "Food name",
   "foods.brand": "Brand",
   "foods.barcode": "Barcode",

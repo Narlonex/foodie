@@ -8,6 +8,7 @@ export default defineConfig([
   globalIgnores([
     ".next/**",
     "node_modules/**",
+    "public/tesseract/**",
     "coverage/**",
     "next-env.d.ts",
   ]),

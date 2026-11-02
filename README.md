@@ -1,6 +1,6 @@
 # Foodie
 
-Foodie is a full-stack nutrition and meal tracker built with Next.js (App Router), TypeScript, PostgreSQL and the Open Food Facts API. It is designed for a premium dark-first, green-accented experience with a complete light theme and English/Slovak interfaces.
+Foodie is a full-stack nutrition and meal tracker built with Next.js (App Router), TypeScript, PostgreSQL and the Open Food Facts API. It is designed for a premium dark-first, green-accented experience with a complete light theme and English/Slovak/Czech interfaces.
 
 The application is a working MVP, not a clickable mockup: accounts, diaries, custom foods, favorites, saved meals, day types, settings and weekly history are persisted in PostgreSQL and scoped to the signed-in user. The mobile food dialog can also scan product barcodes with the phone camera.
 
@@ -11,7 +11,7 @@ The application is a working MVP, not a clickable mockup: accounts, diaries, cus
 - **Mobile barcode scanning** — the mobile food dialog scans EAN-13, EAN-8, UPC-A and UPC-E codes with the phone camera, then uses the same barcode lookup as manual entry. Desktop keeps manual entry only.
 - **Normal food-entry flow** — open a meal, search, choose a product, enter grams/millilitres/servings, preview the calculated nutrition, confirm the meal, and save. Breakfast, Lunch, Dinner and Snacks are the meal groups.
 - **Trust the data** — every result shows its source (Open Food Facts, USDA FoodData Central or user-created), serving basis, barcode/brand when available, and whether data is complete. Missing nutrients stay **Unknown**; they are never replaced with zero.
-- **Custom foods** — create, edit and delete user-entered foods with a serving basis and only the nutrition fields the user knows.
+- **Custom foods and label scanning** — create, edit and delete user-entered foods. When a scanned barcode is unknown, the custom-food form accepts a photo of the nutrition table and reads common values locally with Tesseract.js; the photo is not uploaded, and every parsed value remains editable before saving.
 - **Favorites, recents and quick add** — favorites persist; recents come from actual diary entries; quick add keeps the amount and meal confirmation step.
 - **Saved meals** — save a named set of foods and amounts, edit it, and log its contents to any date/meal.
 - **Weekly meal plan, shopping list and pantry** — plan recipes by grams or portions on a seven-day board, log a whole planned meal to the diary in one action, generate a shopping list from the week's ingredients, subtract pantry stock automatically, and track pantry expiry dates.
@@ -32,7 +32,7 @@ The application is a working MVP, not a clickable mockup: accounts, diaries, cus
 ## Explicit non-features
 
 - **No Smart Add.** There is no free-text multi-food parser, hidden button, disabled menu item or placeholder.
-- **No AI features.** There is no AI nutrition estimate, image recognition, fake AI endpoint or AI-generated food data.
+- **No cloud AI features.** There is no AI nutrition estimate, remote image recognition, fake AI endpoint or AI-generated food data. Nutrition-label OCR runs locally in the browser with Tesseract.js and only fills the same editable fields a user could type by hand.
 - **No desktop camera scanner.** Camera scanning is intentionally limited to the mobile layout; desktop keeps manual barcode entry.
 
 ## Stack
@@ -122,7 +122,7 @@ The original planning conversation was not accessible while this build was compl
 | `OFF_USER_AGENT` | No | Full custom User-Agent. Overrides the generated `Foodie/1.0 (OFF_CONTACT_EMAIL)` value. |
 | `USDA_FDC_API_KEY` | No | Server-only USDA FoodData Central key. When absent, the shared `DEMO_KEY` is used, so USDA search works with low rate limits. A personal key is recommended for regular use. |
 | `ANDROID_APK_URL` | No | Public HTTPS URL of the Android APK shown on `/download`. Leave blank when no APK has been published. |
-| `ANDROID_VERSION_NAME` | No | Android version name displayed on `/download`; defaults to `1.0.0`. |
+| `ANDROID_VERSION_NAME` | No | Android version name displayed on `/download`; defaults to `1.1.0`. |
 | `ANDROID_APK_SHA256` | No | SHA-256 checksum of the published APK, displayed on `/download`. |
 | `ANDROID_APK_NOTES` | No | Optional release notes shown on `/download`. |
 
@@ -164,7 +164,7 @@ npm run build
 npm run check        # typecheck + lint + unit tests
 ```
 
-Unit tests cover nutrition scaling, unit conversion, missing nutrients, Atwater energy, meal/daily totals, macro adjustment modes and invalid combinations, validation, external API normalization, and translation-key completeness.
+Unit tests cover nutrition scaling, unit conversion, missing nutrients, Atwater energy, meal/daily totals, macro adjustment modes and invalid combinations, validation, local nutrition-label OCR parsing, external API normalization, and translation-key completeness.
 
 ### Optional PostgreSQL integration tests
 
@@ -279,3 +279,4 @@ tests/                     Vitest unit and optional integration tests
 | `npm test` | Vitest unit tests (integration tests when configured) |
 | `npm run check` | Typecheck, lint and tests |
 | `npm run db:migrate` | Apply pending SQL migrations |
+| `npm run ocr:assets` | Copy local Tesseract OCR assets into `public/tesseract` |
