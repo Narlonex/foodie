@@ -122,7 +122,7 @@ The original planning conversation was not accessible while this build was compl
 | `OFF_USER_AGENT` | No | Full custom User-Agent. Overrides the generated `Foodie/1.0 (OFF_CONTACT_EMAIL)` value. |
 | `USDA_FDC_API_KEY` | No | Server-only USDA FoodData Central key. When absent, the shared `DEMO_KEY` is used, so USDA search works with low rate limits. A personal key is recommended for regular use. |
 | `ANDROID_APK_URL` | No | Public HTTPS URL of the Android APK shown on `/download`. Leave blank when no APK has been published. |
-| `ANDROID_VERSION_NAME` | No | Android version name displayed on `/download`; defaults to `1.1.0`. |
+| `ANDROID_VERSION_NAME` | No | Android version name displayed on `/download`; defaults to `1.2.0`. |
 | `ANDROID_APK_SHA256` | No | SHA-256 checksum of the published APK, displayed on `/download`. |
 | `ANDROID_APK_NOTES` | No | Optional release notes shown on `/download`. |
 
