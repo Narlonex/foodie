@@ -76,6 +76,7 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
   scroll-behavior: smooth;
 }
 
@@ -112,6 +113,17 @@ a {
   text-decoration: none;
 }
 
+a,
+button,
+[role="button"],
+label,
+select,
+input,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
 a:hover {
   color: var(--accent-strong);
   text-decoration: underline;
@@ -133,6 +145,13 @@ button {
 button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+@media (hover: none) {
+  .mobile-nav a:active {
+    background: var(--accent-soft);
+    color: var(--text);
+  }
 }
 
 img,
