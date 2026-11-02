@@ -45,6 +45,12 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    buildFeatures {
+        // MainActivity appends BuildConfig.VERSION_NAME to the WebView UA so
+        // the web update prompt can ignore the APK that is already installed.
+        buildConfig true
+    }
 }
 
 repositories {
