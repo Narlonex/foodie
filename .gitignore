@@ -13,6 +13,9 @@ next-env.d.ts
 coverage/
 *.lcov
 
+# local chat attachments
+.cloud-attachments/
+
 # environment and secrets
 .env
 .env.*
