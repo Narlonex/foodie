@@ -188,6 +188,7 @@ Foodie is installable as a PWA on Android and iPhone from the public `/download`
 
 - **Android** uses the Capacitor shell in `android/`. It loads the production URL from `capacitor.config.ts`, so normal web changes do not require a new APK; only changes to the native shell need one.
 - **iPhone and iPad** use Safari → Share → Add to Home Screen. No App Store account is required for the PWA.
+- Installed Android builds check the published APK version on launch and show an in-app notice with a direct download button when a newer release is available. This web-side notice works without rebuilding the native shell; a system notification in the Android notification shade would require push infrastructure.
 - Android APK builds are **manual**, not triggered by an ordinary push. Run the `Android APK` workflow from GitHub Actions with a new `version_code`; it signs the APK, publishes it to GitHub Releases and prints its SHA-256.
 - The workflow needs the repository secrets `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and `ANDROID_KEY_PASSWORD`. The local `.secrets/` directory is gitignored and must never be committed.
 - After publishing, set `ANDROID_APK_URL`, `ANDROID_VERSION_NAME`, `ANDROID_APK_SHA256` and optionally `ANDROID_APK_NOTES` in Vercel for Production, then redeploy so `/download` shows the new APK.

@@ -38,6 +38,7 @@ export type IconName =
   | "globe"
   | "scale"
   | "camera"
+  | "download"
   | "ruler"
   | "database";
 
@@ -226,6 +227,12 @@ const paths: Record<IconName, ReactNode> = {
     <>
       <path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.2l1.2-2h6.2l1.2 2h1.2A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5z" />
       <circle cx="12" cy="12.5" r="3.2" />
+    </>
+  ),
+  download: (
+    <>
+      <path d="M12 3v12m0 0 5-5m-5 5-5-5" />
+      <path d="M4 21h16" />
     </>
   ),
   ruler: (

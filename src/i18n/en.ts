@@ -1375,6 +1375,12 @@ export const en = {
   "error.server": "A server error occurred. Please try again.",
 
   "pwa.installTitle": "Foodie on your phone",
+  "update.title": "A new Foodie version is available",
+  "update.body":
+    "Version {version} is ready. Download the new APK; your data stays in place.",
+  "update.download": "Download {version}",
+  "update.later": "Later",
+  "update.aria": "Foodie app update",
   "pwa.installBody": "Install Foodie for a full-screen app experience.",
   "pwa.installIosBody": "In Safari, tap Share, then Add to Home Screen.",
   "pwa.installIosOther":

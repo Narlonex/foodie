@@ -3,8 +3,10 @@ import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
 import "./pwa.css";
 import { ConfigError } from "@/components/config-error";
+import { AppUpdatePrompt } from "@/components/app-update-prompt";
 import { InstallPrompt } from "@/components/install-prompt";
 import { PwaRegister } from "@/components/pwa-register";
+import { androidRelease } from "@/lib/app-release";
 import { getRequestPreferences, getViewer } from "@/lib/auth";
 import { isDatabaseConfigured } from "@/lib/env";
 import type { Language, Theme } from "@/lib/types";
@@ -127,6 +129,11 @@ export default async function RootLayout({
             dismiss: t("pwa.installNotNow"),
             aria: t("pwa.installLabel"),
           }}
+        />
+        <AppUpdatePrompt
+          language={language}
+          latestVersion={androidRelease.versionName}
+          apkUrl={androidRelease.apkUrl}
         />
       </body>
     </html>

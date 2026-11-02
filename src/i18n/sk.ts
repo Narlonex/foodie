@@ -1373,6 +1373,12 @@ export const sk: Dictionary = {
   "error.server": "Vyskytla sa chyba servera. Skúste to znova.",
 
   "pwa.installTitle": "Foodie vo vašom telefóne",
+  "update.title": "Je dostupná nová verzia Foodie",
+  "update.body":
+    "Verzia {version} je pripravená. Stiahni si nové APK; tvoje údaje zostanú zachované.",
+  "update.download": "Stiahnuť {version}",
+  "update.later": "Neskôr",
+  "update.aria": "Aktualizácia aplikácie Foodie",
   "pwa.installBody": "Nainštalujte si Foodie a používajte ho na celú obrazovku.",
   "pwa.installIosBody": "V Safari ťuknite na Zdieľať a potom na Pridať na plochu.",
   "pwa.installIosOther":

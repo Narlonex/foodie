@@ -38,6 +38,14 @@ public class MainActivity extends BridgeActivity {
         WebView webView = getBridge().getWebView();
         if (webView == null) return;
 
+        // AppUpdatePrompt reads this marker to avoid offering the APK that is
+        // already installed. Older builds without the marker fall back to the
+        // web app's last-seen release baseline.
+        String userAgent = webView.getSettings().getUserAgentString();
+        webView.getSettings().setUserAgentString(
+            userAgent + " FoodieAndroid/" + BuildConfig.VERSION_NAME
+        );
+
         webView.setDownloadListener(new DownloadListener() {
             @Override
             public void onDownloadStart(
