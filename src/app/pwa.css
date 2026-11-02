@@ -1,0 +1,275 @@
+/* PWA install prompt and public mobile download page. */
+
+.install-prompt {
+  position: fixed;
+  z-index: 70;
+  left: 50%;
+  bottom: calc(84px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: min(calc(100vw - 24px), 480px);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px 12px;
+  align-items: start;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--surface-2) 97%, transparent);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.install-prompt-brand .brand-mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+}
+
+.install-prompt-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.install-prompt-copy strong {
+  font-size: 0.92rem;
+  line-height: 1.25;
+}
+
+.install-prompt-copy p {
+  color: var(--text-muted);
+  font-size: 0.79rem;
+  line-height: 1.4;
+}
+
+.install-prompt-close {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: -2px -2px 0 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-subtle);
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.install-prompt-close:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.install-prompt-actions {
+  grid-column: 2 / -1;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.download-page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: max(24px, env(safe-area-inset-top)) 20px
+    calc(48px + env(safe-area-inset-bottom));
+}
+
+.download-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 44px;
+}
+
+.download-topbar .brand-mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+}
+
+.download-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(260px, 0.85fr);
+  gap: 30px;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.download-hero-copy h1 {
+  max-width: 13ch;
+  font-size: clamp(2rem, 5.6vw, 3.3rem);
+}
+
+.download-hero-copy .page-subtitle {
+  max-width: 48ch;
+  font-size: 1rem;
+}
+
+.download-hero-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 22px;
+}
+
+.download-visual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  min-height: 260px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  background:
+    radial-gradient(
+      circle at 50% 28%,
+      color-mix(in srgb, var(--accent) 20%, transparent),
+      transparent 62%
+    ),
+    linear-gradient(160deg, var(--surface-2), var(--surface));
+  box-shadow: var(--shadow-soft);
+}
+
+.download-visual::after {
+  content: "";
+  position: absolute;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  filter: blur(28px);
+  pointer-events: none;
+}
+
+.download-visual .brand-mark {
+  z-index: 1;
+  width: 112px;
+  height: 112px;
+  border-radius: 28px;
+}
+
+.download-visual-name {
+  z-index: 1;
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 650;
+  letter-spacing: -0.04em;
+}
+
+.download-visual-note {
+  z-index: 1;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.download-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.download-card {
+  display: grid;
+  align-content: start;
+  gap: 13px;
+  padding: 22px;
+}
+
+.download-card h2 {
+  font-size: 1.2rem;
+}
+
+.download-card-wide {
+  grid-column: 1 / -1;
+}
+
+.download-meta {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.download-notes {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  font-size: 0.83rem;
+  color: var(--text-muted);
+  white-space: pre-line;
+}
+
+.download-sha {
+  display: block;
+  overflow-wrap: anywhere;
+  padding: 9px 10px;
+  border-radius: 9px;
+  background: var(--surface-2);
+  color: var(--text-subtle);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.download-security {
+  margin-top: 18px;
+}
+
+@media (min-width: 761px) {
+  .install-prompt {
+    bottom: calc(24px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 760px) {
+  .install-prompt {
+    bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+
+  .download-page {
+    padding: max(18px, env(safe-area-inset-top)) 16px
+      calc(40px + env(safe-area-inset-bottom));
+  }
+
+  .download-topbar {
+    margin-bottom: 30px;
+  }
+
+  .download-hero {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .download-visual {
+    min-height: 210px;
+  }
+
+  .download-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .download-card-wide {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 380px) {
+  .install-prompt {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .install-prompt-brand {
+    display: none;
+  }
+
+  .install-prompt-actions {
+    grid-column: 1 / -1;
+  }
+}

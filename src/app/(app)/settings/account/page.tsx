@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { logoutAction } from "@/actions/auth";
 import { SettingsDetail } from "@/components/settings-detail";
 import { Icon } from "@/components/icons";
@@ -27,6 +28,17 @@ export default async function AccountSettingsPage() {
             {t("account.signOut")}
           </button>
         </form>
+      </div>
+
+      <div className="card card-pad stack">
+        <div>
+          <h2 className="card-title">{t("account.appTitle")}</h2>
+          <p className="card-hint">{t("account.appBody")}</p>
+        </div>
+        <Link className="button secondary" href="/download">
+          <Icon name="arrow-right" size={16} />
+          {t("account.appLink")}
+        </Link>
       </div>
 
       <div className="card card-pad stack">

@@ -1,0 +1,88 @@
+name: Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: "Version name shown to users (for example 1.0.0)"
+        required: true
+        default: "1.0.0"
+      version_code:
+        description: "Monotonically increasing integer version code"
+        required: true
+        default: "1"
+      notes:
+        description: "Short release notes"
+        required: false
+        default: "Foodie for Android"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/android/release.keystore
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      ANDROID_VERSION_CODE: ${{ inputs.version_code }}
+      ANDROID_VERSION_NAME: ${{ inputs.version_name }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Sync Capacitor shell
+        run: npx cap sync android
+
+      - name: Decode release keystore
+        run: |
+          printf '%s' "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/release.keystore
+
+      - name: Build signed APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Prepare release files
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk "foodie-${ANDROID_VERSION_NAME}.apk"
+          sha256sum "foodie-${ANDROID_VERSION_NAME}.apk" > "foodie-${ANDROID_VERSION_NAME}.sha256"
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)
+          if [ -n "$APKSIGNER" ]; then "$APKSIGNER" verify "foodie-${ANDROID_VERSION_NAME}.apk"; fi
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: foodie-android-${{ inputs.version_name }}
+          path: |
+            foodie-*.apk
+            foodie-*.sha256
+          if-no-files-found: error
+
+      - name: Publish GitHub release
+        run: |
+          gh release create "android-v${ANDROID_VERSION_NAME}" \
+            "foodie-${ANDROID_VERSION_NAME}.apk" \
+            "foodie-${ANDROID_VERSION_NAME}.sha256" \
+            --title "Foodie for Android ${ANDROID_VERSION_NAME}" \
+            --notes "${{ inputs.notes }}" \
+            --latest

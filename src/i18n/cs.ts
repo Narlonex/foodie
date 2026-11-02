@@ -1356,4 +1356,46 @@ export const cs: Dictionary = {
   "error.unauthorised": "Pokračujte přihlášením.",
   "error.forbidden": "K tomuto zdroji nemáte přístup.",
   "error.server": "Vyskytla se chyba serveru. Zkuste to znovu.",
+
+  "pwa.installTitle": "Foodie ve vašem telefonu",
+  "pwa.installBody": "Nainstalujte si Foodie a používejte ho na celou obrazovku.",
+  "pwa.installIosBody": "V Safari klepněte na Sdílet a potom na Přidat na plochu.",
+  "pwa.installIosOther":
+    "Otevřete tuto stránku v Safari, klepněte na Sdílet a potom na Přidat na plochu.",
+  "pwa.installButton": "Nainstalovat aplikaci",
+  "pwa.installNotNow": "Teď ne",
+  "pwa.installLabel": "Nainstalovat aplikaci Foodie",
+
+  "download.title": "Foodie ve vašem telefonu",
+  "download.subtitle":
+    "Jeden účet a stejný deník na Androidu, iPhonu i webu.",
+  "download.androidTitle": "Aplikace pro Android",
+  "download.androidBody":
+    "Stáhněte APK a nainstalujte je přes aktuální verzi. Android si vyžádá potvrzení instalace.",
+  "download.androidButton": "Stáhnout APK",
+  "download.androidVersion": "Verze {version}",
+  "download.androidUnavailable":
+    "Android build se připravuje. Mezitím si Foodie můžete nainstalovat z Chrome jako webovou aplikaci.",
+  "download.iosTitle": "iPhone a iPad",
+  "download.iosBody":
+    "Otevřete Foodie v Safari, klepněte na Sdílet a potom na Přidat na plochu. Otevře se na celou obrazovku a aktualizuje se automaticky.",
+  "download.iosButton": "Otevřít Foodie",
+  "download.iosNote":
+    "APK funguje jen na Androidu. Na iPhonu je iOS verzí webová aplikace.",
+  "download.accountTitle": "Váš účet funguje všude",
+  "download.accountBody":
+    "Přihlaste se stejným účtem. Deník, cíle a nastavení zůstanou synchronizované.",
+  "download.openApp": "Otevřít Foodie",
+  "download.signIn": "Přihlásit se",
+  "download.security":
+    "APK instalujte pouze z této stránky. Soubor ověřte pomocí kontrolního součtu SHA-256.",
+  "download.sha256": "SHA-256",
+  "download.releaseNotes": "Co je nového",
+  "download.backHome": "Zpět do Foodie",
+  "download.badge": "Mobilní aplikace",
+
+  "account.appTitle": "Aplikace Foodie",
+  "account.appBody":
+    "Nainstalujte si Foodie do telefonu nebo pošlete odkaz na stažení kamarádovi.",
+  "account.appLink": "Otevřít stažení aplikace",
 };

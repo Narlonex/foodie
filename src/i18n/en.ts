@@ -1358,4 +1358,46 @@ export const en = {
   "error.unauthorised": "Please sign in to continue.",
   "error.forbidden": "You do not have access to that resource.",
   "error.server": "A server error occurred. Please try again.",
+
+  "pwa.installTitle": "Foodie on your phone",
+  "pwa.installBody": "Install Foodie for a full-screen app experience.",
+  "pwa.installIosBody": "In Safari, tap Share, then Add to Home Screen.",
+  "pwa.installIosOther":
+    "Open this page in Safari, then tap Share and Add to Home Screen.",
+  "pwa.installButton": "Install app",
+  "pwa.installNotNow": "Not now",
+  "pwa.installLabel": "Install the Foodie app",
+
+  "download.title": "Foodie on your phone",
+  "download.subtitle":
+    "One account and the same diary on Android, iPhone and the web.",
+  "download.androidTitle": "Android app",
+  "download.androidBody":
+    "Download the APK and install it over the current version. Android will ask you to confirm the installation.",
+  "download.androidButton": "Download APK",
+  "download.androidVersion": "Version {version}",
+  "download.androidUnavailable":
+    "The Android build is being prepared. You can install Foodie from Chrome as a web app in the meantime.",
+  "download.iosTitle": "iPhone & iPad",
+  "download.iosBody":
+    "Open Foodie in Safari, tap Share, then Add to Home Screen. It opens full screen and updates automatically.",
+  "download.iosButton": "Open Foodie",
+  "download.iosNote":
+    "APK files work only on Android. On iPhone, the web app is the iOS app.",
+  "download.accountTitle": "Your account works everywhere",
+  "download.accountBody":
+    "Sign in with the same account. Your diary, goals and settings stay in sync.",
+  "download.openApp": "Open Foodie",
+  "download.signIn": "Sign in",
+  "download.security":
+    "Only install the APK from this page. Use the SHA-256 checksum to verify the file.",
+  "download.sha256": "SHA-256",
+  "download.releaseNotes": "What's new",
+  "download.backHome": "Back to Foodie",
+  "download.badge": "Mobile app",
+
+  "account.appTitle": "Foodie app",
+  "account.appBody":
+    "Install Foodie on your phone or send the download link to a friend.",
+  "account.appLink": "Open app download",
 } as const;

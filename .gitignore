@@ -19,6 +19,8 @@ coverage/
 !.env.example
 !.env.test.example
 .neon-api-key
+.secrets/
+android/release.keystore
 *.pem
 
 # hosting CLI state

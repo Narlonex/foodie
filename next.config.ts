@@ -15,6 +15,7 @@ const contentSecurityPolicy = [
   "form-action 'self'",
   "frame-ancestors 'none'",
   "manifest-src 'self'",
+  "worker-src 'self'",
 ].join("; ");
 
 const securityHeaders = [
@@ -36,6 +37,32 @@ const securityHeaders = [
     : []),
 ];
 
+const pwaHeaders = [
+  {
+    source: "/sw.js",
+    headers: [
+      { key: "Cache-Control", value: "public, max-age=0, must-revalidate" },
+      { key: "Service-Worker-Allowed", value: "/" },
+    ],
+  },
+  {
+    source: "/manifest.webmanifest",
+    headers: [
+      { key: "Cache-Control", value: "public, max-age=0, must-revalidate" },
+    ],
+  },
+  {
+    source: "/offline.html",
+    headers: [
+      { key: "Cache-Control", value: "public, max-age=0, must-revalidate" },
+    ],
+  },
+  {
+    source: "/icons/:path*",
+    headers: [{ key: "Cache-Control", value: "public, max-age=604800" }],
+  },
+];
+
 const nextConfig: NextConfig = {
   // Keep Turbopack rooted at this project; otherwise a lockfile in a parent
   // directory can make Next.js scan the whole home directory.
@@ -48,6 +75,7 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: securityHeaders,
       },
+      ...pwaHeaders,
     ];
   },
 };

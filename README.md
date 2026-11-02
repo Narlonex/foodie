@@ -121,6 +121,10 @@ The original planning conversation was not accessible while this build was compl
 | `OFF_CONTACT_EMAIL` | Recommended | Contact address inserted into the Open Food Facts User-Agent. Use a real address so the API operator can contact you. |
 | `OFF_USER_AGENT` | No | Full custom User-Agent. Overrides the generated `Foodie/1.0 (OFF_CONTACT_EMAIL)` value. |
 | `USDA_FDC_API_KEY` | No | Server-only USDA FoodData Central key. When absent, the shared `DEMO_KEY` is used, so USDA search works with low rate limits. A personal key is recommended for regular use. |
+| `ANDROID_APK_URL` | No | Public HTTPS URL of the Android APK shown on `/download`. Leave blank when no APK has been published. |
+| `ANDROID_VERSION_NAME` | No | Android version name displayed on `/download`; defaults to `1.0.0`. |
+| `ANDROID_APK_SHA256` | No | SHA-256 checksum of the published APK, displayed on `/download`. |
+| `ANDROID_APK_NOTES` | No | Optional release notes shown on `/download`. |
 
 `.env.example` contains placeholders only. Never commit `.env`, `.env.local`, database credentials or API keys. `.env*` is gitignored except the example.
 
@@ -177,6 +181,17 @@ These exercise the real repositories, ownership boundaries, diary totals, day-ty
    ```
 
 The tests create temporary users with random UUIDs and delete them afterwards, but use a dedicated test database rather than production.
+
+## Mobile app
+
+Foodie is installable as a PWA on Android and iPhone from the public `/download` page.
+
+- **Android** uses the Capacitor shell in `android/`. It loads the production URL from `capacitor.config.ts`, so normal web changes do not require a new APK; only changes to the native shell need one.
+- **iPhone and iPad** use Safari → Share → Add to Home Screen. No App Store account is required for the PWA.
+- Android APK builds are **manual**, not triggered by an ordinary push. Run the `Android APK` workflow from GitHub Actions with a new `version_code`; it signs the APK, publishes it to GitHub Releases and prints its SHA-256.
+- The workflow needs the repository secrets `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` and `ANDROID_KEY_PASSWORD`. The local `.secrets/` directory is gitignored and must never be committed.
+- After publishing, set `ANDROID_APK_URL`, `ANDROID_VERSION_NAME`, `ANDROID_APK_SHA256` and optionally `ANDROID_APK_NOTES` in Vercel for Production, then redeploy so `/download` shows the new APK.
+- PWA icons are generated with `npm run pwa:icons`; Android launcher icons and splash screens with `npm run android:icons`.
 
 ## Deploying to Render with Neon
 

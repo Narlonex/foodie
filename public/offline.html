@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#161613" />
+    <title>Foodie — offline</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        background: #161613;
+        color: #f3f2eb;
+      }
+      * { box-sizing: border-box; }
+      body {
+        min-height: 100dvh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+        background:
+          radial-gradient(circle at 50% 0%, rgba(207, 220, 169, 0.12), transparent 38rem),
+          #161613;
+      }
+      main {
+        width: min(100%, 420px);
+        padding: 28px;
+        border: 1px solid #33332b;
+        border-radius: 20px;
+        background: #1f1f1b;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+        text-align: center;
+      }
+      img { width: 88px; height: 88px; margin: 0 auto 18px; }
+      h1 { margin: 0 0 8px; font-size: 1.55rem; letter-spacing: -0.03em; }
+      p { margin: 0 0 22px; color: #a8a79d; line-height: 1.55; }
+      button {
+        min-height: 46px;
+        padding: 0 20px;
+        border: 0;
+        border-radius: 12px;
+        background: #cfdca9;
+        color: #1e1a16;
+        font: inherit;
+        font-weight: 650;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/brand/foodie-mark.png" alt="" width="88" height="88" />
+      <h1 id="title">You’re offline</h1>
+      <p id="body">Foodie needs a connection to load your diary. Check your connection and try again.</p>
+      <button type="button" onclick="window.location.reload()" id="retry">Try again</button>
+    </main>
+    <script>
+      (function () {
+        var messages = {
+          en: {
+            title: "You’re offline",
+            body: "Foodie needs a connection to load your diary. Check your connection and try again.",
+            retry: "Try again",
+          },
+          sk: {
+            title: "Ste offline",
+            body: "Foodie potrebuje pripojenie, aby načítal váš denník. Skontrolujte pripojenie a skúste to znova.",
+            retry: "Skúsiť znova",
+          },
+          cs: {
+            title: "Jste offline",
+            body: "Foodie potřebuje připojení, aby načetl váš deník. Zkontrolujte připojení a zkuste to znovu.",
+            retry: "Zkusit znovu",
+          },
+        };
+        var language = ((navigator.languages && navigator.languages[0]) || navigator.language || "en").slice(0, 2);
+        var copy = messages[language] || messages.en;
+        document.documentElement.lang = messages[language] ? language : "en";
+        document.getElementById("title").textContent = copy.title;
+        document.getElementById("body").textContent = copy.body;
+        document.getElementById("retry").textContent = copy.retry;
+      })();
+    </script>
+  </body>
+</html>
