@@ -14,6 +14,7 @@ The application is a working MVP, not a clickable mockup: accounts, diaries, cus
 - **Custom foods** — create, edit and delete user-entered foods with a serving basis and only the nutrition fields the user knows.
 - **Favorites, recents and quick add** — favorites persist; recents come from actual diary entries; quick add keeps the amount and meal confirmation step.
 - **Saved meals** — save a named set of foods and amounts, edit it, and log its contents to any date/meal.
+- **Weekly meal plan, shopping list and pantry** — plan recipes by grams or portions on a seven-day board, log a whole planned meal to the diary in one action, generate a shopping list from the week's ingredients, subtract pantry stock automatically, and track pantry expiry dates.
 - **Copy Day and Repeat Meal** — copy quantities between dates/meals with a destination preview. Existing entries are preserved; an explicit confirmation is required before duplicates are created.
 - **Day types** — create named day types with their own calorie, protein, carbohydrate and fat targets, assign them to specific dates, and switch a date's type without changing logged food. A default day type supplies targets on unassigned dates.
 - **Macro adjustment modes** — *Change carbs*, *Change fats*, *Change proteins* and *Change all* behave distinctly. Fixed macros keep their gram values; the selected macro absorbs the remaining calories using 4/4/9 kcal per gram. *Change all* uses the stored 30/40/30 default split (editable percentage fields). Impossible combinations are blocked with a translated explanation rather than creating negative targets.
@@ -146,7 +147,7 @@ Indexes cover per-user/per-date diary reads, recent entries, favorites, source l
 npm run db:migrate   # reads .env.local or DATABASE_URL
 ```
 
-Migrations are numbered `001`–`007` (the two `004` files cover separate features), and each one is recorded in `schema_migrations`. Add new numbered SQL files under `db/migrations/` and rerun the command. Migrations are not automatically applied by `npm run build` or by the app at runtime.
+Migrations are numbered `001`–`008` (the two `004` files cover separate features), and each one is recorded in `schema_migrations`. Add new numbered SQL files under `db/migrations/` and rerun the command. Migrations are not automatically applied by `npm run build` or by the app at runtime.
 
 ## Tests and checks
 

@@ -278,6 +278,29 @@ export const savedMealNameSchema = z
   .min(1, "validation.savedMealName")
   .max(80, "validation.savedMealName");
 
+export const shoppingUnitSchema = z.enum(["g", "ml", "pcs", "serving"]);
+export const pantryUnitSchema = z.enum(["g", "ml", "pcs"]);
+
+export const mealPlanItemSchema = z.object({
+  date: isoDateSchema,
+  meal: mealSchema,
+  savedMealId: z.string().uuid(),
+  amount: positiveAmountSchema,
+});
+
+export const shoppingItemSchema = z.object({
+  name: z.string().trim().min(1, "validation.required").max(200),
+  quantity: positiveAmountSchema.max(1_000_000),
+  unit: shoppingUnitSchema,
+});
+
+export const pantryItemSchema = z.object({
+  name: z.string().trim().min(1, "validation.required").max(200),
+  quantity: positiveAmountSchema.max(1_000_000),
+  unit: pantryUnitSchema,
+  expiresOn: isoDateSchema.nullable(),
+});
+
 export const loginSchema = z.object({
   email: emailSchema,
   password: z.string().min(1, "validation.required"),

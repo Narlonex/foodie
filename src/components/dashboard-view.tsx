@@ -671,6 +671,10 @@ export function DashboardView({
                 <Icon name="utensils" size={17} />
                 {t("nav.recipes")}
               </Link>
+              <Link href="/plan" className="quick-action">
+                <Icon name="calendar" size={17} />
+                {t("nav.plan")}
+              </Link>
               <Link href="/history" className="quick-action">
                 <Icon name="chart" size={17} />
                 {t("dashboard.weekOverview")}

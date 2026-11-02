@@ -205,6 +205,48 @@ export interface SavedMeal {
   items: SavedMealItem[];
 }
 
+export type ShoppingUnit = "g" | "ml" | "pcs" | "serving";
+export type PantryUnit = "g" | "ml" | "pcs";
+
+export interface PlanIngredient {
+  name: string;
+  amount: number;
+  unit: AmountUnit;
+}
+
+export interface PlanItem {
+  id: string;
+  date: string;
+  meal: Meal;
+  savedMealId: string | null;
+  name: string;
+  amount: number;
+  amountUnit: "g" | "serving";
+  basisType: "100g" | "serving";
+  servingSize: number | null;
+  nutrients: Nutrients;
+  ingredients: PlanIngredient[];
+  loggedAt: string | null;
+}
+
+export interface ShoppingItem {
+  id: string;
+  name: string;
+  quantity: number | null;
+  unit: ShoppingUnit;
+  checked: boolean;
+  source: "manual" | "plan";
+}
+
+export interface PantryItem {
+  id: string;
+  name: string;
+  nameKey: string;
+  quantity: number;
+  unit: PantryUnit;
+  expiresOn: string | null;
+}
+
 export interface NutrientTotal {
   value: number | null;
   /** Entries that had a known value for this nutrient. */
