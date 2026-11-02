@@ -78,6 +78,8 @@ interface ViewerRow {
   unit_system: UnitSystem;
   goal_mode: GoalMode;
   maintenance_calories: string | null;
+  goal_weight_kg: string | null;
+  goal_rate_kg_per_week: string | null;
   default_day_type_id: string | null;
   usda_enabled: boolean;
   height_cm: string | null;
@@ -96,7 +98,8 @@ const getViewerCached = cache(async (): Promise<Viewer | null> => {
 
   const row = await queryOne<ViewerRow>(
     `SELECT p.user_id, u.email, p.language, p.theme, p.unit_system, p.goal_mode,
-            p.maintenance_calories, p.default_day_type_id, p.usda_enabled,
+            p.maintenance_calories, p.goal_weight_kg,
+            p.goal_rate_kg_per_week, p.default_day_type_id, p.usda_enabled,
             p.height_cm, p.weight_kg, p.age, p.sex, p.activity_level,
             p.onboarding_completed, p.dashboard_nutrients
        FROM sessions s
@@ -116,6 +119,12 @@ const getViewerCached = cache(async (): Promise<Viewer | null> => {
     goalMode: row.goal_mode,
     maintenanceCalories:
       row.maintenance_calories === null ? null : Number(row.maintenance_calories),
+    goalWeightKg:
+      row.goal_weight_kg === null ? null : Number(row.goal_weight_kg),
+    goalRateKgPerWeek:
+      row.goal_rate_kg_per_week === null
+        ? null
+        : Number(row.goal_rate_kg_per_week),
     defaultDayTypeId: row.default_day_type_id,
     usdaEnabled: row.usda_enabled,
     heightCm: row.height_cm === null ? null : Number(row.height_cm),

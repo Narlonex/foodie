@@ -1096,6 +1096,183 @@ export const en = {
   "recipes.snapshotNote":
     "Logged as one entry using the recipe's per-100-g values.",
 
+  "goals.goalWeight": "Goal weight",
+  "goals.goalWeightHelp":
+    "Optional. Used only to project when your current trend reaches it.",
+  "goals.goalRate": "Goal pace",
+  "goals.goalRateHelp":
+    "Optional. Planned kilograms per week, between 0.05 and 2. Used as context for your targets.",
+  "goals.errorGoalWeight": "Enter a goal weight between 20 and 500 kg.",
+  "goals.errorGoalRate": "Enter a pace between 0.05 and 2 kg per week.",
+
+  "projection.title": "Goal and projection",
+  "projection.help":
+    "A simple projection of your saved weight trend. It is not a promise or a medical estimate.",
+  "projection.current": "Current",
+  "projection.goal": "Goal",
+  "projection.trend": "Weight development",
+  "projection.eta": "At this trend",
+  "projection.targetDate": "Reaches the goal around {date}",
+  "projection.noTargetDate": "The trend does not point at the goal yet.",
+  "projection.fourWeeks": "In four weeks",
+  "projection.needGoal":
+    "Add a goal weight in Nutrition goals to see when your trend reaches it.",
+  "projection.openGoals": "Open goals",
+  "projection.noTrend":
+    "Log at least two weigh-ins a few days apart to see a projection.",
+  "projection.directionMismatch":
+    "Your current trend is moving away from the goal weight.",
+  "projection.simulator": "Goal simulator",
+  "projection.simulatorHelp":
+    "Try a daily intake and see where the arithmetic puts your weight. It uses 7,700 kcal per kilogram and ignores water shifts.",
+  "projection.simulatorWeeks": "Weeks",
+  "projection.simulatorIntake": "Daily intake",
+  "projection.simulatorResult": "Projected weight after {weeks} weeks",
+  "projection.simulatorNote":
+    "This is simple arithmetic, not a prediction. Real weight change varies.",
+  "projection.noWeight": "Log a weight first.",
+  "projection.needMaintenance":
+    "Add maintenance calories in Nutrition goals to use the simulator.",
+  "projection.plannedPace": "Planned pace {value} kg/week",
+  "projection.changeFromToday": "{value} kg vs today",
+
+  "measurements.title": "Body measurements",
+  "measurements.help":
+    "Tape measurements are optional and stored separately from weight. Enter only what you measured.",
+  "measurements.change": "Waist {value}",
+  "measurements.date": "Date",
+  "measurements.waist": "Waist",
+  "measurements.hips": "Hips",
+  "measurements.chest": "Chest",
+  "measurements.thigh": "Thigh",
+  "measurements.arm": "Arm",
+  "measurements.cm": "cm",
+  "measurements.save": "Save measurements",
+  "measurements.chartTitle": "Waist trend",
+  "measurements.chartAria": "Waist trend from {first} to {last} cm.",
+  "measurements.empty": "No measurements saved yet.",
+  "measurements.delete": "Delete measurement",
+  "measurements.note":
+    "Measurements are stored in centimetres exactly as entered. They do not change your nutrition targets.",
+  "measurements.invalid":
+    "Enter a number between 20 and 300 cm, or leave the field empty.",
+  "measurements.required": "Enter at least one measurement.",
+  "measurements.saved": "Measurements saved.",
+  "measurements.deleted": "Measurement deleted.",
+  "measurements.error":
+    "We could not save that measurement. Please try again.",
+
+  "habits.title": "Water and drinks",
+  "habits.help":
+    "Quick daily totals. They do not change your calorie or macro targets.",
+  "habits.saved": "Saved",
+  "habits.water": "Water",
+  "habits.target": "Target {value} ml",
+  "habits.caffeine": "Caffeine",
+  "habits.addCaffeine": "Add 80 mg of caffeine",
+  "habits.alcohol": "Alcoholic drinks",
+  "habits.units": "units",
+  "habits.addAlcohol": "Add one alcohol unit",
+  "habits.reset": "Reset today's drinks",
+  "habits.error": "We could not save those drinks. Please try again.",
+
+  "insights.weeklyReview": "Weekly review",
+  "insights.lastSevenDays": "Your last seven days",
+  "insights.reviewHelp":
+    "A compact summary of logged food and weight. Empty days stay empty.",
+  "insights.period": "7 days",
+  "insights.averageIntake": "Average intake",
+  "insights.noComparison": "No previous week to compare",
+  "insights.vsPrevious": "{value} kcal vs the week before",
+  "insights.loggedDays": "Days logged",
+  "insights.previousLogged": "{count} the week before",
+  "insights.withinTarget": "Within target",
+  "insights.withinTargetHelp": "Days between 90 and 110% of the day's target",
+  "insights.weightTrend": "Weight trend",
+  "insights.weighIns": "{count} weigh-ins",
+  "insights.noWeight": "No weight trend yet",
+  "insights.noData": "Log some food this week to build your review.",
+  "insights.reviewWithWeight":
+    "{logged} logged day(s) averaged {avg} kcal, with a weight trend of {weight}.",
+  "insights.reviewNoWeight":
+    "{logged} logged day(s) averaged {avg} kcal. Log weight to connect intake with progress.",
+  "insights.rollingTitle": "Rolling averages",
+  "insights.rollingHelp":
+    "Bars are single days; the line is the trailing seven-day average of known values.",
+  "insights.period30": "30 days",
+  "insights.metric": "Metric",
+  "insights.notEnoughData":
+    "Log at least two days with this nutrient to draw a trend.",
+  "insights.chartAria":
+    "{metric} over {days} days with a seven-day rolling average.",
+  "insights.rollingAverage": "7-day average",
+  "insights.heatmapTitle": "Adherence heatmap",
+  "insights.heatmapHelp":
+    "Twelve weeks of logged days, coloured by distance from that day's calorie target.",
+  "insights.streakDays": "{count} day streak",
+  "insights.heatmapAria": "Twelve-week heatmap of calorie adherence.",
+  "insights.status.empty": "No entries",
+  "insights.status.partial": "Partial data",
+  "insights.status.within": "Within 10%",
+  "insights.status.outside": "Outside 10%",
+  "insights.status.unscored": "No target",
+  "insights.status.future": "Future",
+  "insights.proteinTitle": "Protein by meal",
+  "insights.proteinHelp":
+    "Average known protein per logged day, split by meal, over seven days.",
+  "insights.daysShort": "Days: {count}",
+  "insights.proteinNote":
+    "Days without protein data are left out of each average.",
+  "insights.qualityTitle": "Nutrition quality",
+  "insights.qualityHelp":
+    "Average fibre, sugar, saturated fat and salt from the last seven days.",
+  "insights.fiber": "Fibre",
+  "insights.sugars": "Sugars",
+  "insights.satFat": "Saturated fat",
+  "insights.salt": "Salt",
+  "insights.reference": "Reference",
+  "insights.qualityNote":
+    "Percentages use 4 kcal per gram of sugar and 9 kcal per gram of saturated fat. References are general guidance, not personal limits.",
+  "insights.foodsTitle": "Where calories come from",
+  "insights.foodsHelp":
+    "The foods that contributed the most energy in the last 30 days.",
+  "insights.noFoods": "No energy-bearing entries in the last 30 days.",
+  "insights.timesLogged": "{count} entries",
+  "insights.foodsNote":
+    "Shares use only entries with known energy; unknown foods are excluded.",
+  "insights.energyTitle": "Inferred maintenance",
+  "insights.energyHelp":
+    "Estimated from your logged intake and weight trend over the last three weeks.",
+  "insights.energyInsufficient":
+    "Keep logging food and weight for about three weeks to infer your maintenance level.",
+  "insights.openProgress": "Open progress",
+  "insights.confidenceGood": "Good coverage",
+  "insights.confidenceLow": "Low coverage",
+  "insights.estimatedTdee": "Inferred maintenance",
+  "insights.netBalance": "Average balance",
+  "insights.deficit": "Average deficit",
+  "insights.surplus": "Average surplus",
+  "insights.balanced": "Close to balance",
+  "insights.energyNote":
+    "An estimate from your own data, not a measured metabolic rate. Water, glycogen and logging gaps affect it.",
+  "insights.habitsTitle": "Drinks trend",
+  "insights.habitsHelp": "Water, caffeine and alcohol totals for the last 14 days.",
+  "insights.logToday": "Log today",
+  "insights.habitsChartAria": "Daily water totals for the last 14 days.",
+  "insights.notLogged": "not logged",
+  "insights.waterAvg": "Water",
+  "insights.caffeineAvg": "Caffeine",
+  "insights.alcoholAvg": "Alcoholic drinks",
+  "insights.habitsNote":
+    "Only days you saved are averaged; missing days are not treated as zero.",
+  "insights.futureDate": "Choose today or an earlier date.",
+  "insights.saveError": "We could not save that. Please try again.",
+
+  "validation.goalRate": "Enter a pace between 0.05 and 2 kg per week.",
+  "validation.measurement": "Enter a measurement between 20 and 300 cm.",
+  "validation.measurementRequired": "Enter at least one measurement.",
+  "validation.habit": "Enter a valid, non-negative amount.",
+
   "error.loadFailed": "We could not load your diary. Please refresh the page.",
   "error.invalidRequest": "That request was not valid.",
   "error.unauthorised": "Please sign in to continue.",

@@ -231,6 +231,47 @@ export const weightEntrySchema = z.object({
   weightKg: weightKgSchema,
 });
 
+export const goalRateSchema = z
+  .number()
+  .finite("validation.goalRate")
+  .min(0.05, "validation.goalRate")
+  .max(2, "validation.goalRate");
+
+const circumferenceSchema = z
+  .number()
+  .finite("validation.measurement")
+  .min(20, "validation.measurement")
+  .max(300, "validation.measurement")
+  .nullable();
+
+export const bodyMeasurementSchema = z
+  .object({
+    date: isoDateSchema,
+    waistCm: circumferenceSchema,
+    hipsCm: circumferenceSchema,
+    chestCm: circumferenceSchema,
+    thighCm: circumferenceSchema,
+    armCm: circumferenceSchema,
+  })
+  .refine(
+    (value) =>
+      [
+        value.waistCm,
+        value.hipsCm,
+        value.chestCm,
+        value.thighCm,
+        value.armCm,
+      ].some((entry) => entry !== null),
+    "validation.measurementRequired",
+  );
+
+export const habitDaySchema = z.object({
+  date: isoDateSchema,
+  waterMl: z.number().int("validation.habit").min(0, "validation.habit").max(20_000, "validation.habit"),
+  caffeineMg: z.number().int("validation.habit").min(0, "validation.habit").max(5_000, "validation.habit"),
+  alcoholUnits: z.number().finite("validation.habit").min(0, "validation.habit").max(100, "validation.habit"),
+});
+
 export const savedMealNameSchema = z
   .string()
   .trim()

@@ -5516,3 +5516,717 @@ h2 {
     white-space: nowrap;
   }
 }
+
+/* Insights, habits, measurements and goal projection */
+.insights-panel {
+  gap: 18px;
+}
+
+.insights-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.insight-card-wide {
+  grid-column: span 2;
+}
+
+.insight-card {
+  min-width: 0;
+}
+
+.insight-review {
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent) 9%, transparent),
+      transparent 55%
+    ),
+    var(--surface);
+}
+
+.insight-review-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.insight-review-stat {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.insight-review-stat > span {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.insight-review-stat > strong {
+  font-size: 1.02rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.insight-review-stat > small {
+  color: var(--text-subtle);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.insight-review-sentence {
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.83rem;
+}
+
+.insight-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.insight-tab {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition),
+    color var(--transition);
+}
+
+.insight-tab:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.insight-tab.active {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.insight-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.insight-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.insight-chart-axis {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+}
+
+.insight-chart-grid {
+  stroke: var(--border);
+  stroke-width: 1;
+  stroke-dasharray: 2 6;
+}
+
+.insight-chart-bar {
+  fill: color-mix(in srgb, var(--accent) 26%, transparent);
+}
+
+.insight-chart-line {
+  fill: none;
+  stroke: var(--accent-strong);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.insight-chart-protein .insight-chart-line {
+  stroke: var(--protein);
+}
+
+.insight-chart-carbs .insight-chart-line {
+  stroke: var(--carbs);
+}
+
+.insight-chart-fat .insight-chart-line {
+  stroke: var(--fat);
+}
+
+.insight-chart-labels {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 6px 0;
+  color: var(--text-subtle);
+  font-size: 0.68rem;
+}
+
+.insight-chart-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+
+.insight-chart-foot strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.insight-empty {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 26px 16px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  text-align: center;
+  font-size: 0.82rem;
+}
+
+.heatmap {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 4px 0 8px;
+}
+
+.heatmap-week {
+  display: grid;
+  grid-template-rows: repeat(7, 12px);
+  gap: 4px;
+}
+
+.heatmap-cell {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  background: var(--surface-3);
+}
+
+.heatmap-cell.empty {
+  background: var(--surface-3);
+}
+
+.heatmap-cell.partial {
+  background: color-mix(in srgb, var(--warning) 45%, var(--surface-3));
+}
+
+.heatmap-cell.within {
+  background: var(--accent);
+}
+
+.heatmap-cell.outside {
+  background: color-mix(in srgb, var(--danger) 55%, var(--surface-3));
+}
+
+.heatmap-cell.unscored {
+  border-color: var(--border-strong);
+  background: transparent;
+}
+
+.heatmap-cell.future {
+  border-style: dashed;
+  border-color: var(--border);
+  background: transparent;
+  opacity: 0.5;
+}
+
+.heatmap-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
+.heatmap-legend .heatmap-cell {
+  width: 10px;
+  height: 10px;
+  margin-right: 4px;
+}
+
+.protein-bars,
+.quality-list,
+.food-attribution {
+  display: grid;
+  gap: 10px;
+}
+
+.protein-row {
+  display: grid;
+  grid-template-columns: 72px minmax(60px, 1fr) 58px 34px;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.78rem;
+}
+
+.protein-track,
+.quality-track,
+.food-attribution-track {
+  overflow: hidden;
+  height: 7px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-3);
+}
+
+.protein-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--protein);
+}
+
+.protein-row strong {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.protein-row small {
+  color: var(--text-subtle);
+  text-align: right;
+  font-size: 0.66rem;
+}
+
+.quality-row {
+  display: grid;
+  gap: 4px;
+}
+
+.quality-row-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.78rem;
+}
+
+.quality-row-head strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.quality-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+.quality-fill.over {
+  background: var(--danger);
+}
+
+.quality-row small {
+  color: var(--text-subtle);
+  font-size: 0.68rem;
+}
+
+.food-attribution-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.food-attribution-rank {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 7px;
+  background: var(--surface-3);
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.food-attribution-copy {
+  display: grid;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.food-attribution-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.78rem;
+}
+
+.food-attribution-head strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.food-attribution-head span {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.food-attribution-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--button-bg) 70%, var(--accent));
+}
+
+.food-attribution-copy small {
+  color: var(--text-subtle);
+  font-size: 0.68rem;
+}
+
+.insight-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.habit-trend {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1.4fr) minmax(150px, 0.8fr);
+  align-items: end;
+}
+
+.habit-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 110px;
+  padding-top: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.habit-bar {
+  flex: 1;
+  min-width: 3px;
+  border-radius: 3px 3px 0 0;
+  background: color-mix(in srgb, var(--info) 65%, var(--accent));
+}
+
+.habit-bar.empty {
+  background: var(--surface-3);
+}
+
+.habit-stats {
+  display: grid;
+  gap: 8px;
+}
+
+.habit-stats > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.74rem;
+}
+
+.habit-stats span {
+  color: var(--text-muted);
+}
+
+.habit-stats strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.habit-card {
+  gap: 12px;
+}
+
+.habit-water {
+  display: grid;
+  gap: 6px;
+}
+
+.habit-water-track {
+  overflow: hidden;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-3);
+}
+
+.habit-water-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--info);
+  transition: width var(--transition);
+}
+
+.habit-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.habit-mini-grid {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.habit-mini {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 4px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  font-size: 0.72rem;
+}
+
+.habit-mini > span {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-muted);
+}
+
+.habit-mini > strong {
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.habit-reset {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-subtle);
+  font-size: 0.7rem;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.habit-reset:hover {
+  color: var(--danger);
+}
+
+.goal-projection-card {
+  gap: 16px;
+}
+
+.projection-stats {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.projection-stat {
+  display: grid;
+  gap: 3px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  min-width: 0;
+}
+
+.projection-stat > span {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.projection-stat > strong {
+  font-size: 0.98rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.projection-stat > small {
+  color: var(--text-subtle);
+  font-size: 0.68rem;
+  line-height: 1.35;
+}
+
+.simulator {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface-2) 70%, transparent);
+}
+
+.simulator-controls {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) 120px;
+}
+
+.simulator-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+
+.simulator-result > div {
+  display: grid;
+  gap: 2px;
+}
+
+.simulator-result span {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.simulator-result strong {
+  font-size: 1.18rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.simulator-result small {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
+.measurements-card {
+  gap: 16px;
+}
+
+.measurement-chart {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.measurement-chart-svg svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.measurement-chart-svg .weight-chart-line {
+  fill: none;
+  stroke: var(--fat);
+  stroke-width: 2.2;
+}
+
+.measurement-chart-svg .weight-chart-dot {
+  fill: var(--fat);
+}
+
+.measurement-history {
+  display: grid;
+  gap: 2px;
+}
+
+.measurement-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.measurement-row:last-child {
+  border-bottom: 0;
+}
+
+.measurement-row > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.measurement-row strong {
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.measurement-row span {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+@media (max-width: 900px) {
+  .insight-review-grid,
+  .projection-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .insight-card-wide {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 760px) {
+  .insights-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .insight-review-grid,
+  .projection-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .habit-trend {
+    grid-template-columns: 1fr;
+  }
+
+  .simulator-controls {
+    grid-template-columns: 1fr 100px;
+  }
+
+  .protein-row {
+    grid-template-columns: 64px minmax(50px, 1fr) 52px;
+  }
+
+  .protein-row small {
+    display: none;
+  }
+}
+
+@media (max-width: 460px) {
+  .insight-review-grid,
+  .projection-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .habit-mini-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .simulator-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .simulator-result {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

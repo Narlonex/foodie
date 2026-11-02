@@ -28,6 +28,7 @@ import {
   type DiaryEntry,
   type DiaryTotals,
   type Food,
+  type HabitDay,
   type Language,
   type Meal,
   type SavedMeal,
@@ -43,6 +44,7 @@ import {
   MoveEntryDialog,
 } from "./entry-dialogs";
 import { FoodThumb } from "./food-thumb";
+import { HabitTracker } from "./habit-tracker";
 import { Icon } from "./icons";
 import { QuickAddFoodDialog } from "./quick-add-food-dialog";
 import { RecipeBuilderDialog } from "./recipe-builder-dialog";
@@ -81,6 +83,8 @@ export function DashboardView({
   savedMeals,
   latestWeight,
   weightChangePerWeekKg,
+  habits,
+  waterTargetMl,
   usdaEnabled,
 }: {
   date: string;
@@ -98,6 +102,8 @@ export function DashboardView({
   savedMeals: SavedMeal[];
   latestWeight: WeightEntry | null;
   weightChangePerWeekKg: number | null;
+  habits: HabitDay | null;
+  waterTargetMl: number;
   usdaEnabled: boolean;
   dashboardNutrients: DashboardNutrient[];
 }) {
@@ -626,6 +632,13 @@ export function DashboardView({
               </>
             )}
           </section>
+
+          <HabitTracker
+            date={date}
+            initial={habits}
+            waterTargetMl={waterTargetMl}
+            language={language}
+          />
 
           <section className="card side-card">
             <h2>{t("dashboard.quickActions")}</h2>

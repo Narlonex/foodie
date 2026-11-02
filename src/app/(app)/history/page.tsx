@@ -1,6 +1,16 @@
 import Link from "next/link";
 import { Icon } from "@/components/icons";
+import { InsightsPanel } from "@/components/insights-view";
 import { getTranslator } from "@/i18n";
+import {
+  buildHeatmap,
+  buildWeeklyReview,
+  currentStreak,
+  nutritionQuality,
+  proteinByMeal,
+  topFoods,
+  type InsightDay,
+} from "@/lib/analytics";
 import { requireViewer } from "@/lib/auth";
 import {
   addDays,
@@ -18,7 +28,13 @@ import {
   formatNumber,
 } from "@/lib/format";
 import { pageMetadata } from "@/lib/pageMetadata";
-import { getWeekTotals } from "@/lib/repositories/diary";
+import {
+  getWeekTotals,
+  listEntriesForRange,
+} from "@/lib/repositories/diary";
+import { listHabitDays } from "@/lib/repositories/habits";
+import { listWeightEntries } from "@/lib/repositories/weight";
+import { calculateAdaptiveCheckIn } from "@/lib/weightTrend";
 import type { DiaryTotals } from "@/lib/types";
 
 export async function generateMetadata() {
@@ -46,6 +62,24 @@ function sumValues(
   };
 }
 
+function toInsightDay(day: Awaited<ReturnType<typeof getWeekTotals>>[number]): InsightDay {
+  const nutrients = day.totals.nutrients;
+  return {
+    date: day.date,
+    kcal: nutrients.kcal.value,
+    protein: nutrients.protein.value,
+    carbs: nutrients.carbs.value,
+    fat: nutrients.fat.value,
+    fiber: nutrients.fiber.value,
+    sugars: nutrients.sugars.value,
+    satFat: nutrients.satFat.value,
+    salt: nutrients.salt.value,
+    entryCount: day.entryCount,
+    targetKcal: day.dayType?.kcal ?? null,
+    missingEntries: nutrients.kcal.missingEntries,
+  };
+}
+
 function dayStatus(
   totals: DiaryTotals,
   entryCount: number,
@@ -70,7 +104,28 @@ export default async function HistoryPage({
   const selected = parseDateParam(params.week, today);
   const weekStart = startOfWeek(selected);
   const dates = weekDates(weekStart);
-  const days = await getWeekTotals(viewer.user.id, dates);
+  const analyticsDates = Array.from({ length: 84 }, (_, index) =>
+    addDays(today, index - 83),
+  );
+  const [days, analyticsTotals, analyticsEntries, weights, habits] =
+    await Promise.all([
+      getWeekTotals(viewer.user.id, dates),
+      getWeekTotals(viewer.user.id, analyticsDates),
+      listEntriesForRange(viewer.user.id, addDays(today, -29), today),
+      listWeightEntries(viewer.user.id, addDays(today, -90)),
+      listHabitDays(viewer.user.id, addDays(today, -29)),
+    ]);
+  const insightDays = analyticsTotals.map(toInsightDay);
+  const checkIn = calculateAdaptiveCheckIn({
+    weights,
+    intake: insightDays.slice(-21).map((day) => ({
+      date: day.date,
+      kcal: day.kcal,
+      entryCount: day.entryCount,
+    })),
+    goalMode: viewer.profile.goalMode,
+    today,
+  });
 
   const hasEntries = days.some((day) => day.entryCount > 0);
   const daysLogged = days.filter((day) => day.entryCount > 0).length;
@@ -128,6 +183,20 @@ export default async function HistoryPage({
           </Link>
         </div>
       </div>
+
+      <InsightsPanel
+        days={insightDays}
+        review={buildWeeklyReview(insightDays, weights, today)}
+        heatmap={buildHeatmap(insightDays, today, 12)}
+        streak={currentStreak(insightDays, today)}
+        meals={proteinByMeal(analyticsEntries, today, 7)}
+        foods={topFoods(analyticsEntries, today, 30, 6)}
+        quality={nutritionQuality(insightDays, today, 7)}
+        habits={habits}
+        checkIn={checkIn}
+        language={language}
+        today={today}
+      />
 
       <div className="stack">
         <div className="summary-cards">

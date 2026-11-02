@@ -133,6 +133,23 @@ export interface WeightEntry {
   weightKg: number;
 }
 
+export interface HabitDay {
+  date: string;
+  waterMl: number;
+  caffeineMg: number;
+  alcoholUnits: number;
+}
+
+export interface BodyMeasurement {
+  id: string;
+  date: string;
+  waistCm: number | null;
+  hipsCm: number | null;
+  chestCm: number | null;
+  thighCm: number | null;
+  armCm: number | null;
+}
+
 export interface DayType {
   id: string;
   name: string;
@@ -152,6 +169,8 @@ export interface Profile {
   unitSystem: UnitSystem;
   goalMode: GoalMode;
   maintenanceCalories: number | null;
+  goalWeightKg: number | null;
+  goalRateKgPerWeek: number | null;
   defaultDayTypeId: string | null;
   usdaEnabled: boolean;
   heightCm: number | null;

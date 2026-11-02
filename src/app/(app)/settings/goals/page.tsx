@@ -22,6 +22,8 @@ export default async function GoalsSettingsPage() {
         language={viewer.profile.language}
         goalMode={viewer.profile.goalMode}
         maintenanceCalories={viewer.profile.maintenanceCalories}
+        goalWeightKg={viewer.profile.goalWeightKg}
+        goalRateKgPerWeek={viewer.profile.goalRateKgPerWeek}
         defaultDayType={defaultDayType}
       />
     </SettingsDetail>

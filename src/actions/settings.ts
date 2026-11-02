@@ -7,6 +7,7 @@ import {
   completeOnboarding,
   updateBodyMetrics,
   updateDashboardNutrients,
+  updateGoalTargets,
   updateGoals,
   updateLanguage,
   updateTheme,
@@ -27,11 +28,13 @@ import {
   activityLevelSchema,
   bodyMetricsSchema,
   goalModeSchema,
+  goalRateSchema,
   languageSchema,
   manualTargetsSchema,
   sexSchema,
   themeSchema,
   unitSystemSchema,
+  weightKgSchema,
 } from "@/lib/validation";
 import { errorFromZod, type FormState } from "./types";
 
@@ -150,8 +153,43 @@ export async function updateGoalsAction(
     }
     maintenance = parsed;
   }
+
+  const goalWeightRaw = String(formData.get("goalWeightKg") ?? "").trim();
+  let goalWeight: number | null = null;
+  if (goalWeightRaw !== "") {
+    const parsed = weightKgSchema.safeParse(
+      Number(goalWeightRaw.replace(",", ".")),
+    );
+    if (!parsed.success) {
+      return {
+        status: "error",
+        message: "goals.errorGoalWeight",
+        fieldErrors: { goalWeightKg: "validation.weight" },
+      };
+    }
+    goalWeight = parsed.data;
+  }
+
+  const goalRateRaw = String(formData.get("goalRateKgPerWeek") ?? "").trim();
+  let goalRate: number | null = null;
+  if (goalRateRaw !== "") {
+    const parsed = goalRateSchema.safeParse(
+      Number(goalRateRaw.replace(",", ".")),
+    );
+    if (!parsed.success) {
+      return {
+        status: "error",
+        message: "goals.errorGoalRate",
+        fieldErrors: { goalRateKgPerWeek: "validation.goalRate" },
+      };
+    }
+    goalRate = parsed.data;
+  }
+
   await updateGoals(viewer.user.id, mode.data, maintenance);
+  await updateGoalTargets(viewer.user.id, goalWeight, goalRate);
   revalidatePath("/settings/goals");
+  revalidatePath("/progress");
   return success("goals.saved");
 }
 

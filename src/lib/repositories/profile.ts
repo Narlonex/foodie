@@ -56,6 +56,19 @@ export async function updateGoals(
   return Boolean(row);
 }
 
+export async function updateGoalTargets(
+  userId: string,
+  goalWeightKg: number | null,
+  goalRateKgPerWeek: number | null,
+): Promise<boolean> {
+  const row = await queryOne<{ user_id: string }>(
+    `UPDATE profiles SET goal_weight_kg = $2, goal_rate_kg_per_week = $3
+      WHERE user_id = $1 RETURNING user_id`,
+    [userId, goalWeightKg, goalRateKgPerWeek],
+  );
+  return Boolean(row);
+}
+
 export async function updateUsdaPreference(
   userId: string,
   usdaEnabled: boolean,

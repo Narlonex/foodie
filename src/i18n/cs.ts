@@ -1096,6 +1096,181 @@ export const cs: Dictionary = {
   "recipes.snapshotNote":
     "Zapíše se jako jedna položka s hodnotami receptu na 100 g.",
 
+  "goals.goalWeight": "Cílová váha",
+  "goals.goalWeightHelp":
+    "Nepovinné. Použije se jen k odhadu, kdy k ní při současném trendu dospějete.",
+  "goals.goalRate": "Tempo cíle",
+  "goals.goalRateHelp":
+    "Nepovinné. Plánované kilogramy za týden, od 0,05 do 2. Slouží jako kontext pro cíle.",
+  "goals.errorGoalWeight": "Zadejte cílovou váhu mezi 20 a 500 kg.",
+  "goals.errorGoalRate": "Zadejte tempo mezi 0,05 a 2 kg za týden.",
+
+  "projection.title": "Cíl a projekce",
+  "projection.help":
+    "Jednoduchá projekce trendu uložených vážení. Není to slib ani lékařský odhad.",
+  "projection.current": "Nyní",
+  "projection.goal": "Cíl",
+  "projection.trend": "Vývoj hmotnosti",
+  "projection.eta": "Při tomto trendu",
+  "projection.targetDate": "Cíl dosáhnete přibližně {date}",
+  "projection.noTargetDate": "Trend zatím k cíli nesměřuje.",
+  "projection.fourWeeks": "Za čtyři týdny",
+  "projection.needGoal":
+    "Doplňte cílovou váhu ve Výživových cílech a uvidíte, kdy k ní trend dospěje.",
+  "projection.openGoals": "Otevřít cíle",
+  "projection.noTrend":
+    "Zapište alespoň dvě vážení několik dní od sebe, aby šla projekce vypočítat.",
+  "projection.directionMismatch":
+    "Současný trend se od cílové váhy vzdaluje.",
+  "projection.simulator": "Simulátor cíle",
+  "projection.simulatorHelp":
+    "Zkuste denní příjem a podívejte se, kam váhu posune aritmetika. Počítá se 7 700 kcal na kilogram a nezohledňuje výkyvy vody.",
+  "projection.simulatorWeeks": "Týdny",
+  "projection.simulatorIntake": "Denní příjem",
+  "projection.simulatorResult": "Odhadovaná váha po {weeks} týdnech",
+  "projection.simulatorNote":
+    "Je to jednoduchá aritmetika, ne předpověď. Skutečná změna váhy se liší.",
+  "projection.noWeight": "Nejprve zapište váhu.",
+  "projection.needMaintenance":
+    "Pro simulátor doplňte kalorie na udržení ve Výživových cílech.",
+  "projection.plannedPace": "Plánované tempo {value} kg/týden",
+  "projection.changeFromToday": "{value} kg oproti dnešku",
+
+  "measurements.title": "Tělesné míry",
+  "measurements.help":
+    "Míry jsou nepovinné a ukládají se odděleně od váhy. Zadejte jen to, co jste změřili.",
+  "measurements.change": "Pas {value}",
+  "measurements.date": "Datum",
+  "measurements.waist": "Pas",
+  "measurements.hips": "Boky",
+  "measurements.chest": "Hrudník",
+  "measurements.thigh": "Stehno",
+  "measurements.arm": "Paže",
+  "measurements.cm": "cm",
+  "measurements.save": "Uložit míry",
+  "measurements.chartTitle": "Trend pasu",
+  "measurements.chartAria": "Trend obvodu pasu z {first} na {last} cm.",
+  "measurements.empty": "Zatím nejsou uložené žádné míry.",
+  "measurements.delete": "Odstranit míru",
+  "measurements.note":
+    "Míry se ukládají v centimetrech přesně tak, jak je zadáte. Výživové cíle nemění.",
+  "measurements.invalid":
+    "Zadejte číslo mezi 20 a 300 cm nebo pole nechte prázdné.",
+  "measurements.required": "Zadejte alespoň jednu míru.",
+  "measurements.saved": "Míry byly uloženy.",
+  "measurements.deleted": "Míra byla odstraněna.",
+  "measurements.error": "Míru se nepodařilo uložit. Zkuste to znovu.",
+
+  "habits.title": "Voda a nápoje",
+  "habits.help": "Rychlé denní součty. Kalorické ani makro cíle nemění.",
+  "habits.saved": "Uloženo",
+  "habits.water": "Voda",
+  "habits.target": "Cíl {value} ml",
+  "habits.caffeine": "Kofein",
+  "habits.addCaffeine": "Přidat 80 mg kofeinu",
+  "habits.alcohol": "Alkoholické nápoje",
+  "habits.units": "jednotky",
+  "habits.addAlcohol": "Přidat jednu alkoholovou jednotku",
+  "habits.reset": "Vynulovat dnešní nápoje",
+  "habits.error": "Nápoje se nepodařilo uložit. Zkuste to znovu.",
+
+  "insights.weeklyReview": "Týdenní přehled",
+  "insights.lastSevenDays": "Vašich posledních sedm dní",
+  "insights.reviewHelp":
+    "Stručný souhrn zapsaného jídla a váhy. Prázdné dny zůstávají prázdné.",
+  "insights.period": "7 dní",
+  "insights.averageIntake": "Průměrný příjem",
+  "insights.noComparison": "Předchozí týden k porovnání chybí",
+  "insights.vsPrevious": "{value} kcal oproti předchozímu týdnu",
+  "insights.loggedDays": "Zapsané dny",
+  "insights.previousLogged": "Předchozí týden: {count}",
+  "insights.withinTarget": "V cíli",
+  "insights.withinTargetHelp": "Dny mezi 90 a 110 % denního cíle",
+  "insights.weightTrend": "Trend váhy",
+  "insights.weighIns": "Vážení: {count}",
+  "insights.noWeight": "Trend váhy zatím chybí",
+  "insights.noData": "Zapište tento týden nějaké jídlo a přehled se vytvoří.",
+  "insights.reviewWithWeight":
+    "{logged} zapsaných dní mělo průměr {avg} kcal, trend váhy je {weight}.",
+  "insights.reviewNoWeight":
+    "{logged} zapsaných dní mělo průměr {avg} kcal. Zapište váhu, abyste propojili příjem s pokrokem.",
+  "insights.rollingTitle": "Klouzavé průměry",
+  "insights.rollingHelp":
+    "Sloupce jsou jednotlivé dny; čára je klouzavý sedmidenní průměr známých hodnot.",
+  "insights.period30": "30 dní",
+  "insights.metric": "Ukazatel",
+  "insights.notEnoughData":
+    "Zapište alespoň dva dny s touto živinou, aby šel nakreslit trend.",
+  "insights.chartAria":
+    "{metric} za {days} dní se sedmidenním klouzavým průměrem.",
+  "insights.rollingAverage": "7denní průměr",
+  "insights.heatmapTitle": "Mapa dodržování",
+  "insights.heatmapHelp":
+    "Dvanáct týdnů zapsaných dní, barevně podle vzdálenosti od denního kalorického cíle.",
+  "insights.streakDays": "Série: {count} dní",
+  "insights.heatmapAria": "Dvanáctitýdenní mapa dodržování kalorií.",
+  "insights.status.empty": "Bez záznamů",
+  "insights.status.partial": "Částečná data",
+  "insights.status.within": "Do 10 %",
+  "insights.status.outside": "Mimo 10 %",
+  "insights.status.unscored": "Bez cíle",
+  "insights.status.future": "Budoucnost",
+  "insights.proteinTitle": "Bílkoviny podle jídla",
+  "insights.proteinHelp":
+    "Průměr známých bílkovin na zapsaný den, rozdělený podle jídla, za sedm dní.",
+  "insights.daysShort": "Dny: {count}",
+  "insights.proteinNote":
+    "Dny bez údajů o bílkovinách se do průměru nezahrnují.",
+  "insights.qualityTitle": "Kvalita výživy",
+  "insights.qualityHelp":
+    "Průměr vlákniny, cukrů, nasycených tuků a soli za posledních sedm dní.",
+  "insights.fiber": "Vláknina",
+  "insights.sugars": "Cukry",
+  "insights.satFat": "Nasycené tuky",
+  "insights.salt": "Sůl",
+  "insights.reference": "Reference",
+  "insights.qualityNote":
+    "Procenta počítají 4 kcal na gram cukru a 9 kcal na gram nasyceného tuku. Reference jsou obecná doporučení, ne osobní limity.",
+  "insights.foodsTitle": "Odkud kalorie pocházejí",
+  "insights.foodsHelp":
+    "Potraviny, které za posledních 30 dní přispěly nejvíce energií.",
+  "insights.noFoods": "Za posledních 30 dní nejsou žádné záznamy s energií.",
+  "insights.timesLogged": "Záznamy: {count}",
+  "insights.foodsNote":
+    "Podíl používá jen záznamy se známou energií; potraviny s neznámou energií se nezahrnují.",
+  "insights.energyTitle": "Odvozený výdej",
+  "insights.energyHelp":
+    "Odhad z vašeho zapsaného příjmu a trendu váhy za poslední tři týdny.",
+  "insights.energyInsufficient":
+    "Zapisujte jídlo a váhu přibližně tři týdny, aby šel odvodit udržovací výdej.",
+  "insights.openProgress": "Otevřít pokrok",
+  "insights.confidenceGood": "Dobré pokrytí",
+  "insights.confidenceLow": "Nízké pokrytí",
+  "insights.estimatedTdee": "Odvozený výdej",
+  "insights.netBalance": "Průměrná bilance",
+  "insights.deficit": "Průměrný deficit",
+  "insights.surplus": "Průměrný přebytek",
+  "insights.balanced": "Téměř vyrovnané",
+  "insights.energyNote":
+    "Odhad z vašich vlastních dat, ne měřený metabolický výdej. Ovlivňuje ho voda, glykogen a mezery v zapisování.",
+  "insights.habitsTitle": "Trend nápojů",
+  "insights.habitsHelp": "Voda, kofein a alkohol za posledních 14 dní.",
+  "insights.logToday": "Zapsat dnešek",
+  "insights.habitsChartAria": "Denní množství vody za posledních 14 dní.",
+  "insights.notLogged": "nezapsané",
+  "insights.waterAvg": "Voda",
+  "insights.caffeineAvg": "Kofein",
+  "insights.alcoholAvg": "Alkoholické nápoje",
+  "insights.habitsNote":
+    "Průměrují se jen uložené dny; chybějící dny se neberou jako nula.",
+  "insights.futureDate": "Zvolte dnešní nebo dřívější datum.",
+  "insights.saveError": "Uložit se nepodařilo. Zkuste to znovu.",
+
+  "validation.goalRate": "Zadejte tempo mezi 0,05 a 2 kg za týden.",
+  "validation.measurement": "Zadejte míru mezi 20 a 300 cm.",
+  "validation.measurementRequired": "Zadejte alespoň jednu míru.",
+  "validation.habit": "Zadejte platné nezáporné množství.",
+
   "error.loadFailed": "Deník se nepodařilo načíst. Obnovte stránku.",
   "error.invalidRequest": "Požadavek nebyl platný.",
   "error.unauthorised": "Pokračujte přihlášením.",

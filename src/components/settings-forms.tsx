@@ -318,11 +318,15 @@ export function GoalsForm({
   language,
   goalMode,
   maintenanceCalories,
+  goalWeightKg,
+  goalRateKgPerWeek,
   defaultDayType,
 }: {
   language: Language;
   goalMode: GoalMode;
   maintenanceCalories: number | null;
+  goalWeightKg: number | null;
+  goalRateKgPerWeek: number | null;
   defaultDayType: DayType | null;
 }) {
   const t = getTranslator(language);
@@ -334,6 +338,12 @@ export function GoalsForm({
   const [mode, setMode] = useState<GoalMode>(goalMode);
   const [maintenance, setMaintenance] = useState(
     maintenanceCalories ? String(maintenanceCalories) : "",
+  );
+  const [goalWeight, setGoalWeight] = useState(
+    goalWeightKg ? String(goalWeightKg) : "",
+  );
+  const [goalRate, setGoalRate] = useState(
+    goalRateKgPerWeek ? String(goalRateKgPerWeek) : "",
   );
 
   const maintenanceNumber = parseInput(maintenance);
@@ -392,6 +402,57 @@ export function GoalsForm({
             ))}
           </div>
         </fieldset>
+
+        <div className="form-grid">
+          <div className="field">
+            <label htmlFor="goal-weight">
+              {t("goals.goalWeight")}{" "}
+              <span className="subtle">({t("common.optional")})</span>
+            </label>
+            <input
+              id="goal-weight"
+              name="goalWeightKg"
+              className="input"
+              inputMode="decimal"
+              value={goalWeight}
+              onChange={(event) => setGoalWeight(event.target.value)}
+              placeholder="75"
+              aria-describedby="goal-weight-hint"
+            />
+            <p className="field-hint" id="goal-weight-hint">
+              {t("goals.goalWeightHelp")}
+            </p>
+            {state.fieldErrors?.goalWeightKg ? (
+              <p className="field-error">
+                {translatedMessage(language, state.fieldErrors.goalWeightKg)}
+              </p>
+            ) : null}
+          </div>
+          <div className="field">
+            <label htmlFor="goal-rate">
+              {t("goals.goalRate")}{" "}
+              <span className="subtle">({t("common.optional")})</span>
+            </label>
+            <input
+              id="goal-rate"
+              name="goalRateKgPerWeek"
+              className="input"
+              inputMode="decimal"
+              value={goalRate}
+              onChange={(event) => setGoalRate(event.target.value)}
+              placeholder="0.5"
+              aria-describedby="goal-rate-hint"
+            />
+            <p className="field-hint" id="goal-rate-hint">
+              {t("goals.goalRateHelp")}
+            </p>
+            {state.fieldErrors?.goalRateKgPerWeek ? (
+              <p className="field-error">
+                {translatedMessage(language, state.fieldErrors.goalRateKgPerWeek)}
+              </p>
+            ) : null}
+          </div>
+        </div>
 
         <div className="field">
           <label htmlFor="maintenance-calories">

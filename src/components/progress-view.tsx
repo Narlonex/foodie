@@ -10,9 +10,12 @@ import {
 import { getTranslator, translate, type TranslationKey } from "@/i18n";
 import { formatLongDate, formatShortDate } from "@/lib/dates";
 import { formatKcal, formatNumber } from "@/lib/format";
-import type { Language, WeightEntry } from "@/lib/types";
+import type { BodyMeasurement, Language, WeightEntry } from "@/lib/types";
 import type { AdaptiveCheckIn } from "@/lib/weightTrend";
+import type { GoalProjection } from "@/lib/analytics";
+import { GoalProjectionCard } from "./goal-projection-card";
 import { Icon } from "./icons";
+import { MeasurementsCard } from "./measurements-card";
 
 export function ProgressView({
   weights,
@@ -22,6 +25,11 @@ export function ProgressView({
   currentTargetKcal,
   currentDayTypeName,
   hasDefaultDayType,
+  projection,
+  goalWeightKg,
+  goalRateKgPerWeek,
+  maintenanceKcal,
+  measurements,
 }: {
   weights: WeightEntry[];
   checkIn: AdaptiveCheckIn;
@@ -30,6 +38,11 @@ export function ProgressView({
   currentTargetKcal: number | null;
   currentDayTypeName: string | null;
   hasDefaultDayType: boolean;
+  projection: GoalProjection | null;
+  goalWeightKg: number | null;
+  goalRateKgPerWeek: number | null;
+  maintenanceKcal: number | null;
+  measurements: BodyMeasurement[];
 }) {
   const t = getTranslator(language);
   const router = useRouter();
@@ -181,6 +194,15 @@ export function ProgressView({
         </section>
       </div>
 
+      <GoalProjectionCard
+        projection={projection}
+        goalWeightKg={goalWeightKg}
+        goalRateKgPerWeek={goalRateKgPerWeek}
+        currentTargetKcal={currentTargetKcal}
+        maintenanceKcal={maintenanceKcal}
+        language={language}
+      />
+
       <section className="card card-pad stack">
         <div className="row-between">
           <div>
@@ -200,6 +222,12 @@ export function ProgressView({
           onApply={applyTarget}
         />
       </section>
+
+      <MeasurementsCard
+        measurements={measurements}
+        today={today}
+        language={language}
+      />
 
       <section className="card card-pad stack">
         <div className="row-between">

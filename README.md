@@ -17,8 +17,11 @@ The application is a working MVP, not a clickable mockup: accounts, diaries, cus
 - **Copy Day and Repeat Meal** — copy quantities between dates/meals with a destination preview. Existing entries are preserved; an explicit confirmation is required before duplicates are created.
 - **Day types** — create named day types with their own calorie, protein, carbohydrate and fat targets, assign them to specific dates, and switch a date's type without changing logged food. A default day type supplies targets on unassigned dates.
 - **Macro adjustment modes** — *Change carbs*, *Change fats*, *Change proteins* and *Change all* behave distinctly. Fixed macros keep their gram values; the selected macro absorbs the remaining calories using 4/4/9 kcal per gram. *Change all* uses the stored 30/40/30 default split (editable percentage fields). Impossible combinations are blocked with a translated explanation rather than creating negative targets.
-- **Goals** — cut, maintenance and bulk presets are optional starting points. Maintenance calories and targets remain editable. No medical formula or personal target is imposed.
+- **Goals** — cut, maintenance and bulk presets are optional starting points. Maintenance calories, goal weight, planned pace and targets remain editable. No medical formula or personal target is imposed.
 - **Weekly overview and history** — real persisted data only, day-specific calorie target comparison, macro summaries, days with no entries distinguished from days whose data is incomplete, and links back to each diary.
+- **Insights and trends** — trailing seven-day averages for calories and macros, a 12-week adherence heatmap, protein split by meal, nutrition-quality indicators, calorie attribution and inferred maintenance from actual intake and weight data. Empty days stay unknown.
+- **Habits and body measurements** — optional daily water, caffeine and alcohol totals plus tape measurements. They are stored separately from food and never change calorie or macro targets.
+- **Goal projection and simulator** — optional goal weight and planned pace, a trend-based ETA, and a clearly labelled 7,700 kcal/kg what-if simulator.
 - **Settings** — clean icon/title/chevron list with explanations inside each detail screen: Nutrition goals, Day types, Appearance, Language, Units, Food data and Account.
 - **Themes and languages** — dark/light theme and English/Slovak are stored on the profile and survive reloads and sessions.
 - **Accounts** — real email/password registration and login with scrypt password hashing, hashed opaque session tokens in HTTP-only cookies, CSRF origin checks, and per-user ownership checks on every query.
@@ -125,12 +128,15 @@ The schema lives in [`db/migrations/001_init.sql`](db/migrations/001_init.sql). 
 
 - `users` — normalized unique email, scrypt password hash.
 - `sessions` — SHA-256 hash of an opaque random token, expiry, cascade delete with the user.
-- `profiles` — language, theme, unit system, goal mode, optional maintenance calories and default day type.
+- `profiles` — language, theme, unit system, goal mode, optional maintenance calories, goal weight/pace and default day type.
 - `day_types` — per-user named calorie/macro targets, adjustment mode and stored macro percentages. Unique per user by case-insensitive name.
 - `day_assignments` — per-user, per-date day-type selection. Unique `(user_id, date)`; deleting an assigned type is restricted.
 - `foods` — cached Open Food Facts/USDA records and user-created foods, with source, serving basis, precision-safe numeric nutrients, energy source and favorite flag.
 - `diary_entries` — immutable snapshot of food nutrition at logging time, amount, amount unit, meal, date and timestamp. Foods can be deleted without erasing diary history (`ON DELETE SET NULL`).
+- `weight_logs` — one weight per user per date, with a linear trend used by check-ins and projections.
 - `saved_meals` and `saved_meal_items` — named food/amount combinations and validated references.
+- `daily_habits` — optional per-user, per-day water, caffeine and alcohol totals; missing days are not treated as zero.
+- `body_measurements` — optional per-user, per-day circumference measurements in centimetres, independent of weight.
 
 Indexes cover per-user/per-date diary reads, recent entries, favorites, source lookup, assignments and saved-meal items. All application queries scope by the authenticated user ID; no client-supplied owner ID is trusted.
 
@@ -140,7 +146,7 @@ Indexes cover per-user/per-date diary reads, recent entries, favorites, source l
 npm run db:migrate   # reads .env.local or DATABASE_URL
 ```
 
-There is one initial migration; add new numbered SQL files under `db/migrations/` and rerun the command. Migrations are not automatically applied by `npm run build` or by the app at runtime.
+Migrations are numbered `001`–`007` (the two `004` files cover separate features), and each one is recorded in `schema_migrations`. Add new numbered SQL files under `db/migrations/` and rerun the command. Migrations are not automatically applied by `npm run build` or by the app at runtime.
 
 ## Tests and checks
 

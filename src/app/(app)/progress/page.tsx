@@ -1,8 +1,10 @@
 import { ProgressView } from "@/components/progress-view";
+import { projectGoal } from "@/lib/analytics";
 import { requireViewer } from "@/lib/auth";
 import { addDays, todayIso } from "@/lib/dates";
 import { getWeekTotals } from "@/lib/repositories/diary";
 import { getEffectiveDayType } from "@/lib/repositories/dayTypes";
+import { listBodyMeasurements } from "@/lib/repositories/measurements";
 import { listWeightEntries } from "@/lib/repositories/weight";
 import { calculateAdaptiveCheckIn } from "@/lib/weightTrend";
 import { pageMetadata } from "@/lib/pageMetadata";
@@ -17,10 +19,11 @@ export default async function ProgressPage() {
   const dates = Array.from({ length: 21 }, (_, index) =>
     addDays(today, index - 20),
   );
-  const [weights, totalsByDay, effective] = await Promise.all([
+  const [weights, totalsByDay, effective, measurements] = await Promise.all([
     listWeightEntries(viewer.user.id, addDays(today, -90)),
     getWeekTotals(viewer.user.id, dates),
     getEffectiveDayType(viewer.user.id, today),
+    listBodyMeasurements(viewer.user.id, 24),
   ]);
   const checkIn = calculateAdaptiveCheckIn({
     weights,
@@ -41,6 +44,19 @@ export default async function ProgressPage() {
       currentTargetKcal={effective.dayType?.kcal ?? null}
       currentDayTypeName={effective.dayType?.name ?? null}
       hasDefaultDayType={viewer.profile.defaultDayTypeId !== null}
+      projection={projectGoal(
+        weights,
+        viewer.profile.goalWeightKg,
+        today,
+      )}
+      goalWeightKg={viewer.profile.goalWeightKg}
+      goalRateKgPerWeek={viewer.profile.goalRateKgPerWeek}
+      maintenanceKcal={
+        checkIn.status === "ok"
+          ? checkIn.estimatedTdeeKcal
+          : viewer.profile.maintenanceCalories
+      }
+      measurements={measurements}
     />
   );
 }
