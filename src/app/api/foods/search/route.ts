@@ -50,11 +50,13 @@ async function loadCatalog(
   page: number,
   category: string | null,
   verifiedOnly: boolean,
+  sort: "protein" | "light" | null,
 ): Promise<FoodCandidate[]> {
   try {
     return await searchCatalogFoods(query, source, CATALOG_RESULT_LIMIT, {
       category,
       verifiedOnly,
+      sort,
       offset: (page - 1) * CATALOG_RESULT_LIMIT,
     });
   } catch {
@@ -112,6 +114,8 @@ export async function GET(request: NextRequest) {
       ? rawCategory
       : null;
   const verifiedOnly = searchParams.get("verified") === "1";
+  const rawSort = searchParams.get("sort");
+  const sort = rawSort === "protein" || rawSort === "light" ? rawSort : null;
 
   if (rawCategory && !category) return errorResponse("search.error", 400);
   if (query.length < 2 && !category) {
@@ -128,7 +132,7 @@ export async function GET(request: NextRequest) {
   }
 
   const [catalogResults, ...outcomes] = await Promise.all([
-    loadCatalog(query, source, page, category, verifiedOnly),
+    loadCatalog(query, source, page, category, verifiedOnly, sort),
     ...(source !== "both"
       ? [
           externalAllowed
@@ -165,14 +169,18 @@ export async function GET(request: NextRequest) {
 
   const off = succeeded.find((outcome) => outcome.kind === "off");
   const usda = succeeded.find((outcome) => outcome.kind === "usda");
-  const results = mergeSearchResults(
-    [...catalogResults, ...(off?.results ?? [])],
-    usda?.results ?? [],
-    query,
-    CATALOG_RESULT_LIMIT,
-  );
+  // A sorted view is a catalog view: merging external sources would re-rank by
+  // text relevance and silently break "most protein per kcal".
+  const results = sort
+    ? catalogResults
+    : mergeSearchResults(
+        [...catalogResults, ...(off?.results ?? [])],
+        usda?.results ?? [],
+        query,
+        CATALOG_RESULT_LIMIT,
+      );
 
-  if (results.length === 0 && page === 1 && externalAllowed) {
+  if (!sort && results.length === 0 && page === 1 && externalAllowed) {
     await recordCatalogSearchMiss(query).catch(() => undefined);
   }
 

@@ -1448,6 +1448,9 @@ export const en = {
 
   "search.category": "Category",
   "search.verifiedOnly": "Verified foods only",
+  "search.sortLabel": "Sort results",
+  "search.sortProtein": "Most protein per kcal",
+  "search.sortLight": "Lowest kcal",
   "search.verified": "Verified",
   "search.missingNotice": "Nothing matched. We added this search to the missing-food radar.",
   "search.reportMissing": "Report a missing food",

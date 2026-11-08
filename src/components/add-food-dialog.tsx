@@ -115,6 +115,7 @@ export function AddFoodDialog({
   );
   const [category, setCategory] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [sort, setSort] = useState<"" | "protein" | "light">("");
   const [categories, setCategories] = useState<
     Array<{ category: string; count: number }>
   >([]);
@@ -223,6 +224,7 @@ export function AddFoodDialog({
         const params = new URLSearchParams({ q: trimmed, source });
         if (category) params.set("category", category);
         if (verifiedOnly) params.set("verified", "1");
+        if (sort) params.set("sort", sort);
         const response = await fetch(
           `/api/foods/search?${params.toString()}`,
           { signal: controller.signal, headers: { Accept: "application/json" } },
@@ -268,7 +270,7 @@ export function AddFoodDialog({
       window.clearTimeout(timer);
       searchAbort.current?.abort();
     };
-  }, [query, source, tab, open, searchTick, category, verifiedOnly]);
+  }, [query, source, tab, open, searchTick, category, verifiedOnly, sort]);
 
   async function loadMore() {
     if (loadingMore || !hasMore || searchStatus !== "done") return;
@@ -288,6 +290,7 @@ export function AddFoodDialog({
       });
       if (category) params.set("category", category);
       if (verifiedOnly) params.set("verified", "1");
+      if (sort) params.set("sort", sort);
       const response = await fetch(
         `/api/foods/search?${params.toString()}`,
         { signal: controller.signal, headers: { Accept: "application/json" } },
@@ -820,6 +823,28 @@ export function AddFoodDialog({
                   <span className="chip-count">{entry.count}</span>
                 </button>
               ))}
+            </div>
+            <div
+              className="category-chips"
+              role="group"
+              aria-label={t("search.sortLabel")}
+            >
+              <button
+                type="button"
+                className="category-chip"
+                aria-pressed={sort === "protein"}
+                onClick={() => setSort(sort === "protein" ? "" : "protein")}
+              >
+                {t("search.sortProtein")}
+              </button>
+              <button
+                type="button"
+                className="category-chip"
+                aria-pressed={sort === "light"}
+                onClick={() => setSort(sort === "light" ? "" : "light")}
+              >
+                {t("search.sortLight")}
+              </button>
             </div>
             <label className="checkbox-row compact">
               <input

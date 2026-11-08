@@ -9,6 +9,8 @@ export interface CatalogSearchOptions {
   category?: string | null;
   verifiedOnly?: boolean;
   offset?: number;
+  /** "protein" ranks by protein per kcal, "light" by lowest energy. */
+  sort?: "protein" | "light" | null;
 }
 
 export interface CatalogFacet {
@@ -150,26 +152,43 @@ export async function searchCatalogFoods(
   const safeOffset = Math.max(Math.trunc(options.offset ?? 0), 0);
   params.push(safeLimit, safeOffset);
 
+  // Gym use-cases dominate the search: "protein" sorts by protein density
+  // (grams per kcal, so a 350 kcal bar cannot outrank lean meat), "light"
+  // surfaces the lowest-energy options. Everything else keeps relevance.
+  const orderBy =
+    options.sort === "protein"
+      ? `(protein_g / NULLIF(kcal, 0)) DESC NULLS LAST,
+         verified DESC,
+         completeness DESC,
+         length(name),
+         name`
+      : options.sort === "light"
+        ? `kcal ASC NULLS LAST,
+           verified DESC,
+           completeness DESC,
+           length(name),
+           name`
+        : `CASE
+             WHEN $1 <> '' AND normalized_name = $1::text THEN 0
+             WHEN $1 <> '' AND normalized_name LIKE $1::text || '%' THEN 1
+             WHEN $1 <> '' AND normalized_name LIKE '% ' || $1::text || '%' THEN 2
+             ELSE 3
+           END,
+           ts_rank_cd(
+             search_vector,
+             websearch_to_tsquery('simple', $1::text)
+           ) DESC,
+           similarity(normalized_name, $1::text) DESC,
+           verified DESC,
+           completeness DESC,
+           length(name),
+           name`;
+
   const rows = await query<CatalogRow>(
     `SELECT ${CATALOG_COLUMNS}
        FROM catalog_foods
       WHERE ${conditions.join(" AND ")}
-      ORDER BY
-        CASE
-          WHEN $1 <> '' AND normalized_name = $1::text THEN 0
-          WHEN $1 <> '' AND normalized_name LIKE $1::text || '%' THEN 1
-          WHEN $1 <> '' AND normalized_name LIKE '% ' || $1::text || '%' THEN 2
-          ELSE 3
-        END,
-        ts_rank_cd(
-          search_vector,
-          websearch_to_tsquery('simple', $1::text)
-        ) DESC,
-        similarity(normalized_name, $1::text) DESC,
-        verified DESC,
-        completeness DESC,
-        length(name),
-        name
+      ORDER BY ${orderBy}
       LIMIT $${params.length - 1} OFFSET $${params.length}`,
     params,
   );
