@@ -2,6 +2,7 @@ import { z } from "zod";
 import { isValidIsoDate } from "./dates";
 import {
   DASHBOARD_NUTRIENTS,
+  FOOD_CATEGORIES,
   MEALS,
   NUTRIENT_KEYS,
   PREPARATION_STATES,
@@ -24,6 +25,7 @@ export const passwordSchema = z
 export const languageSchema = z.enum(["en", "sk", "cs"]);
 export const themeSchema = z.enum(["dark", "light"]);
 export const unitSystemSchema = z.enum(["metric", "imperial"]);
+export const measurementUnitSchema = z.enum(["cm", "in"]);
 export const goalModeSchema = z.enum(["cut", "maintenance", "bulk"]);
 export const adjustmentModeSchema = z.enum([
   "all",
@@ -147,6 +149,8 @@ export const customFoodSchema = z
       )
       .optional()
       .default(""),
+    category: z.enum(FOOD_CATEGORIES).default("other"),
+    submitToCatalog: z.boolean().default(false),
     basisType: basisTypeSchema,
     servingSize: z.number().finite().positive("validation.servingSize").max(100_000).nullable(),
     servingUnit: z.enum(["g", "ml"]).nullable(),

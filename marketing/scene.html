@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8" />
+<title>Foodie — TikTok Concept 1</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0b0b0a; display: grid; place-items: center; }
+  canvas { display: block; width: min(100vw, 460px); height: auto; }
+</style>
+</head>
+<body>
+<canvas id="stage" width="1080" height="1920"></canvas>
+<script>
+(() => {
+  const W = 1080, H = 1920, DUR = 11.2;
+  const canvas = document.getElementById("stage");
+  const ctx = canvas.getContext("2d");
+
+  const C = {
+    bg: "#161613", card: "#1f1f1b", card2: "#25251f", surface3: "#2c2c24", line: "#33332b",
+    text: "#f3f2eb", muted: "#a8a79d", subtle: "#86867c",
+    accent: "#cfdca9", accentStr: "#e4edc8", accentSoft: "rgba(207,220,169,0.12)",
+    peach: "#f0ac88", dark: "#1e1a16",
+    protein: "#c9dba7", carbs: "#8fa6be", fat: "#e9a07e",
+  };
+  const SANS = '-apple-system, "Segoe UI", Inter, Roboto, Arial, sans-serif';
+  const SERIF = 'Georgia, "Times New Roman", serif';
+
+  const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+  const seg = (t, a, b) => clamp((t - a) / (b - a));
+  const ease = (t) => 1 - Math.pow(1 - t, 3);
+  const easeOut = (t) => 1 - Math.pow(1 - t, 2);
+  const grp = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+
+  function rr(x, y, w, h, r) {
+    const rad = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rad, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rad);
+    ctx.arcTo(x + w, y + h, x, y + h, rad);
+    ctx.arcTo(x, y + h, x, y, rad);
+    ctx.arcTo(x, y, x + w, y, rad);
+    ctx.closePath();
+  }
+
+  function label(str, x, y, size, color, weight = 500, align = "left", font = SANS) {
+    ctx.fillStyle = color;
+    ctx.font = `${weight} ${size}px ${font}`;
+    ctx.textAlign = align;
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText(str, x, y);
+  }
+
+  const ICON = {
+    scale: "M12 3v18M7 21h10M5 7h14M5 7l-3 7a3 3 0 0 0 6 0zM19 7l-3 7a3 3 0 0 0 6 0z",
+    book: "M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5zM4 5.5v16M8 7h8M8 11h8",
+    utensils: "M5 3v6a3 3 0 0 0 6 0V3M8 9v12M17 3c-2 2-2.5 4-2.5 6.5 0 2 1 3 2.5 3V21",
+    chart: "M4 20V10M10 20V4M16 20v-7M22 20H2",
+    settings: "M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.82 2.82-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1 1.56V21h-4v-.08A1.7 1.7 0 0 0 9 19.36a1.7 1.7 0 0 0-1.88.34l-.06.06-2.82-2.82.06-.06A1.7 1.7 0 0 0 4.64 15a1.7 1.7 0 0 0-1.56-1H3v-4h.08A1.7 1.7 0 0 0 4.64 9a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.82-2.82.06.06A1.7 1.7 0 0 0 9 4.64a1.7 1.7 0 0 0 1-1.56V3h4v.08A1.7 1.7 0 0 0 15 4.64a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.82 2.82-.06.06A1.7 1.7 0 0 0 19.36 9a1.7 1.7 0 0 0 1.56 1H21v4h-.08a1.7 1.7 0 0 0-1.52 1z",
+  };
+
+  function icon(name, cx, cy, size, color) {
+    const s = size / 24;
+    ctx.save();
+    ctx.translate(cx - size / 2, cy - size / 2);
+    ctx.scale(s, s);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.8;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    if (name === "dashboard") {
+      [[3, 3], [14, 3], [3, 14], [14, 14]].forEach(([x, y]) => {
+        rr(x, y, 7, 7, 1.6);
+        ctx.stroke();
+      });
+    } else {
+      ctx.stroke(new Path2D(ICON[name] || ""));
+    }
+    ctx.restore();
+  }
+
+  const bowl = new Image();
+  bowl.src = "assets/bowl.png";
+  const mark = new Image();
+  mark.src = "assets/foodie-mark.png";
+
+  function drawBackground(t) {
+    const zoom = 1.05 + 0.07 * (t / DUR);
+    const scale = Math.max(W / bowl.width, H / bowl.height) * zoom;
+    const dw = bowl.width * scale, dh = bowl.height * scale;
+    ctx.save();
+    ctx.filter = "brightness(1.12) saturate(1.08)";
+    ctx.drawImage(bowl, (W - dw) / 2, (H - dh) / 2 - 24, dw, dh);
+    ctx.restore();
+
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "rgba(10,10,9,0.40)");
+    g.addColorStop(0.34, "rgba(10,10,9,0.08)");
+    g.addColorStop(0.72, "rgba(10,10,9,0.32)");
+    g.addColorStop(1, "rgba(10,10,9,0.86)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    const v = ctx.createRadialGradient(W / 2, H * 0.44, H * 0.16, W / 2, H * 0.5, H * 0.8);
+    v.addColorStop(0, "rgba(0,0,0,0)");
+    v.addColorStop(1, "rgba(0,0,0,0.5)");
+    ctx.fillStyle = v;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  function drawHook(t) {
+    const a = clamp(seg(t, 0.3, 0.85)) * (1 - seg(t, 2.7, 3.2));
+    if (a <= 0.002) return;
+    const rise = (1 - easeOut(seg(t, 0.3, 0.95))) * 26;
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.translate(0, rise);
+    ctx.shadowColor = "rgba(0,0,0,0.6)";
+    ctx.shadowBlur = 28;
+    ctx.shadowOffsetY = 8;
+    label("Nemusíš to počítať.", W / 2, 262, 60, C.text, 600, "center", SERIF);
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+    label("Foodie to zapíše za teba.", W / 2, 314, 29, C.accent, 500, "center");
+    ctx.restore();
+  }
+
+  const PHONE = { x: 195, y: 392, w: 690, h: 1430, r: 66, inset: 16 };
+  const NAV = [
+    ["dashboard", "Doma"],
+    ["scale", "Vývoj"],
+    ["book", "Potraviny"],
+    ["utensils", "Recepty"],
+    ["chart", "Týždeň"],
+    ["settings", "Nastavenia"],
+  ];
+
+  function drawPhone(t) {
+    const p = PHONE;
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.62)";
+    ctx.shadowBlur = 90;
+    ctx.shadowOffsetY = 48;
+    ctx.fillStyle = "#0a0a09";
+    rr(p.x, p.y, p.w, p.h, p.r);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,255,255,0.10)";
+    ctx.lineWidth = 2.5;
+    rr(p.x + 1.5, p.y + 1.5, p.w - 3, p.h - 3, p.r - 1);
+    ctx.stroke();
+    ctx.restore();
+
+    const sx = p.x + p.inset, sy = p.y + p.inset;
+    const sw = p.w - p.inset * 2, sh = p.h - p.inset * 2;
+    ctx.save();
+    rr(sx, sy, sw, sh, p.r - 12);
+    ctx.clip();
+    drawScreen(t, sx, sy, sw, sh);
+    ctx.restore();
+  }
+
+  function drawScreen(t, sx, sy, sw, sh) {
+    ctx.save();
+    ctx.translate(sx, sy);
+
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, sw, sh);
+    const glow = ctx.createRadialGradient(sw * 0.82, -70, 20, sw * 0.82, -70, 640);
+    glow.addColorStop(0, "rgba(207,220,169,0.13)");
+    glow.addColorStop(1, "rgba(207,220,169,0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, sw, sh);
+
+    const pad = 26, cardW = sw - pad * 2;
+    const fill = ease(seg(t, 4.3, 5.75));
+
+    // status bar
+    label("9:41", pad, 42, 19, C.muted, 600);
+    ctx.fillStyle = C.subtle;
+    for (let i = 0; i < 4; i++) {
+      ctx.globalAlpha = i < 3 ? 1 : 0.45;
+      ctx.fillRect(sw - pad - 42 + i * 8, 32 - i * 2.4, 4, 8 + i * 2.4);
+    }
+    ctx.globalAlpha = 1;
+    rr(sw - pad - 14, 31, 16, 10, 3);
+    ctx.fillStyle = C.subtle;
+    ctx.fill();
+
+    // app header with brand
+    label("Foodie", pad + 50, 88, 26, C.text, 650);
+    if (mark.complete && mark.naturalWidth) {
+      ctx.save();
+      rr(pad, 62, 36, 36, 11);
+      ctx.clip();
+      ctx.drawImage(mark, pad, 62, 36, 36);
+      ctx.restore();
+    } else {
+      rr(pad, 62, 36, 36, 11);
+      ctx.fillStyle = C.accentSoft;
+      ctx.fill();
+    }
+    rr(sw - pad - 38, 60, 38, 38, 12);
+    ctx.fillStyle = C.card;
+    ctx.fill();
+    ctx.strokeStyle = C.line;
+    ctx.lineWidth = 1.5;
+    rr(sw - pad - 38, 60, 38, 38, 12);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(sw - pad - 19, 79, 7, 0, Math.PI * 2);
+    ctx.fillStyle = C.accent;
+    ctx.fill();
+
+    // page header
+    label("PREHĽAD", pad, 138, 16, C.accent, 650);
+    label("Dnes", pad, 190, 52, C.text, 600, "left", SERIF);
+    label("utorok 3. november · Štandardný deň", pad, 220, 20, C.muted, 450);
+
+    // week strip
+    const wsY = 242, wsH = 96;
+    rr(pad, wsY, cardW, wsH, 15);
+    ctx.fillStyle = C.card;
+    ctx.fill();
+    ctx.strokeStyle = C.line;
+    ctx.lineWidth = 1.5;
+    rr(pad, wsY, cardW, wsH, 15);
+    ctx.stroke();
+    const days = [["Po", 2], ["Ut", 3], ["St", 4], ["Št", 5], ["Pi", 6], ["So", 7], ["Ne", 8]];
+    const stripInner = cardW - 60;
+    days.forEach((d, i) => {
+      const cw = stripInner / 7;
+      const cx = pad + 30 + cw * i + cw / 2;
+      const active = i === 1;
+      if (active) {
+        rr(cx - cw / 2 + 3, wsY + 12, cw - 6, wsH - 24, 11);
+        ctx.fillStyle = C.accentSoft;
+        ctx.fill();
+      }
+      label(d[0], cx, wsY + 44, 15, active ? C.accent : C.subtle, 550, "center");
+      label(String(d[1]), cx, wsY + 72, 21, active ? C.accent : C.text, 650, "center");
+    });
+    ["‹", "›"].forEach((ch, i) => {
+      label(ch, i === 0 ? pad + 16 : sw - pad - 16, wsY + 56, 26, C.subtle, 500, "center");
+    });
+
+    // calorie card with ring
+    const cardY = 356, cardH = 392;
+    rr(pad, cardY, cardW, cardH, 18);
+    ctx.fillStyle = C.card;
+    ctx.fill();
+    ctx.strokeStyle = C.line;
+    ctx.lineWidth = 1.5;
+    rr(pad, cardY, cardW, cardH, 18);
+    ctx.stroke();
+
+    const cx = sw / 2, cy = cardY + 20 + 113, R = 100;
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.strokeStyle = C.surface3;
+    ctx.lineWidth = 16;
+    ctx.stroke();
+    const pct = 0.738 * fill;
+    if (pct > 0.002) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * pct);
+      ctx.strokeStyle = C.accent;
+      ctx.lineWidth = 16;
+      ctx.lineCap = "round";
+      ctx.shadowColor = "rgba(207,220,169,0.30)";
+      ctx.shadowBlur = 16;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    const remaining = 2000 - Math.round(1476 * fill);
+    label(grp(remaining), cx, cy + 12, 54, C.text, 500, "center", SERIF);
+    label("kcal zostáva", cx, cy + 42, 17, C.muted, 500, "center");
+
+    const stats = [
+      ["Prijaté", grp(Math.round(1476 * fill))],
+      ["Cieľ", "2 000"],
+      ["Zostáva", grp(remaining)],
+    ];
+    const statW = (cardW - 40) / 3;
+    stats.forEach((s, i) => {
+      const x = pad + 20 + statW * i + statW / 2;
+      label(s[0], x, cardY + cardH - 54, 15, C.subtle, 500, "center");
+      label(s[1], x, cardY + cardH - 26, 21, i === 2 ? C.accent : C.text, 650, "center");
+    });
+
+    // macro rows
+    const macroY = 772;
+    rr(pad, macroY, cardW, 118, 16);
+    ctx.fillStyle = C.card;
+    ctx.fill();
+    ctx.strokeStyle = C.line;
+    ctx.lineWidth = 1.5;
+    rr(pad, macroY, cardW, 118, 16);
+    ctx.stroke();
+    const macroData = [
+      ["Bielkoviny", 120, 150, C.protein],
+      ["Sacharidy", 180, 200, C.carbs],
+      ["Tuky", 58, 70, C.fat],
+    ];
+    const colW = (cardW - 40) / 3;
+    macroData.forEach((m, i) => {
+      const x = pad + 20 + colW * i;
+      label(m[0], x, macroY + 34, 15, C.muted, 500);
+      label(`${m[1]} g`, x, macroY + 62, 21, C.text, 650);
+      rr(x, macroY + 78, colW - 22, 6, 3);
+      ctx.fillStyle = C.surface3;
+      ctx.fill();
+      rr(x, macroY + 78, (colW - 22) * (m[1] / m[2]), 6, 3);
+      ctx.fillStyle = m[3];
+      ctx.fill();
+    });
+
+    // meals
+    label("Raňajky", pad, 938, 24, C.text, 650);
+    label("380 kcal", sw - pad, 938, 18, C.muted, 500, "right");
+    foodRow(958, "Ovsená kaša s bobuľami", "350 g · raňajky", "380 kcal", ease(seg(t, 4.4, 4.9)), 0);
+
+    label("Obed", pad, 1112, 24, C.text, 650);
+    const lunchA = ease(seg(t, 6.15, 6.55));
+    if (lunchA > 0) {
+      foodRow(1132, "Losos s avokádom", "250 g · obed", "520 kcal", lunchA, (1 - lunchA) * 80);
+    } else {
+      ctx.save();
+      ctx.setLineDash([9, 8]);
+      ctx.strokeStyle = C.line;
+      ctx.lineWidth = 2;
+      rr(pad, 1132, cardW, 88, 18);
+      ctx.stroke();
+      ctx.restore();
+      label("+  Pridať jedlo", sw / 2, 1183, 19, C.subtle, 500, "center");
+    }
+    const pulse = 1 + 0.06 * Math.sin(clamp(seg(t, 5.9, 6.9)) * Math.PI);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(sw - pad - 26, 1104, 24 * pulse, 0, Math.PI * 2);
+    ctx.fillStyle = C.peach;
+    ctx.fill();
+    label("+", sw - pad - 26, 1114, 26, C.dark, 600, "center");
+    ctx.restore();
+
+    // bottom nav — six items, real icons, active pill
+    const navY = sh - 112;
+    ctx.fillStyle = "rgba(22,22,19,0.92)";
+    ctx.fillRect(0, navY, sw, 112);
+    ctx.strokeStyle = C.line;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(0, navY);
+    ctx.lineTo(sw, navY);
+    ctx.stroke();
+    const navPad = 10, itemW = (sw - navPad * 2) / 6;
+    NAV.forEach(([ic, text], i) => {
+      const x = navPad + itemW * i;
+      const active = i === 0;
+      if (active) {
+        rr(x + 5, navY + 9, itemW - 10, 92, 11);
+        ctx.fillStyle = C.peach;
+        ctx.fill();
+      }
+      icon(ic, x + itemW / 2, navY + 44, 20, active ? C.dark : C.subtle);
+      label(text, x + itemW / 2, navY + 76, 14, active ? C.dark : C.subtle, 550, "center");
+    });
+
+    // toast — floats above the nav, like the real app
+    const toastA = ease(seg(t, 6.3, 6.65)) * (1 - ease(seg(t, 7.1, 7.4)));
+    if (toastA > 0) {
+      const txt = "✓  Zapísané do denníka";
+      ctx.font = `600 21px ${SANS}`;
+      const tw = ctx.measureText(txt).width + 48;
+      const tx = (sw - tw) / 2, ty = navY - 84 + (1 - toastA) * 18;
+      ctx.save();
+      ctx.globalAlpha = toastA;
+      ctx.shadowColor = "rgba(0,0,0,0.55)";
+      ctx.shadowBlur = 24;
+      ctx.shadowOffsetY = 10;
+      rr(tx, ty, tw, 56, 28);
+      ctx.fillStyle = C.accent;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+      label(txt, sw / 2, ty + 35, 21, C.dark, 650, "center");
+      ctx.restore();
+    }
+
+    // search sheet
+    const open = ease(seg(t, 7.0, 7.6)) * (1 - ease(seg(t, 8.55, 9.15)));
+    if (open > 0.002) {
+      const shH = 536;
+      const top = sh - shH * open;
+      ctx.save();
+      rr(0, top, sw, shH + 40, 30);
+      ctx.fillStyle = "#1b1b18";
+      ctx.fill();
+      ctx.strokeStyle = C.line;
+      ctx.lineWidth = 1.5;
+      rr(0, top, sw, shH + 40, 30);
+      ctx.stroke();
+
+      rr(sw / 2 - 32, top + 16, 64, 6, 3);
+      ctx.fillStyle = C.line;
+      ctx.fill();
+
+      const fX = 22, fY = top + 46, fW = sw - 44;
+      rr(fX, fY, fW, 58, 16);
+      ctx.fillStyle = C.card2;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(fX + 32, fY + 28, 8, 0, Math.PI * 2);
+      ctx.strokeStyle = C.subtle;
+      ctx.lineWidth = 2.4;
+      ctx.stroke();
+      label("losos", fX + 56, fY + 36, 21, C.text, 500);
+      if (Math.floor(t * 2) % 2 === 0) {
+        ctx.fillStyle = C.accent;
+        ctx.fillRect(fX + 122, fY + 18, 2, 22);
+      }
+
+      const rows = [
+        ["Losos čerstvý", "100 g · 208 kcal"],
+        ["Losos s avokádom", "250 g · 520 kcal"],
+      ];
+      rows.forEach((r, i) => {
+        const y = top + 126 + i * 98;
+        rr(fX, y, fW, 86, 16);
+        ctx.fillStyle = i === 1 ? "rgba(207,220,169,0.10)" : C.card;
+        ctx.fill();
+        ctx.strokeStyle = i === 1 ? C.accent : C.line;
+        ctx.lineWidth = i === 1 ? 2 : 1.5;
+        rr(fX, y, fW, 86, 16);
+        ctx.stroke();
+        label(r[0], fX + 20, y + 38, 21, C.text, 600);
+        label(r[1], fX + 20, y + 64, 17, C.muted, 450);
+        if (i === 1) {
+          ctx.beginPath();
+          ctx.arc(fX + fW - 34, y + 43, 15, 0, Math.PI * 2);
+          ctx.fillStyle = C.accent;
+          ctx.fill();
+          label("✓", fX + fW - 34, y + 50, 17, C.dark, 700, "center");
+        }
+      });
+
+      const btnY = top + 126 + 2 * 98 + 12;
+      rr(fX, btnY, fW, 74, 37);
+      ctx.fillStyle = C.peach;
+      ctx.fill();
+      label("Pridať do obeda · 250 g", sw / 2, btnY + 47, 22, C.dark, 650, "center");
+      ctx.restore();
+    }
+
+    ctx.restore();
+  }
+
+  function foodRow(y, name, sub, kcal, alpha, offsetX) {
+    const pad = 26, rowW = PHONE.w - PHONE.inset * 2 - pad * 2;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(offsetX, 0);
+    rr(pad, y, rowW, 88, 18);
+    ctx.fillStyle = C.card;
+    ctx.fill();
+    ctx.strokeStyle = C.line;
+    ctx.lineWidth = 1.5;
+    rr(pad, y, rowW, 88, 18);
+    ctx.stroke();
+    rr(pad + 16, y + 16, 56, 56, 14);
+    ctx.fillStyle = C.card2;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(pad + 44, y + 44, 13, 0, Math.PI * 2);
+    ctx.fillStyle = C.accentSoft;
+    ctx.fill();
+    label(name, pad + 84, y + 38, 21, C.text, 600);
+    label(sub, pad + 84, y + 64, 16, C.muted, 450);
+    label(kcal, pad + rowW - 18, y + 52, 20, C.accentStr, 650, "right");
+    ctx.restore();
+  }
+
+  function drawCTA(t) {
+    const a = ease(seg(t, 9.3, 9.95));
+    if (a <= 0.002) return;
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.fillStyle = "#0b0b0a";
+    ctx.fillRect(0, 0, W, H);
+    const warm = ctx.createRadialGradient(W * 0.5, H * 0.46, 40, W * 0.5, H * 0.52, H * 0.72);
+    warm.addColorStop(0, "rgba(240,172,136,0.10)");
+    warm.addColorStop(0.55, "rgba(207,220,169,0.045)");
+    warm.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = warm;
+    ctx.fillRect(0, 0, W, H);
+
+    if (mark.complete && mark.naturalWidth) {
+      const s = 132;
+      ctx.drawImage(mark, W / 2 - s / 2, 690, s, s);
+    }
+    label("Foodie", W / 2, 950, 108, C.text, 600, "center", SERIF);
+    label("Skenuj. Zapíš. Hotovo.", W / 2, 1014, 32, C.accent, 500, "center");
+
+    const bw = 460, bh = 92, bx = (W - bw) / 2, by = 1080;
+    rr(bx, by, bw, bh, 46);
+    ctx.fillStyle = C.peach;
+    ctx.fill();
+    label("Stiahni zdarma", W / 2, by + 58, 30, C.dark, 650, "center");
+    label("Pre iOS aj Android", W / 2, by + 152, 21, C.subtle, 500, "center");
+    ctx.restore();
+  }
+
+  function render(t) {
+    ctx.clearRect(0, 0, W, H);
+    if (bowl.complete && bowl.naturalWidth) {
+      drawBackground(t);
+    } else {
+      const fb = ctx.createRadialGradient(W * 0.32, H * 0.34, 60, W * 0.5, H * 0.55, H * 0.9);
+      fb.addColorStop(0, "#3a2f22");
+      fb.addColorStop(0.55, "#211d17");
+      fb.addColorStop(1, "#0d0c0a");
+      ctx.fillStyle = fb;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    const reveal = ease(seg(t, 3.35, 4.3));
+    if (reveal > 0.002) {
+      ctx.save();
+      ctx.globalAlpha = 0.38 * reveal;
+      ctx.fillStyle = "#0a0a09";
+      ctx.fillRect(0, 0, W, H);
+      ctx.restore();
+
+      ctx.save();
+      ctx.globalAlpha = reveal;
+      const dy = (1 - reveal) * 320;
+      const sc = 0.94 + 0.06 * reveal;
+      const anchorY = PHONE.y + PHONE.h * 0.6;
+      ctx.translate(W / 2, anchorY + dy);
+      ctx.scale(sc, sc);
+      ctx.translate(-W / 2, -anchorY);
+      drawPhone(t);
+      ctx.restore();
+    }
+
+    drawHook(t);
+    drawCTA(t);
+  }
+
+  const FRAME_MODE = new URLSearchParams(location.search).has("frames");
+  const FPS = 30;
+  let t0 = null, rec = null;
+  const chunks = [];
+
+  function whenReady(img, ms) {
+    return new Promise((res) => {
+      if (img.complete && img.naturalWidth) return res();
+      const fin = () => res();
+      img.addEventListener("load", fin, { once: true });
+      img.addEventListener("error", fin, { once: true });
+      setTimeout(fin, ms);
+    });
+  }
+
+  async function exportFrames() {
+    await Promise.all([whenReady(bowl, 4000), whenReady(mark, 2000)]);
+    const total = Math.round(DUR * FPS);
+    window.__export = { total, done: 0, started: performance.now() };
+    for (let i = 0; i < total; i++) {
+      render(i / FPS);
+      const blob = await new Promise((res) => canvas.toBlob(res, "image/jpeg", 0.94));
+      await fetch("/save?name=" + encodeURIComponent("frame_" + String(i).padStart(4, "0") + ".jpg"), { method: "POST", body: blob });
+      window.__export.done = i + 1;
+    }
+    window.__saved = { frames: total, done: true, elapsed: Math.round(performance.now() - window.__export.started) };
+  }
+
+  function pickMime() {
+    const candidates = [
+      "video/mp4;codecs=avc1.42E01E",
+      "video/mp4",
+      "video/webm;codecs=vp9",
+      "video/webm",
+    ];
+    for (const c of candidates) {
+      if (window.MediaRecorder && MediaRecorder.isTypeSupported(c)) return c;
+    }
+    return "";
+  }
+
+  async function post(blob, name) {
+    const res = await fetch("/save?name=" + encodeURIComponent(name), { method: "POST", body: blob });
+    return await res.text();
+  }
+
+  async function start() {
+    if (FRAME_MODE) {
+      await exportFrames();
+      return;
+    }
+    await Promise.all([whenReady(bowl, 1600), whenReady(mark, 900)]);
+    const mime = pickMime();
+    window.__mime = mime || "none";
+    const stream = canvas.captureStream(30);
+    const opts = { videoBitsPerSecond: 9_000_000 };
+    if (mime) opts.mimeType = mime;
+    rec = new MediaRecorder(stream, opts);
+    rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+    rec.onstop = async () => {
+      try {
+        const type = mime || "video/webm";
+        const blob = new Blob(chunks, { type });
+        const ext = type.indexOf("mp4") >= 0 ? "mp4" : "webm";
+        const v = await post(blob, "tiktok-foodie-1." + ext);
+        render(6.55);
+        const poster = await new Promise((res) => canvas.toBlob(res, "image/jpeg", 0.92));
+        const p = await post(poster, "tiktok-foodie-1-poster.jpg");
+        window.__saved = { video: v, poster: p, mime: type, bytes: blob.size };
+      } catch (err) {
+        window.__saved = { error: String(err) };
+      }
+    };
+    rec.start(200);
+    t0 = performance.now();
+    step();
+  }
+
+  function step() {
+    const t = (performance.now() - t0) / 1000;
+    window.__t = t;
+    render(Math.min(t, DUR));
+    if (t < DUR) setTimeout(step, 1000 / 30);
+    else setTimeout(() => { if (rec && rec.state !== "inactive") rec.stop(); }, 260);
+  }
+
+  start().catch((e) => { window.__saved = { error: String(e) }; });
+})();
+</script>
+</body>
+</html>

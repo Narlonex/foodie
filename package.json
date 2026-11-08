@@ -19,6 +19,7 @@
     "test:watch": "vitest",
     "test:integration": "node --env-file-if-exists=.env.local node_modules/vitest/vitest.mjs run tests/integration.test.ts",
     "db:migrate": "node --env-file-if-exists=.env.local scripts/migrate.mjs",
+    "db:seed:foods": "node --env-file-if-exists=.env.local scripts/import-food-catalog.mjs",
     "check": "npm run typecheck && npm run lint && npm run test"
   },
   "dependencies": {

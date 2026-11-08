@@ -3,6 +3,7 @@ import { requireViewer } from "@/lib/auth";
 import { parseDateParam, startOfWeek, todayIso, weekDates } from "@/lib/dates";
 import { listPlanItems, listPantryItems, listShoppingItems } from "@/lib/repositories/mealPlanner";
 import { listSavedMeals } from "@/lib/repositories/savedMeals";
+import { getHousehold } from "@/lib/repositories/households";
 import { pageMetadata } from "@/lib/pageMetadata";
 
 export async function generateMetadata() {
@@ -20,11 +21,12 @@ export default async function PlanPage({
   const weekStart = startOfWeek(parseDateParam(params.week, today));
   const dates = weekDates(weekStart);
 
-  const [items, recipes, shopping, pantry] = await Promise.all([
+  const [items, recipes, shopping, pantry, household] = await Promise.all([
     listPlanItems(viewer.user.id, dates[0]!, dates[6]!),
     listSavedMeals(viewer.user.id),
     listShoppingItems(viewer.user.id),
     listPantryItems(viewer.user.id),
+    getHousehold(viewer.user.id),
   ]);
 
   return (
@@ -35,6 +37,7 @@ export default async function PlanPage({
       recipes={recipes}
       shopping={shopping}
       pantry={pantry}
+      householdName={household?.name ?? null}
       language={viewer.profile.language}
       unitSystem={viewer.profile.unitSystem}
     />

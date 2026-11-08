@@ -9,6 +9,7 @@ import { initialFormState } from "@/actions/types";
 import { getTranslator, translate, type TranslationKey } from "@/i18n";
 import type { LabelScanResult } from "@/lib/label";
 import {
+  FOOD_CATEGORIES,
   NUTRIENT_KEYS,
   type Food,
   type Language,
@@ -209,6 +210,24 @@ export function CustomFoodDialog({
               <p className="field-error">{errorFor("barcode")}</p>
             ) : null}
           </div>
+          {!food ? (
+            <div className="field">
+              <label htmlFor="food-category">{t("foods.category")}</label>
+              <select
+                id="food-category"
+                name="category"
+                className="select"
+                defaultValue="other"
+              >
+                {FOOD_CATEGORIES.map((category) => (
+                  <option value={category} key={category}>
+                    {t(`category.${category}` as TranslationKey)}
+                  </option>
+                ))}
+              </select>
+              <p className="field-hint">{t("foods.categoryHelp")}</p>
+            </div>
+          ) : null}
           <div className="field">
             <label htmlFor="food-basis">{t("foods.basis")}</label>
             <select
@@ -344,6 +363,17 @@ export function CustomFoodDialog({
             <h3 className="form-section-title">{t("foods.nutrientsSection")}</h3>
             <p className="field-hint">{t("foods.nutrientsHint")}</p>
           </div>
+          {!food ? (
+            <label className="checkbox-row">
+              <input type="checkbox" name="submitToCatalog" />
+              <span>
+                <strong>{t("foods.submitToCatalog")}</strong>
+                <span className="field-hint">
+                  {t("foods.submitToCatalogHelp")}
+                </span>
+              </span>
+            </label>
+          ) : null}
           <div className="form-grid">
             {NUTRIENT_KEYS.map((key) => (
               <div className="field" key={key}>

@@ -14,6 +14,7 @@ import {
   updateCustomFood,
 } from "@/lib/repositories/foods";
 import { logExternalFood, logFoodById } from "@/lib/repositories/diary";
+import { createFoodSubmission } from "@/lib/repositories/catalogAdmin";
 import {
   amountUnitSchema,
   customFoodSchema,
@@ -205,6 +206,8 @@ function parseCustomFood(formData: FormData) {
     name: String(formData.get("name") ?? ""),
     brand: String(formData.get("brand") ?? ""),
     barcode: String(formData.get("barcode") ?? ""),
+    category: String(formData.get("category") ?? "other"),
+    submitToCatalog: formData.get("submitToCatalog") === "on",
     basisType,
     servingSize: basisType === "serving" ? servingSize : null,
     servingUnit: basisType === "serving" ? servingUnitRaw : null,
@@ -258,10 +261,29 @@ export async function createCustomFoodAction(
       drainedWeight: parsed.data.drainedWeight,
       ...(parsePhoto(parsed.data.photo) ?? {}),
     });
+    let submitted = false;
+    if (parsed.data.submitToCatalog) {
+      try {
+        await createFoodSubmission(viewer.user.id, {
+          name: food.name,
+          brand: food.brand,
+          barcode: food.barcode,
+          category: parsed.data.category,
+          basisType: food.basisType,
+          servingSize: food.servingSize,
+          servingUnit: food.servingUnit,
+          nutrients: food.nutrients,
+        });
+        submitted = true;
+        revalidatePath("/admin");
+      } catch {
+        submitted = false;
+      }
+    }
     revalidatePath("/foods");
     return {
       status: "success",
-      message: "foods.created",
+      message: submitted ? "foods.createdSubmitted" : "foods.created",
       createdFood: food,
     };
   } catch {

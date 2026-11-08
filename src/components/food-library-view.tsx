@@ -39,6 +39,7 @@ export function FoodLibraryView({
   recent,
   savedMeals,
   usdaEnabled = false,
+  autoOpenCustom = false,
 }: {
   language: Language;
   unitSystem: UnitSystem;
@@ -48,11 +49,12 @@ export function FoodLibraryView({
   recent: Food[];
   savedMeals: SavedMeal[];
   usdaEnabled?: boolean;
+  autoOpenCustom?: boolean;
 }) {
   const t = getTranslator(language);
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("custom");
-  const [newFoodOpen, setNewFoodOpen] = useState(false);
+  const [newFoodOpen, setNewFoodOpen] = useState(autoOpenCustom);
   const [editingFood, setEditingFood] = useState<Food | null>(null);
   const [deletingFood, setDeletingFood] = useState<Food | null>(null);
   const [quickFood, setQuickFood] = useState<Food | null>(null);

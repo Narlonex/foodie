@@ -53,7 +53,7 @@ export function mergeSearchResults(
   off: FoodCandidate[],
   usda: FoodCandidate[],
   query: string,
-  limit = 24,
+  limit = 40,
 ): FoodCandidate[] {
   const normalizedQuery = normalizeFoodName(query);
   const seen = new Set<string>();

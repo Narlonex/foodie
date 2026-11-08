@@ -11,11 +11,19 @@ vi.mock("@/lib/foods/usda", () => ({
   isUsdaEnabled: vi.fn(),
   searchUsda: vi.fn(),
 }));
+vi.mock("@/lib/repositories/catalog", () => ({
+  searchCatalogFoods: vi.fn(),
+  recordCatalogSearchMiss: vi.fn(),
+}));
 
 import { GET } from "@/app/api/foods/search/route";
 import { getViewer } from "@/lib/auth";
 import { FoodApiError, searchOpenFoodFacts } from "@/lib/foods/openFoodFacts";
 import { isUsdaEnabled, searchUsda } from "@/lib/foods/usda";
+import {
+  recordCatalogSearchMiss,
+  searchCatalogFoods,
+} from "@/lib/repositories/catalog";
 import { EMPTY_NUTRIENTS, type FoodCandidate, type FoodSource } from "@/lib/types";
 
 const viewer = {
@@ -47,16 +55,18 @@ function candidate(
   };
 }
 
-function search(query: string, source: string) {
+function search(query: string, source: string, page = 1) {
   return GET(
     new NextRequest(
-      `http://localhost/api/foods/search?q=${encodeURIComponent(query)}&source=${source}`,
+      `http://localhost/api/foods/search?q=${encodeURIComponent(query)}&source=${source}&page=${page}`,
     ),
   );
 }
 
 const offSearch = vi.mocked(searchOpenFoodFacts);
 const usdaSearch = vi.mocked(searchUsda);
+const catalogSearch = vi.mocked(searchCatalogFoods);
+const recordMiss = vi.mocked(recordCatalogSearchMiss);
 const usdaAvailable = vi.mocked(isUsdaEnabled);
 const viewerMock = vi.mocked(getViewer);
 
@@ -66,6 +76,8 @@ beforeEach(() => {
   usdaAvailable.mockReturnValue(true);
   offSearch.mockResolvedValue([candidate("off", "off-1", "Chicken breast, cooked")]);
   usdaSearch.mockResolvedValue([candidate("usda", "usda-1", "Chicken breast")]);
+  catalogSearch.mockResolvedValue([]);
+  recordMiss.mockResolvedValue(undefined);
 });
 
 describe("combined food search", () => {
@@ -122,5 +134,63 @@ describe("combined food search", () => {
 
     expect(response.status).toBe(200);
     expect(usdaSearch).not.toHaveBeenCalled();
+  });
+
+  it("passes the requested page to both databases", async () => {
+    const response = await search("chicken breast", "both", 2);
+    const payload = (await response.json()) as {
+      page: number;
+      hasMore: boolean;
+    };
+
+    expect(response.status).toBe(200);
+    expect(offSearch).toHaveBeenCalledWith("chicken breast", 2);
+    expect(usdaSearch).toHaveBeenCalledWith("chicken breast", 2);
+    expect(payload.page).toBe(2);
+    expect(payload.hasMore).toBe(false);
+  });
+
+  it("keeps local catalog results when an external source fails", async () => {
+    catalogSearch.mockResolvedValue([
+      { ...candidate("off", "local-1", "Chicken breast"), catalog: true },
+    ]);
+    offSearch.mockRejectedValue(new FoodApiError("unavailable", "OFF is down."));
+
+    const response = await search("chicken breast", "off");
+    const payload = (await response.json()) as { results: FoodCandidate[] };
+
+    expect(response.status).toBe(200);
+    expect(payload.results).toHaveLength(1);
+    expect(payload.results[0]?.catalog).toBe(true);
+  });
+
+  it("browses a category without requiring a query", async () => {
+    catalogSearch.mockResolvedValue([
+      { ...candidate("off", "local-1", "Chicken breast"), catalog: true },
+    ]);
+
+    const response = await GET(
+      new NextRequest(
+        "http://localhost/api/foods/search?category=meat&source=off",
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    expect(catalogSearch).toHaveBeenCalledWith(
+      "",
+      "off",
+      40,
+      expect.objectContaining({ category: "meat", offset: 0 }),
+    );
+  });
+
+  it("records a zero-result search for the missing-food radar", async () => {
+    catalogSearch.mockResolvedValue([]);
+    offSearch.mockResolvedValue([]);
+
+    const response = await search("unlisted food", "off");
+
+    expect(response.status).toBe(200);
+    expect(recordMiss).toHaveBeenCalledWith("unlisted food");
   });
 });

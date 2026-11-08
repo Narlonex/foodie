@@ -283,5 +283,6 @@ describe("goal projection and simulator", () => {
   it("uses 7,700 kcal per kilogram for the simulator", () => {
     expect(simulateWeight(80, 2500, 2000, 4)).toBeCloseTo(78.2, 1);
     expect(simulateWeight(80, 2500, 2500, 4)).toBe(80);
+    expect(simulateWeight(80, 2500, 2000, 26)).toBeCloseTo(68.2, 1);
   });
 });

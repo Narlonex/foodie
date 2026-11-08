@@ -57,6 +57,30 @@ export default function manifest(): MetadataRoute.Manifest {
         ],
       },
       {
+        name: "Quick add food",
+        short_name: "Add food",
+        url: "/?quick=1",
+        icons: [
+          {
+            src: "/icons/icon-192.png",
+            sizes: "192x192",
+            type: "image/png",
+          },
+        ],
+      },
+      {
+        name: "Scan a nutrition label",
+        short_name: "Scan label",
+        url: "/foods?label=1",
+        icons: [
+          {
+            src: "/icons/icon-192.png",
+            sizes: "192x192",
+            type: "image/png",
+          },
+        ],
+      },
+      {
         name: "Progress",
         short_name: "Progress",
         url: "/progress",

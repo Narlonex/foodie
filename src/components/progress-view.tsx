@@ -10,7 +10,12 @@ import {
 import { getTranslator, translate, type TranslationKey } from "@/i18n";
 import { formatLongDate, formatShortDate } from "@/lib/dates";
 import { formatKcal, formatNumber } from "@/lib/format";
-import type { BodyMeasurement, Language, WeightEntry } from "@/lib/types";
+import type {
+  BodyMeasurement,
+  Language,
+  MeasurementUnit,
+  WeightEntry,
+} from "@/lib/types";
 import type { AdaptiveCheckIn } from "@/lib/weightTrend";
 import type { GoalProjection } from "@/lib/analytics";
 import { GoalProjectionCard } from "./goal-projection-card";
@@ -22,6 +27,7 @@ export function ProgressView({
   checkIn,
   today,
   language,
+  measurementUnit,
   currentTargetKcal,
   currentDayTypeName,
   hasDefaultDayType,
@@ -35,6 +41,7 @@ export function ProgressView({
   checkIn: AdaptiveCheckIn;
   today: string;
   language: Language;
+  measurementUnit: MeasurementUnit;
   currentTargetKcal: number | null;
   currentDayTypeName: string | null;
   hasDefaultDayType: boolean;
@@ -227,6 +234,7 @@ export function ProgressView({
         measurements={measurements}
         today={today}
         language={language}
+        measurementUnit={measurementUnit}
       />
 
       <section className="card card-pad stack">

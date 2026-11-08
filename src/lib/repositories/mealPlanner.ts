@@ -3,6 +3,7 @@ import { query, queryOne, withTransaction } from "../db";
 import { aggregateShoppingList, planPortion } from "../mealPlanning";
 import { insertEntryWithFood } from "./diary";
 import { getSavedMeal } from "./savedMeals";
+import { getVisibleUserIds } from "./households";
 import type {
   AmountUnit,
   BasisType,
@@ -35,6 +36,7 @@ interface PlanRow {
 interface ShoppingRow {
   id: string;
   name: string;
+  name_key: string;
   quantity: string | number | null;
   unit: ShoppingUnit;
   checked: boolean;
@@ -114,11 +116,12 @@ export async function listPlanItems(
   from: string,
   to: string,
 ): Promise<PlanItem[]> {
+  const visible = await getVisibleUserIds(userId);
   const rows = await query<PlanRow>(
     `SELECT id, plan_date, meal, saved_meal_id, name, amount, amount_unit,
             basis_type, serving_size, nutrients, ingredients, logged_at
        FROM meal_plan_items
-      WHERE user_id = $1 AND plan_date BETWEEN $2 AND $3
+      WHERE user_id = ANY($1::uuid[]) AND plan_date BETWEEN $2 AND $3
       ORDER BY plan_date,
                CASE meal
                  WHEN 'breakfast' THEN 1
@@ -127,7 +130,7 @@ export async function listPlanItems(
                  ELSE 4
                END,
                created_at`,
-    [userId, from, to],
+    [visible, from, to],
   );
   return rows.map(mapPlan);
 }
@@ -168,11 +171,12 @@ export async function deletePlanItem(
   userId: string,
   id: string,
 ): Promise<boolean> {
+  const visible = await getVisibleUserIds(userId);
   const row = await queryOne<{ id: string }>(
     `DELETE FROM meal_plan_items
-      WHERE id = $1 AND user_id = $2 AND logged_at IS NULL
+      WHERE id = $1 AND user_id = ANY($2::uuid[]) AND logged_at IS NULL
       RETURNING id`,
-    [id, userId],
+    [id, visible],
   );
   return Boolean(row);
 }
@@ -183,15 +187,16 @@ export async function logPlannedMeal(
   meal: Meal,
 ): Promise<number> {
   return withTransaction(async (client) => {
+    const visible = await getVisibleUserIds(userId);
     const result = await client.query<PlanRow>(
       `SELECT id, plan_date, meal, saved_meal_id, name, amount, amount_unit,
               basis_type, serving_size, nutrients, ingredients, logged_at
          FROM meal_plan_items
-        WHERE user_id = $1 AND plan_date = $2 AND meal = $3
+        WHERE user_id = ANY($1::uuid[]) AND plan_date = $2 AND meal = $3
           AND logged_at IS NULL
         ORDER BY created_at
         FOR UPDATE`,
-      [userId, date, meal],
+      [visible, date, meal],
     );
 
     for (const row of result.rows) {
@@ -230,8 +235,8 @@ export async function logPlannedMeal(
       await client.query(
         `UPDATE meal_plan_items
             SET logged_at = now()
-          WHERE user_id = $1 AND id = ANY($2::uuid[])`,
-        [userId, ids],
+          WHERE id = ANY($1::uuid[])`,
+        [ids],
       );
     }
     return ids.length;
@@ -239,14 +244,34 @@ export async function logPlannedMeal(
 }
 
 export async function listShoppingItems(userId: string): Promise<ShoppingItem[]> {
+  const visible = await getVisibleUserIds(userId);
   const rows = await query<ShoppingRow>(
-    `SELECT id, name, quantity, unit, checked, source
+    `SELECT id, name, name_key, quantity, unit, checked, source
        FROM shopping_list_items
-      WHERE user_id = $1
+      WHERE user_id = ANY($1::uuid[])
       ORDER BY checked, lower(name)`,
-    [userId],
+    [visible],
   );
-  return rows.map(mapShopping);
+  const grouped = new Map<string, ShoppingItem>();
+  for (const row of rows) {
+    const key = `${row.name_key}\u0000${row.unit}`;
+    const mapped = mapShopping(row);
+    const existing = grouped.get(key);
+    if (!existing) {
+      grouped.set(key, mapped);
+      continue;
+    }
+    grouped.set(key, {
+      ...existing,
+      quantity:
+        existing.quantity === null || mapped.quantity === null
+          ? null
+          : existing.quantity + mapped.quantity,
+      checked: existing.checked && mapped.checked,
+      source: existing.source === "manual" || mapped.source === "manual" ? "manual" : "plan",
+    });
+  }
+  return [...grouped.values()];
 }
 
 export async function addShoppingItem(
@@ -276,7 +301,7 @@ export async function generateShoppingList(
     listPlanItems(userId, from, to),
     listPantryItems(userId),
     query<ShoppingRow>(
-      `SELECT id, name, quantity, unit, checked, source
+      `SELECT id, name, name_key, quantity, unit, checked, source
          FROM shopping_list_items
         WHERE user_id = $1 AND source = 'plan'`,
       [userId],
@@ -318,48 +343,86 @@ export async function toggleShoppingItem(
   id: string,
   checked: boolean,
 ): Promise<boolean> {
-  const row = await queryOne<{ id: string }>(
-    `UPDATE shopping_list_items
-        SET checked = $3, updated_at = now()
-      WHERE id = $1 AND user_id = $2
-      RETURNING id`,
-    [id, userId, checked],
+  const visible = await getVisibleUserIds(userId);
+  const target = await queryOne<{ name_key: string; unit: ShoppingUnit }>(
+    `SELECT name_key, unit FROM shopping_list_items
+      WHERE id = $1 AND user_id = ANY($2::uuid[])`,
+    [id, visible],
   );
-  return Boolean(row);
+  if (!target) return false;
+  const rows = await query<{ id: string }>(
+    `UPDATE shopping_list_items
+        SET checked = $4, updated_at = now()
+      WHERE user_id = ANY($1::uuid[]) AND name_key = $2 AND unit = $3
+      RETURNING id`,
+    [visible, target.name_key, target.unit, checked],
+  );
+  return rows.length > 0;
 }
 
 export async function deleteShoppingItem(
   userId: string,
   id: string,
 ): Promise<boolean> {
-  const row = await queryOne<{ id: string }>(
-    `DELETE FROM shopping_list_items
-      WHERE id = $1 AND user_id = $2
-      RETURNING id`,
-    [id, userId],
+  const visible = await getVisibleUserIds(userId);
+  const target = await queryOne<{ name_key: string; unit: ShoppingUnit }>(
+    `SELECT name_key, unit FROM shopping_list_items
+      WHERE id = $1 AND user_id = ANY($2::uuid[])`,
+    [id, visible],
   );
-  return Boolean(row);
+  if (!target) return false;
+  const rows = await query<{ id: string }>(
+    `DELETE FROM shopping_list_items
+      WHERE user_id = ANY($1::uuid[]) AND name_key = $2 AND unit = $3
+      RETURNING id`,
+    [visible, target.name_key, target.unit],
+  );
+  return rows.length > 0;
 }
 
 export async function clearCheckedShoppingItems(userId: string): Promise<number> {
+  const visible = await getVisibleUserIds(userId);
   const rows = await query<{ id: string }>(
     `DELETE FROM shopping_list_items
-      WHERE user_id = $1 AND checked = true
+      WHERE user_id = ANY($1::uuid[]) AND checked = true
       RETURNING id`,
-    [userId],
+    [visible],
   );
   return rows.length;
 }
 
 export async function listPantryItems(userId: string): Promise<PantryItem[]> {
+  const visible = await getVisibleUserIds(userId);
   const rows = await query<PantryRow>(
     `SELECT id, name, name_key, quantity, unit, expires_on
        FROM pantry_items
-      WHERE user_id = $1
+      WHERE user_id = ANY($1::uuid[])
       ORDER BY expires_on NULLS LAST, lower(name)`,
-    [userId],
+    [visible],
   );
-  return rows.map(mapPantry);
+  const grouped = new Map<string, PantryItem>();
+  for (const row of rows) {
+    const key = `${row.name_key}\u0000${row.unit}`;
+    const mapped = mapPantry(row);
+    const existing = grouped.get(key);
+    if (!existing) {
+      grouped.set(key, mapped);
+      continue;
+    }
+    grouped.set(key, {
+      ...existing,
+      quantity: existing.quantity + mapped.quantity,
+      expiresOn:
+        existing.expiresOn === null
+          ? mapped.expiresOn
+          : mapped.expiresOn === null
+            ? existing.expiresOn
+            : existing.expiresOn < mapped.expiresOn
+              ? existing.expiresOn
+              : mapped.expiresOn,
+    });
+  }
+  return [...grouped.values()];
 }
 
 export async function addPantryItem(
@@ -391,9 +454,18 @@ export async function deletePantryItem(
   userId: string,
   id: string,
 ): Promise<boolean> {
-  const row = await queryOne<{ id: string }>(
-    `DELETE FROM pantry_items WHERE id = $1 AND user_id = $2 RETURNING id`,
-    [id, userId],
+  const visible = await getVisibleUserIds(userId);
+  const target = await queryOne<{ name_key: string; unit: PantryUnit }>(
+    `SELECT name_key, unit FROM pantry_items
+      WHERE id = $1 AND user_id = ANY($2::uuid[])`,
+    [id, visible],
   );
-  return Boolean(row);
+  if (!target) return false;
+  const rows = await query<{ id: string }>(
+    `DELETE FROM pantry_items
+      WHERE user_id = ANY($1::uuid[]) AND name_key = $2 AND unit = $3
+      RETURNING id`,
+    [visible, target.name_key, target.unit],
+  );
+  return rows.length > 0;
 }

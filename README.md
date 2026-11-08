@@ -15,6 +15,12 @@ The application is a working MVP, not a clickable mockup: accounts, diaries, cus
 - **Favorites, recents and quick add** — favorites persist; recents come from actual diary entries; quick add keeps the amount and meal confirmation step.
 - **Saved meals** — save a named set of foods and amounts, edit it, and log its contents to any date/meal.
 - **Weekly meal plan, shopping list and pantry** — plan recipes by grams or portions on a seven-day board, log a whole planned meal to the diary in one action, generate a shopping list from the week's ingredients, subtract pantry stock automatically, and track pantry expiry dates.
+- **Shared food catalog** — a local PostgreSQL catalog (roughly 15,000 Open Food Facts products with 38,000 aliases) searched with full-text and trigram indexes, so lookups stay fast and keep working when the external APIs are slow. Results can be filtered by food category and by "verified only".
+- **Missing-food radar** — searches that return nothing are aggregated in the admin area, so gaps in the catalog are visible instead of silently forgotten.
+- **Food submissions** — a custom food can be offered to the shared catalog; the admin approves it and the approved copy is stored as a verified catalog row for everyone in the app.
+- **Households** — create or join a household with a code and share the diary summary, meal plan, shopping list and pantry with the people you actually cook with. Everything still belongs to the user who wrote it.
+- **Coach mode** — invite a coach with a one-time code. A coach sees only seven-day aggregates (logged days, average calories, protein and latest weight), never the diary itself, and access can be revoked at any time.
+- **Admin dashboard** — catalog totals, verified foods, data-quality counters (missing energy, missing macros, duplicate barcodes), pending submissions, missing searches, import runs and the newest catalog rows. The oldest account is not assumed to be the owner; admin rights are an explicit flag.
 - **Data export** — download a complete JSON backup of the account (diary, foods, recipes, day types, weight, measurements, habits, plan, shopping list and pantry) or a CSV of diary entries. Files exclude passwords, session tokens and image bytes.
 - **Copy Day and Repeat Meal** — copy quantities between dates/meals with a destination preview. Existing entries are preserved; an explicit confirmation is required before duplicates are created.
 - **Day types** — create named day types with their own calorie, protein, carbohydrate and fat targets, assign them to specific dates, and switch a date's type without changing logged food. A default day type supplies targets on unassigned dates.
@@ -143,6 +149,10 @@ The schema lives in [`db/migrations/001_init.sql`](db/migrations/001_init.sql). 
 - `saved_meals` and `saved_meal_items` — named food/amount combinations and validated references.
 - `daily_habits` — optional per-user, per-day water, caffeine and alcohol totals; missing days are not treated as zero.
 - `body_measurements` — optional per-user, per-day circumference measurements in centimetres, independent of weight.
+- `catalog_foods`, `catalog_aliases`, `catalog_search_misses` — the shared food catalog with normalized names, aliases, a generated search vector and the aggregated radar of searches without results.
+- `food_submissions` — user-proposed foods with an approval workflow and a reference to the verified catalog row that was created.
+- `households`, `household_members` — shared meal plan, shopping list and pantry membership; individual diary rows keep their original `user_id`.
+- `coach_clients`, `coach_invites` — one-time coach invitations and active coach/client links, plus the `is_admin` flag on `profiles`.
 
 Indexes cover per-user/per-date diary reads, recent entries, favorites, source lookup, assignments and saved-meal items. All application queries scope by the authenticated user ID; no client-supplied owner ID is trusted.
 
@@ -152,7 +162,7 @@ Indexes cover per-user/per-date diary reads, recent entries, favorites, source l
 npm run db:migrate   # reads .env.local or DATABASE_URL
 ```
 
-Migrations are numbered `001`–`008` (the two `004` files cover separate features), and each one is recorded in `schema_migrations`. Add new numbered SQL files under `db/migrations/` and rerun the command. Migrations are not automatically applied by `npm run build` or by the app at runtime.
+Migrations are numbered `001`–`011` (the two `004` files cover separate features), and each one is recorded in `schema_migrations`. Add new numbered SQL files under `db/migrations/` and rerun the command. Migrations are not automatically applied by `npm run build` or by the app at runtime.
 
 ## Tests and checks
 

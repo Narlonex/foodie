@@ -124,6 +124,7 @@ interface UsdaSearchInput {
   query: string;
   dataType: string[];
   pageSize: number;
+  pageNumber: number;
 }
 
 async function requestUsdaFoods(input: UsdaSearchInput): Promise<UsdaFood[]> {
@@ -146,7 +147,7 @@ async function requestUsdaFoods(input: UsdaSearchInput): Promise<UsdaFood[]> {
         query: input.query,
         dataType: input.dataType,
         pageSize: input.pageSize,
-        pageNumber: 1,
+        pageNumber: input.pageNumber,
       }),
       signal: AbortSignal.timeout(9_000),
       next: { revalidate: 600 },
@@ -170,11 +171,15 @@ async function requestUsdaFoods(input: UsdaSearchInput): Promise<UsdaFood[]> {
   return Array.isArray(payload.foods) ? payload.foods : [];
 }
 
-export async function searchUsda(query: string): Promise<FoodCandidate[]> {
+export async function searchUsda(
+  query: string,
+  page = 1,
+): Promise<FoodCandidate[]> {
   const foods = await requestUsdaFoods({
     query,
-    dataType: ["Foundation", "SR Legacy"],
-    pageSize: 16,
+    dataType: ["Foundation", "SR Legacy", "Branded"],
+    pageSize: 24,
+    pageNumber: page,
   });
   const seen = new Set<string>();
   const results: FoodCandidate[] = [];
@@ -258,6 +263,7 @@ export async function lookupUsdaBarcode(barcode: string): Promise<FoodCandidate>
     query: barcode,
     dataType: ["Branded"],
     pageSize: 10,
+    pageNumber: 1,
   });
   const wanted = gtinKey(barcode);
   const matches = foods.filter((food) => gtinKey(food.gtinUpc) === wanted);

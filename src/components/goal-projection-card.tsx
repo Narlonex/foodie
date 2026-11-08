@@ -15,6 +15,8 @@ function signed(value: number, language: Language, digits = 2): string {
   return `${value > 0 ? "+" : "−"}${formatted}`;
 }
 
+const WEEK_PRESETS = [4, 8, 12, 16, 26, 52] as const;
+
 export function GoalProjectionCard({
   projection,
   goalWeightKg,
@@ -32,7 +34,7 @@ export function GoalProjectionCard({
 }) {
   const t = getTranslator(language);
   const defaultIntake = currentTargetKcal ?? maintenanceKcal ?? null;
-  const [weeks, setWeeks] = useState(8);
+  const [weeksInput, setWeeksInput] = useState("8");
   const [intake, setIntake] = useState(
     defaultIntake === null ? "" : String(defaultIntake),
   );
@@ -40,8 +42,12 @@ export function GoalProjectionCard({
   const parsedIntake = Number(intake.replace(",", "."));
   const validIntake =
     Number.isFinite(parsedIntake) && parsedIntake >= 500 && parsedIntake <= 10_000;
+  const parsedWeeks = Number(weeksInput.replace(",", "."));
+  const validWeeks =
+    Number.isInteger(parsedWeeks) && parsedWeeks >= 1 && parsedWeeks <= 104;
+  const weeks = validWeeks ? parsedWeeks : null;
   const simulated =
-    projection && maintenanceKcal !== null && validIntake
+    projection && maintenanceKcal !== null && validIntake && weeks !== null
       ? simulateWeight(
           projection.currentKg,
           maintenanceKcal,
@@ -179,19 +185,39 @@ export function GoalProjectionCard({
                 <label htmlFor="simulator-weeks">
                   {t("projection.simulatorWeeks")}
                 </label>
-                <select
+                <input
                   id="simulator-weeks"
-                  className="select"
-                  value={weeks}
-                  onChange={(event) => setWeeks(Number(event.target.value))}
-                >
-                  <option value={4}>4</option>
-                  <option value={8}>8</option>
-                  <option value={12}>12</option>
-                </select>
+                  className="input"
+                  type="number"
+                  min={1}
+                  max={104}
+                  step={1}
+                  inputMode="numeric"
+                  value={weeksInput}
+                  onChange={(event) => setWeeksInput(event.target.value)}
+                  aria-invalid={weeksInput !== "" && !validWeeks}
+                />
               </div>
             </div>
-            {simulated === null ? (
+            <div
+              className="segmented simulator-presets"
+              role="group"
+              aria-label={t("projection.simulatorWeeks")}
+            >
+              {WEEK_PRESETS.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  aria-pressed={weeks === preset}
+                  onClick={() => setWeeksInput(String(preset))}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+            {!validWeeks ? (
+              <p className="field-error">{t("projection.weeksInvalid")}</p>
+            ) : simulated === null ? (
               <p className="field-error">
                 {t("search.amountRequired")}
               </p>
@@ -199,7 +225,7 @@ export function GoalProjectionCard({
               <div className="simulator-result" role="status">
                 <div>
                   <span>
-                    {t("projection.simulatorResult", { weeks })}
+                    {t("projection.simulatorResult", { weeks: weeks ?? 0 })}
                   </span>
                   <strong>
                     {formatNumber(simulated, language, 1)} {t("units.kg")}

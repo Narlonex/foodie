@@ -20,6 +20,24 @@ export type Nutrients = Record<NutrientKey, number | null>;
 export type BasisType = "100g" | "100ml" | "serving";
 export type AmountUnit = "g" | "ml" | "serving";
 export type FoodSource = "off" | "usda" | "custom";
+export const FOOD_CATEGORIES = [
+  "meat",
+  "fish",
+  "eggs",
+  "dairy",
+  "grains",
+  "bakery",
+  "vegetables",
+  "fruit",
+  "fats",
+  "nuts",
+  "legumes",
+  "prepared",
+  "snacks",
+  "beverages",
+  "other",
+] as const;
+export type FoodCategory = (typeof FOOD_CATEGORIES)[number];
 export const PREPARATION_STATES = ["raw", "cooked", "unspecified"] as const;
 export type Preparation = (typeof PREPARATION_STATES)[number];
 export const DASHBOARD_NUTRIENTS = [
@@ -36,6 +54,7 @@ export type EnergySource = "provided" | "calculated" | "unknown";
 export type Language = "en" | "sk" | "cs";
 export type Theme = "dark" | "light";
 export type UnitSystem = "metric" | "imperial";
+export type MeasurementUnit = "cm" | "in";
 export type GoalMode = "cut" | "maintenance" | "bulk";
 export type Sex = "female" | "male" | "other";
 export const ACTIVITY_LEVELS = [
@@ -109,6 +128,10 @@ export interface FoodCandidate extends FoodNutrition {
   packageQuantity: number | null;
   packageUnit: "g" | "ml" | null;
   drainedWeight: number | null;
+  /** True when the row came from Foodie's local catalog rather than a live API. */
+  catalog?: boolean;
+  category?: string;
+  verified?: boolean;
 }
 
 export interface DiaryEntry extends FoodNutrition {
@@ -167,6 +190,7 @@ export interface Profile {
   language: Language;
   theme: Theme;
   unitSystem: UnitSystem;
+  measurementUnit: MeasurementUnit;
   goalMode: GoalMode;
   maintenanceCalories: number | null;
   goalWeightKg: number | null;
@@ -179,6 +203,8 @@ export interface Profile {
   sex: Sex | null;
   activityLevel: ActivityLevel | null;
   onboardingCompleted: boolean;
+  /** Admin tools are hidden and server actions refuse non-admin accounts. */
+  isAdmin?: boolean;
   /** Nutrient cards the dashboard renders. Calories are always included. */
   dashboardNutrients: DashboardNutrient[];
 }

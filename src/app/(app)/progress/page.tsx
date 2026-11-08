@@ -41,6 +41,7 @@ export default async function ProgressPage() {
       checkIn={checkIn}
       today={today}
       language={viewer.profile.language}
+      measurementUnit={viewer.profile.measurementUnit}
       currentTargetKcal={effective.dayType?.kcal ?? null}
       currentDayTypeName={effective.dayType?.name ?? null}
       hasDefaultDayType={viewer.profile.defaultDayTypeId !== null}

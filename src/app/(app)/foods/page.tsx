@@ -14,8 +14,14 @@ export async function generateMetadata() {
   return pageMetadata("nav.foodLibrary");
 }
 
-export default async function FoodsPage() {
+export default async function FoodsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ label?: string | string[] }>;
+}) {
   const viewer = await requireViewer();
+  const params = await searchParams;
+  const autoOpenCustom = params.label === "1";
   const [customFoods, favorites, recent, savedMeals] = await Promise.all([
     listCustomFoods(viewer.user.id),
     listFavoriteFoods(viewer.user.id),
@@ -33,6 +39,7 @@ export default async function FoodsPage() {
       recent={recent}
       savedMeals={savedMeals}
       usdaEnabled={viewer.profile.usdaEnabled && isUsdaConfigured()}
+      autoOpenCustom={autoOpenCustom}
     />
   );
 }

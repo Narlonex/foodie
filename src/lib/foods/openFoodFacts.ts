@@ -459,11 +459,15 @@ function countryPriority(hit: Record<string, unknown>): number {
   return 1;
 }
 
-export async function searchOpenFoodFacts(query: string): Promise<FoodCandidate[]> {
+export async function searchOpenFoodFacts(
+  query: string,
+  page = 1,
+): Promise<FoodCandidate[]> {
   const perform = async (text: string): Promise<FoodCandidate[]> => {
     const url = new URL(SEARCH_URL);
     url.searchParams.set("q", text);
-    url.searchParams.set("page_size", "24");
+    url.searchParams.set("page_size", "48");
+    url.searchParams.set("page", String(page));
     url.searchParams.set("fields", SEARCH_FIELDS);
     const payload = await requestJson(url.toString());
     if (!payload || typeof payload !== "object") return [];
@@ -494,7 +498,7 @@ export async function searchOpenFoodFacts(query: string): Promise<FoodCandidate[
       if (!candidate || seen.has(candidate.externalId ?? "")) continue;
       seen.add(candidate.externalId ?? "");
       results.push(candidate);
-      if (results.length >= 12) break;
+      if (results.length >= 30) break;
     }
     return results;
   };

@@ -88,6 +88,7 @@ export function MealPlannerView({
   recipes,
   shopping,
   pantry,
+  householdName = null,
   language,
   unitSystem,
 }: {
@@ -97,6 +98,7 @@ export function MealPlannerView({
   recipes: SavedMeal[];
   shopping: ShoppingItem[];
   pantry: PantryItem[];
+  householdName?: string | null;
   language: Language;
   unitSystem: UnitSystem;
 }) {
@@ -363,6 +365,11 @@ export function MealPlannerView({
           <p className="eyebrow">{t("plan.eyebrow")}</p>
           <h1>{t("plan.title")}</h1>
           <p className="page-subtitle">{t("plan.subtitle")}</p>
+          {householdName ? (
+            <p className="source-note">
+              {t("plan.householdNote", { name: householdName })}
+            </p>
+          ) : null}
         </div>
         <div className="plan-weeknav">
           <button

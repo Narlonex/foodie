@@ -5,6 +5,7 @@ import type {
   DashboardNutrient,
   GoalMode,
   Language,
+  MeasurementUnit,
   Sex,
   Theme,
   UnitSystem,
@@ -39,6 +40,18 @@ export async function updateUnitSystem(
   const row = await queryOne<{ user_id: string }>(
     `UPDATE profiles SET unit_system = $2 WHERE user_id = $1 RETURNING user_id`,
     [userId, unitSystem],
+  );
+  return Boolean(row);
+}
+
+export async function updateMeasurementUnit(
+  userId: string,
+  measurementUnit: MeasurementUnit,
+): Promise<boolean> {
+  const row = await queryOne<{ user_id: string }>(
+    `UPDATE profiles SET measurement_unit = $2
+      WHERE user_id = $1 RETURNING user_id`,
+    [userId, measurementUnit],
   );
   return Boolean(row);
 }

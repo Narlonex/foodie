@@ -11,6 +11,9 @@ vi.mock("@/lib/foods/usda", () => ({
   isUsdaEnabled: vi.fn(),
   lookupUsdaBarcode: vi.fn(),
 }));
+vi.mock("@/lib/repositories/catalog", () => ({
+  getCatalogFoodByBarcode: vi.fn(),
+}));
 
 import { GET } from "@/app/api/foods/barcode/route";
 import { getViewer } from "@/lib/auth";
@@ -19,6 +22,7 @@ import {
   FoodApiError,
 } from "@/lib/foods/openFoodFacts";
 import { isUsdaEnabled, lookupUsdaBarcode } from "@/lib/foods/usda";
+import { getCatalogFoodByBarcode } from "@/lib/repositories/catalog";
 import { EMPTY_NUTRIENTS, type FoodCandidate } from "@/lib/types";
 
 const viewer = {
@@ -54,6 +58,7 @@ function lookup(code = "8580000000001") {
 
 const offLookup = vi.mocked(fetchOpenFoodFactsProduct);
 const usdaLookup = vi.mocked(lookupUsdaBarcode);
+const catalogLookup = vi.mocked(getCatalogFoodByBarcode);
 const usdaAvailable = vi.mocked(isUsdaEnabled);
 const viewerMock = vi.mocked(getViewer);
 
@@ -63,9 +68,24 @@ beforeEach(() => {
   usdaAvailable.mockReturnValue(true);
   offLookup.mockResolvedValue(candidate("off", "8580000000001"));
   usdaLookup.mockResolvedValue(candidate("usda", "8580000000001"));
+  catalogLookup.mockResolvedValue(null);
 });
 
 describe("barcode lookup", () => {
+  it("uses the local catalog before live databases", async () => {
+    catalogLookup.mockResolvedValue({
+      ...candidate("off", "8580000000001"),
+      catalog: true,
+    });
+
+    const response = await lookup();
+    const payload = (await response.json()) as { food: FoodCandidate };
+
+    expect(response.status).toBe(200);
+    expect(payload.food.catalog).toBe(true);
+    expect(offLookup).not.toHaveBeenCalled();
+  });
+
   it("uses Open Food Facts first", async () => {
     const response = await lookup();
     const payload = (await response.json()) as { food: FoodCandidate };

@@ -113,9 +113,19 @@ export function AddFoodDialog({
   const [source, setSource] = useState<Source>(() =>
     usdaEnabled ? "both" : "off",
   );
+  const [category, setCategory] = useState("");
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [categories, setCategories] = useState<
+    Array<{ category: string; count: number }>
+  >([]);
+  const [missingNotice, setMissingNotice] = useState(false);
   const [query, setQuery] = useState("");
   const [searchTick, setSearchTick] = useState(0);
   const [results, setResults] = useState<FoodCandidate[]>([]);
+  const [searchPage, setSearchPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const [searchStatus, setSearchStatus] = useState<SearchStatus>("idle");
   const [searchError, setSearchError] = useState<string | null>(null);
   const [unavailableSources, setUnavailableSources] = useState<SourceKind[]>([]);
@@ -170,32 +180,71 @@ export function AddFoodDialog({
 
   useEffect(() => {
     if (!open || tab !== "search") return;
+    const controller = new AbortController();
+    void fetch("/api/foods/categories", {
+      signal: controller.signal,
+      headers: { Accept: "application/json" },
+    })
+      .then(async (response) => {
+        if (!response.ok) return;
+        const payload = (await response.json().catch(() => ({}))) as {
+          categories?: Array<{ category: string; count: number }>;
+        };
+        if (Array.isArray(payload.categories)) {
+          setCategories(
+            payload.categories.filter(
+              (entry) =>
+                entry &&
+                typeof entry.category === "string" &&
+                typeof entry.count === "number",
+            ),
+          );
+        }
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [open, tab]);
+
+  useEffect(() => {
+    if (!open || tab !== "search") return;
     const trimmed = query.trim();
-    if (trimmed.length < 2) return;
+    if (trimmed.length < 2 && !category) return;
     const timer = window.setTimeout(async () => {
       const controller = new AbortController();
       searchAbort.current?.abort();
       searchAbort.current = controller;
+      setSearchPage(1);
+      setHasMore(false);
+      setLoadingMore(false);
+      setLoadMoreError(null);
       setSearchStatus("loading");
       setSearchError(null);
       try {
+        const params = new URLSearchParams({ q: trimmed, source });
+        if (category) params.set("category", category);
+        if (verifiedOnly) params.set("verified", "1");
         const response = await fetch(
-          `/api/foods/search?q=${encodeURIComponent(trimmed)}&source=${source}`,
+          `/api/foods/search?${params.toString()}`,
           { signal: controller.signal, headers: { Accept: "application/json" } },
         );
         const payload = (await response.json().catch(() => ({}))) as {
           results?: FoodCandidate[];
           error?: string;
           unavailable?: string[];
+          hasMore?: boolean;
         };
         if (!response.ok) {
           setResults([]);
           setUnavailableSources([]);
+          setHasMore(false);
           setSearchError(payload.error ?? "search.error");
           setSearchStatus("error");
           return;
         }
-        setResults(Array.isArray(payload.results) ? payload.results : []);
+        const incoming = Array.isArray(payload.results) ? payload.results : [];
+        setResults(incoming);
+        setMissingNotice(incoming.length === 0 && trimmed.length >= 2);
+        setHasMore(payload.hasMore === true);
         setUnavailableSources(
           Array.isArray(payload.unavailable)
             ? payload.unavailable.filter(
@@ -210,6 +259,7 @@ export function AddFoodDialog({
         if (error instanceof DOMException && error.name === "AbortError") return;
         setResults([]);
         setUnavailableSources([]);
+        setMissingNotice(false);
         setSearchError("search.networkError");
         setSearchStatus("error");
       }
@@ -218,7 +268,72 @@ export function AddFoodDialog({
       window.clearTimeout(timer);
       searchAbort.current?.abort();
     };
-  }, [query, source, tab, open, searchTick]);
+  }, [query, source, tab, open, searchTick, category, verifiedOnly]);
+
+  async function loadMore() {
+    if (loadingMore || !hasMore || searchStatus !== "done") return;
+    const trimmed = query.trim();
+    if (trimmed.length < 2 && !category) return;
+    const nextPage = searchPage + 1;
+    const controller = new AbortController();
+    searchAbort.current?.abort();
+    searchAbort.current = controller;
+    setLoadingMore(true);
+    setLoadMoreError(null);
+    try {
+      const params = new URLSearchParams({
+        q: trimmed,
+        source,
+        page: String(nextPage),
+      });
+      if (category) params.set("category", category);
+      if (verifiedOnly) params.set("verified", "1");
+      const response = await fetch(
+        `/api/foods/search?${params.toString()}`,
+        { signal: controller.signal, headers: { Accept: "application/json" } },
+      );
+      const payload = (await response.json().catch(() => ({}))) as {
+        results?: FoodCandidate[];
+        error?: string;
+        unavailable?: string[];
+        hasMore?: boolean;
+      };
+      if (!response.ok) {
+        if (!controller.signal.aborted) {
+          setLoadMoreError(payload.error ?? "search.loadMoreError");
+        }
+        return;
+      }
+      const incoming = Array.isArray(payload.results) ? payload.results : [];
+      setResults((current) => {
+        const seen = new Set(current.map(externalKey));
+        const next = [...current];
+        for (const food of incoming) {
+          const key = externalKey(food);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          next.push(food);
+        }
+        return next;
+      });
+      setSearchPage(nextPage);
+      setHasMore(payload.hasMore === true);
+      setUnavailableSources(
+        Array.isArray(payload.unavailable)
+          ? payload.unavailable.filter(
+              (value): value is SourceKind =>
+                value === "off" || value === "usda",
+            )
+          : [],
+      );
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      setLoadMoreError("search.loadMoreError");
+    } finally {
+      if (!controller.signal.aborted) setLoadingMore(false);
+    }
+  }
 
   // A package can only be used when its unit matches the food's nutrition
   // basis; otherwise the calculator stays hidden rather than converting guesses.
@@ -291,7 +406,8 @@ export function AddFoodDialog({
     setDetailError(null);
     detailRequestKey.current = key;
 
-    if (needsDetail && food.source === "off" && food.barcode) {
+    const isCatalogFood = "catalog" in food && food.catalog === true;
+    if (needsDetail && !isCatalogFood && food.source === "off" && food.barcode) {
       const controller = new AbortController();
       detailAbort.current?.abort();
       detailAbort.current = controller;
@@ -677,6 +793,44 @@ export function AddFoodDialog({
             <p className="source-note">{t("search.offAttribution")}</p>
           )}
 
+          <div className="filter-block">
+            <span className="field-label">{t("search.category")}</span>
+            <div
+              className="category-chips"
+              role="group"
+              aria-label={t("search.category")}
+            >
+              <button
+                type="button"
+                className="category-chip"
+                aria-pressed={category === ""}
+                onClick={() => setCategory("")}
+              >
+                {t("category.all")}
+              </button>
+              {categories.map((entry) => (
+                <button
+                  type="button"
+                  className="category-chip"
+                  key={entry.category}
+                  aria-pressed={category === entry.category}
+                  onClick={() => setCategory(entry.category)}
+                >
+                  {t(`category.${entry.category}` as TranslationKey)}
+                  <span className="chip-count">{entry.count}</span>
+                </button>
+              ))}
+            </div>
+            <label className="checkbox-row compact">
+              <input
+                type="checkbox"
+                checked={verifiedOnly}
+                onChange={(event) => setVerifiedOnly(event.target.checked)}
+              />
+              <span>{t("search.verifiedOnly")}</span>
+            </label>
+          </div>
+
           <form
             className="search-bar"
             role="search"
@@ -696,8 +850,12 @@ export function AddFoodDialog({
               onChange={(event) => {
                 const value = event.target.value;
                 setQuery(value);
-                if (value.trim().length < 2) {
+                if (value.trim().length < 2 && !category) {
                   setResults([]);
+                  setSearchPage(1);
+                  setHasMore(false);
+                  setLoadingMore(false);
+                  setLoadMoreError(null);
                   setSearchStatus("idle");
                   setSearchError(null);
                 }
@@ -851,6 +1009,9 @@ export function AddFoodDialog({
               </span>
               <h3>{t("search.noResults")}</h3>
               <p>{t("search.noResultsHelp")}</p>
+              {missingNotice ? (
+                <p className="source-note">{t("search.missingNotice")}</p>
+              ) : null}
               <Link href="/foods" className="button secondary small">
                 {t("search.customFoodHint")}
               </Link>
@@ -875,6 +1036,11 @@ export function AddFoodDialog({
                         <span className="result-meta">
                           {food.brand ? <span>{food.brand}</span> : null}
                           <SourceBadge source={food.source} language={language} />
+                          {"verified" in food && food.verified === true ? (
+                            <span className="badge verified-badge">
+                              {t("search.verified")}
+                            </span>
+                          ) : null}
                           <PreparationBadge
                             preparation={food.preparation}
                             language={language}
@@ -921,6 +1087,27 @@ export function AddFoodDialog({
                   </div>
                 );
               })}
+            </div>
+          ) : null}
+
+          {loadMoreError ? (
+            <p className="notice error" role="alert">
+              {tr(loadMoreError) ?? t("search.loadMoreError")}
+            </p>
+          ) : null}
+
+          {searchStatus === "done" && results.length > 0 && hasMore ? (
+            <div className="form-actions">
+              <button
+                type="button"
+                className="button secondary"
+                disabled={loadingMore}
+                onClick={() => void loadMore()}
+              >
+                {loadingMore
+                  ? t("search.loadingMore")
+                  : t("search.loadMore")}
+              </button>
             </div>
           ) : null}
 

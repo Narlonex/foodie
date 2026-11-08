@@ -5,6 +5,7 @@ import {
   FoodApiError,
 } from "@/lib/foods/openFoodFacts";
 import { isUsdaEnabled, lookupUsdaBarcode } from "@/lib/foods/usda";
+import { getCatalogFoodByBarcode } from "@/lib/repositories/catalog";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -47,6 +48,17 @@ export async function GET(request: NextRequest) {
   const code = (request.nextUrl.searchParams.get("code") ?? "").trim();
   if (!/^[0-9]{6,20}$/.test(code)) {
     return response({ error: "search.invalidBarcode" }, 400);
+  }
+
+  // The local catalog is the fastest and most reliable path for the seeded
+  // regional products; fall back to live databases for everything else.
+  try {
+    const catalogFood = await getCatalogFoodByBarcode(code);
+    if (catalogFood) {
+      return response({ food: catalogFood, source: catalogFood.source }, 200);
+    }
+  } catch {
+    // A catalog problem must not block the live OFF/USDA lookup.
   }
 
   try {

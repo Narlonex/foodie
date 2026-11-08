@@ -9,6 +9,7 @@ import type {
   ActivityLevel,
   GoalMode,
   Language,
+  MeasurementUnit,
   Profile,
   Sex,
   Theme,
@@ -76,12 +77,14 @@ interface ViewerRow {
   language: Language;
   theme: Theme;
   unit_system: UnitSystem;
+  measurement_unit: MeasurementUnit;
   goal_mode: GoalMode;
   maintenance_calories: string | null;
   goal_weight_kg: string | null;
   goal_rate_kg_per_week: string | null;
   default_day_type_id: string | null;
   usda_enabled: boolean;
+  is_admin: boolean;
   height_cm: string | null;
   weight_kg: string | null;
   age: number | null;
@@ -97,10 +100,11 @@ const getViewerCached = cache(async (): Promise<Viewer | null> => {
   if (!token) return null;
 
   const row = await queryOne<ViewerRow>(
-    `SELECT p.user_id, u.email, p.language, p.theme, p.unit_system, p.goal_mode,
+    `SELECT p.user_id, u.email, p.language, p.theme, p.unit_system,
+            p.measurement_unit, p.goal_mode,
             p.maintenance_calories, p.goal_weight_kg,
             p.goal_rate_kg_per_week, p.default_day_type_id, p.usda_enabled,
-            p.height_cm, p.weight_kg, p.age, p.sex, p.activity_level,
+            p.is_admin, p.height_cm, p.weight_kg, p.age, p.sex, p.activity_level,
             p.onboarding_completed, p.dashboard_nutrients
        FROM sessions s
        JOIN users u ON u.id = s.user_id
@@ -116,6 +120,7 @@ const getViewerCached = cache(async (): Promise<Viewer | null> => {
     language: row.language,
     theme: row.theme,
     unitSystem: row.unit_system,
+    measurementUnit: row.measurement_unit,
     goalMode: row.goal_mode,
     maintenanceCalories:
       row.maintenance_calories === null ? null : Number(row.maintenance_calories),
@@ -133,6 +138,7 @@ const getViewerCached = cache(async (): Promise<Viewer | null> => {
     sex: row.sex,
     activityLevel: row.activity_level,
     onboardingCompleted: row.onboarding_completed,
+    isAdmin: row.is_admin,
     dashboardNutrients: normaliseDashboardNutrients(row.dashboard_nutrients),
   };
   return { user: { id: row.user_id, email: row.email }, profile };

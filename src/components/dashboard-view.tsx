@@ -69,6 +69,7 @@ const MACRO_CARDS = [
 export function DashboardView({
   date,
   today,
+  quickAdd = false,
   language,
   unitSystem,
   assignedDayTypeId,
@@ -89,6 +90,7 @@ export function DashboardView({
 }: {
   date: string;
   today: string;
+  quickAdd?: boolean;
   language: Language;
   unitSystem: UnitSystem;
   assignedDayTypeId: string | null;
@@ -109,7 +111,7 @@ export function DashboardView({
 }) {
   const t = getTranslator(language);
   const router = useRouter();
-  const [addMeal, setAddMeal] = useState<Meal | null>(null);
+  const [addMeal, setAddMeal] = useState<Meal | null>(quickAdd ? "breakfast" : null);
   const [editingEntry, setEditingEntry] = useState<DiaryEntry | null>(null);
   const [movingEntry, setMovingEntry] = useState<DiaryEntry | null>(null);
   const [deletingEntry, setDeletingEntry] = useState<DiaryEntry | null>(null);

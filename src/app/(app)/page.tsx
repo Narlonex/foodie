@@ -22,12 +22,13 @@ export async function generateMetadata() {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string | string[] }>;
+  searchParams: Promise<{ date?: string | string[]; quick?: string | string[] }>;
 }) {
   const viewer = await requireViewer();
   const params = await searchParams;
   const today = todayIso();
   const date = parseDateParam(params.date, today);
+  const quickAdd = params.quick === "1";
 
   const [day, dayTypes, favorites, recent, customFoods, savedMeals, weights, habits] =
     await Promise.all([
@@ -49,6 +50,7 @@ export default async function DashboardPage({
       key={date}
       date={date}
       today={today}
+      quickAdd={quickAdd}
       language={viewer.profile.language}
       unitSystem={viewer.profile.unitSystem}
       assignedDayTypeId={day.assignedDayTypeId}

@@ -3,6 +3,10 @@ import { getViewer } from "@/lib/auth";
 import { FoodApiError, searchOpenFoodFacts } from "@/lib/foods/openFoodFacts";
 import { isUsdaEnabled, searchUsda } from "@/lib/foods/usda";
 import { mergeSearchResults } from "@/lib/foods/merge";
+import {
+  recordCatalogSearchMiss,
+  searchCatalogFoods,
+} from "@/lib/repositories/catalog";
 import type { FoodCandidate } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +14,9 @@ export const runtime = "nodejs";
 
 type SourceKind = "off" | "usda";
 type SearchSource = SourceKind | "both";
+
+const SOURCE_RESULT_LIMIT: Record<SourceKind, number> = { off: 30, usda: 24 };
+const CATALOG_RESULT_LIMIT = 40;
 
 type SourceOutcome =
   | { ok: true; kind: SourceKind; results: FoodCandidate[] }
@@ -26,6 +33,34 @@ function parseSource(value: string | null): SearchSource {
   if (value === "usda") return "usda";
   if (value === "both") return "both";
   return "off";
+}
+
+function parsePage(value: string | null): number {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= 1 && parsed <= 50 ? parsed : 1;
+}
+
+function sourceHasMore(outcome: Extract<SourceOutcome, { ok: true }>): boolean {
+  return outcome.results.length >= SOURCE_RESULT_LIMIT[outcome.kind];
+}
+
+async function loadCatalog(
+  query: string,
+  source: SearchSource,
+  page: number,
+  category: string | null,
+  verifiedOnly: boolean,
+): Promise<FoodCandidate[]> {
+  try {
+    return await searchCatalogFoods(query, source, CATALOG_RESULT_LIMIT, {
+      category,
+      verifiedOnly,
+      offset: (page - 1) * CATALOG_RESULT_LIMIT,
+    });
+  } catch {
+    // A missing/unavailable catalog must not take external search down.
+    return [];
+  }
 }
 
 function describeError(error: unknown): { error: string; status: number } {
@@ -46,14 +81,21 @@ function describeError(error: unknown): { error: string; status: number } {
 async function loadSource(
   kind: SourceKind,
   query: string,
+  page: number,
 ): Promise<SourceOutcome> {
   try {
     const results =
-      kind === "usda" ? await searchUsda(query) : await searchOpenFoodFacts(query);
+      kind === "usda"
+        ? await searchUsda(query, page)
+        : await searchOpenFoodFacts(query, page);
     return { ok: true, kind, results };
   } catch (error) {
     return { ok: false, kind, ...describeError(error) };
   }
+}
+
+function emptyOutcome(kind: SourceKind): SourceOutcome {
+  return { ok: true, kind, results: [] };
 }
 
 export async function GET(request: NextRequest) {
@@ -63,31 +105,44 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const query = (searchParams.get("q") ?? "").trim();
   const source = parseSource(searchParams.get("source"));
-  if (query.length < 2) return errorResponse("search.minChars", 400);
+  const page = parsePage(searchParams.get("page"));
+  const rawCategory = (searchParams.get("category") ?? "").trim();
+  const category =
+    rawCategory && /^[a-z0-9-]{2,40}$/.test(rawCategory)
+      ? rawCategory
+      : null;
+  const verifiedOnly = searchParams.get("verified") === "1";
+
+  if (rawCategory && !category) return errorResponse("search.error", 400);
+  if (query.length < 2 && !category) {
+    return errorResponse("search.minChars", 400);
+  }
   if (query.length > 80) return errorResponse("search.error", 400);
 
-  if (source === "usda" && !isUsdaEnabled()) {
+  const externalAllowed = query.length >= 2;
+  if (externalAllowed && source === "usda" && !isUsdaEnabled()) {
     return errorResponse("search.usdaNotConfigured", 501);
   }
-  if (source === "usda" && !viewer.profile.usdaEnabled) {
+  if (externalAllowed && source === "usda" && !viewer.profile.usdaEnabled) {
     return errorResponse("search.usdaDisabled", 403);
   }
 
-  if (source !== "both") {
-    const outcome = await loadSource(source, query);
-    if (!outcome.ok) return errorResponse(outcome.error, outcome.status);
-    return NextResponse.json(
-      { results: outcome.results, source },
-      { headers: { "Cache-Control": "no-store" } },
-    );
-  }
-
-  // "Both" queries every configured database at once. A dead provider must not
-  // take the usable one down with it, so each call settles on its own.
-  const usdaAllowed = isUsdaEnabled() && viewer.profile.usdaEnabled;
-  const outcomes = await Promise.all([
-    loadSource("off", query),
-    ...(usdaAllowed ? [loadSource("usda", query)] : []),
+  const [catalogResults, ...outcomes] = await Promise.all([
+    loadCatalog(query, source, page, category, verifiedOnly),
+    ...(source !== "both"
+      ? [
+          externalAllowed
+            ? loadSource(source, query, page)
+            : Promise.resolve(emptyOutcome(source)),
+        ]
+      : [
+          externalAllowed
+            ? loadSource("off", query, page)
+            : Promise.resolve(emptyOutcome("off")),
+          externalAllowed && viewer.profile.usdaEnabled && isUsdaEnabled()
+            ? loadSource("usda", query, page)
+            : Promise.resolve(emptyOutcome("usda")),
+        ]),
   ]);
 
   const succeeded = outcomes.filter(
@@ -97,9 +152,10 @@ export async function GET(request: NextRequest) {
     (outcome): outcome is Extract<SourceOutcome, { ok: false }> => !outcome.ok,
   );
 
-  if (succeeded.length === 0) {
-    // Throttling is the one failure the user can act on, so it wins over the
-    // generic "unavailable" a different database may have reported.
+  if (succeeded.length === 0 && catalogResults.length === 0) {
+    if (!externalAllowed) {
+      return errorResponse("food.apiError", 503);
+    }
     const reported =
       failed.find((outcome) => outcome.status === 429) ?? failed[0];
     return reported
@@ -109,12 +165,25 @@ export async function GET(request: NextRequest) {
 
   const off = succeeded.find((outcome) => outcome.kind === "off");
   const usda = succeeded.find((outcome) => outcome.kind === "usda");
-  const results = mergeSearchResults(off?.results ?? [], usda?.results ?? [], query);
+  const results = mergeSearchResults(
+    [...catalogResults, ...(off?.results ?? [])],
+    usda?.results ?? [],
+    query,
+    CATALOG_RESULT_LIMIT,
+  );
+
+  if (results.length === 0 && page === 1 && externalAllowed) {
+    await recordCatalogSearchMiss(query).catch(() => undefined);
+  }
 
   return NextResponse.json(
     {
       results,
       source,
+      page,
+      hasMore:
+        catalogResults.length >= CATALOG_RESULT_LIMIT ||
+        succeeded.some(sourceHasMore),
       unavailable: failed.map((outcome) => outcome.kind),
     },
     { headers: { "Cache-Control": "no-store" } },

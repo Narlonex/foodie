@@ -54,6 +54,25 @@ export default async function SettingsPage() {
       icon: "database",
     },
     {
+      href: "/settings/household",
+      label: t("settings.household"),
+      icon: "user",
+    },
+    {
+      href: "/coach",
+      label: t("settings.coach"),
+      icon: "target",
+    },
+    ...(viewer.profile.isAdmin
+      ? [
+          {
+            href: "/admin",
+            label: t("settings.admin"),
+            icon: "database" as IconName,
+          },
+        ]
+      : []),
+    {
       href: "/settings/account",
       label: t("settings.account"),
       icon: "user",

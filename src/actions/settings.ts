@@ -10,6 +10,7 @@ import {
   updateGoalTargets,
   updateGoals,
   updateLanguage,
+  updateMeasurementUnit,
   updateTheme,
   updateUnitSystem,
   updateUsdaPreference,
@@ -31,6 +32,7 @@ import {
   goalRateSchema,
   languageSchema,
   manualTargetsSchema,
+  measurementUnitSchema,
   sexSchema,
   themeSchema,
   unitSystemSchema,
@@ -98,6 +100,18 @@ export async function updateUnitsAction(
   await updateUnitSystem(viewer.user.id, parsed.data);
   revalidatePath("/", "layout");
   return success("units.saved");
+}
+
+export async function updateMeasurementUnitAction(
+  unit: string,
+): Promise<FormState> {
+  const viewer = await requireViewer();
+  const parsed = measurementUnitSchema.safeParse(unit);
+  if (!parsed.success) return failure("settings.saveError");
+  const changed = await updateMeasurementUnit(viewer.user.id, parsed.data);
+  if (!changed) return failure("settings.saveError");
+  revalidatePath("/progress");
+  return success("measurements.unitSaved");
 }
 
 export async function updateUsdaEnabledAction(
