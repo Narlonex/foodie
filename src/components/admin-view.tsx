@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useTransition, useState } from "react";
 import { reviewSubmissionAction } from "@/actions/admin";
 import { getTranslator, translate, type TranslationKey } from "@/i18n";
+import { formatNumber } from "@/lib/format";
 import type {
   FoodSubmission,
   ImportRun,
@@ -70,11 +71,11 @@ export function AdminView({
       <div className="stat-grid">
         <div className="card stat-card">
           <span className="stat-label">{t("admin.totalFoods")}</span>
-          <strong>{stats.total.toLocaleString()}</strong>
+          <strong>{formatNumber(stats.total, language)}</strong>
         </div>
         <div className="card stat-card">
           <span className="stat-label">{t("admin.verifiedFoods")}</span>
-          <strong>{stats.verified.toLocaleString()}</strong>
+          <strong>{formatNumber(stats.verified, language)}</strong>
         </div>
         <div className="card stat-card">
           <span className="stat-label">{t("admin.categories")}</span>
@@ -94,15 +95,15 @@ export function AdminView({
         <div className="stat-grid">
           <div className="card stat-card">
             <span className="stat-label">{t("admin.missingKcal")}</span>
-            <strong>{quality.missingKcal.toLocaleString()}</strong>
+            <strong>{formatNumber(quality.missingKcal, language)}</strong>
           </div>
           <div className="card stat-card">
             <span className="stat-label">{t("admin.missingMacros")}</span>
-            <strong>{quality.missingMacros.toLocaleString()}</strong>
+            <strong>{formatNumber(quality.missingMacros, language)}</strong>
           </div>
           <div className="card stat-card">
             <span className="stat-label">{t("admin.duplicateBarcodes")}</span>
-            <strong>{quality.duplicateBarcodes.toLocaleString()}</strong>
+            <strong>{formatNumber(quality.duplicateBarcodes, language)}</strong>
           </div>
         </div>
       </section>

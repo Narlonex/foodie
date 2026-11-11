@@ -96,24 +96,43 @@ export function formatLongDate(iso: string, language: Language): string {
     : `${part("weekday")} ${part("day")}. ${part("month")} ${part("year")}`;
 }
 
-export function formatShortDate(iso: string, language: Language): string {
-  return new Intl.DateTimeFormat(localeFor(language), {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC",
-  }).format(toUtcDate(iso));
-}
-
-export function formatWeekRange(startIso: string, language: Language): string {
-  const endIso = addDays(startIso, 6);
-  const formatter = new Intl.DateTimeFormat(localeFor(language), {
+function shortDateParts(
+  iso: string,
+  language: Language,
+  withYear = false,
+): Record<string, string> {
+  const parts = new Intl.DateTimeFormat(localeFor(language), {
+    ...(withYear ? {} : { weekday: "short" as const }),
     day: "numeric",
     month: "short",
     year: "numeric",
     timeZone: "UTC",
-  });
-  return `${formatter.format(toUtcDate(startIso))} – ${formatter.format(toUtcDate(endIso))}`;
+  }).formatToParts(toUtcDate(iso));
+  const out: Record<string, string> = {};
+  for (const part of parts) out[part.type] = part.value;
+  return out;
+}
+
+/**
+ * Assembled from parts on purpose: Node and the browser ship different CLDR
+ * data, so calling `format()` for the same date renders different strings on
+ * the server and in the browser and breaks hydration.
+ */
+export function formatShortDate(iso: string, language: Language): string {
+  const p = shortDateParts(iso, language);
+  return language === "en"
+    ? `${p.weekday} ${p.day} ${p.month}`
+    : `${p.weekday} ${p.day}. ${p.month}`;
+}
+
+export function formatWeekRange(startIso: string, language: Language): string {
+  const start = shortDateParts(startIso, language, true);
+  const end = shortDateParts(addDays(startIso, 6), language, true);
+  const one = (p: Record<string, string>) =>
+    language === "en"
+      ? `${p.day} ${p.month} ${p.year}`
+      : `${p.day}. ${p.month} ${p.year}`;
+  return `${one(start)} – ${one(end)}`;
 }
 
 export function formatDateTime(
